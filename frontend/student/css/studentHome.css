@@ -1,0 +1,561 @@
+/*MAIN CONTENT AREA*/
+#mainContent {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 28px 32px;
+    background-color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    transition: background-color 0.3s;
+    align-items: unset;
+    justify-content: unset;
+}
+
+body.dark #mainContent {
+    background-color: #0f172a;
+}
+
+/*HERO BANNER*/
+.hero-banner {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    border-radius: 20px;
+    padding: 36px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Text column — left side */
+.hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: min(560px, 65%);
+    min-width: 0;
+    flex-shrink: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-title {
+    font-size: clamp(1.05rem, 2.5vw, 1.75rem);
+    font-weight: 800;
+    line-height: 1.25;
+    color: #fff;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.hero-subtitle {
+    font-size: clamp(0.8rem, 1.4vw, 0.9rem);
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+    overflow-wrap: break-word;
+}
+
+/* Launch QuestAI button */
+.hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #fff;
+    color: #1e40af;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 6px;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.hero-btn:hover {
+    background-color: #e0f2fe;
+    transform: translateY(-1px);
+}
+
+/* Faded school icon — desktop only decoration */
+.hero-illustration {
+    font-size: clamp(5rem, 9vw, 8rem);
+    color: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+    user-select: none;
+    position: absolute;
+    right: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+
+/*ENROLLED CLASSES SECTION */
+.enrolled-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.enrolled-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.enrolled-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+body.dark .enrolled-title { color: #f1f5f9; }
+
+.enrolled-subtitle {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+body.dark .enrolled-subtitle { color: #94a3b8; }
+
+
+/* CLASS CARDS GRID*/
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.class-card {
+    background-color: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    text-decoration: none;
+    display: block;
+}
+
+.class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+    border-color: var(--card-color);
+}
+
+body.dark .class-card {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+body.dark .class-card:hover {
+    border-color: var(--card-color);
+}
+
+/* Top colored area */
+.card-top {
+    padding: 24px 20px 20px;
+    position: relative;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+}
+
+.card-subject {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+}
+
+.card-section {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+}
+
+/* Teacher photo */
+.card-teacher-photo {
+    position: absolute;
+    bottom: -20px;
+    right: 20px;
+    width: 64px;
+    height: 64px;
+}
+
+.card-teacher-photo img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    display: block;
+}
+
+/* Fallback initials */
+.card-teacher-initials {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: #e2e8f0;
+    border: 3px solid #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #475569;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Card bottom */
+.card-bottom {
+    padding: 28px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background-color: #fff;
+}
+
+body.dark .card-bottom {
+    background-color: #1e293b;
+}
+
+.card-teacher-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.card-teacher-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+body.dark .card-teacher-name { color: #f1f5f9; }
+
+.card-teacher-role {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+body.dark .card-teacher-role { color: #94a3b8; }
+
+.card-enter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #f1f5f9;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.class-card:hover .card-enter-btn {
+    background-color: var(--card-color);
+    color: #fff;
+}
+
+body.dark .card-enter-btn {
+    background-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark .class-card:hover .card-enter-btn {
+    background-color: var(--card-color);
+    color: #fff;
+}
+
+
+/*RESPONSIVE BREAKPOINTS */
+
+/* ── Large Desktop: 1280px+ ── */
+@media (min-width: 1280px) {
+    #mainContent {
+        padding: 32px 40px;
+        gap: 36px;
+    }
+
+    .hero-banner {
+        padding: 44px 52px;
+        min-height: 190px;
+    }
+
+    .class-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+    }
+}
+
+/* ── Desktop / Laptop: 1024px – 1279px ── */
+@media (min-width: 1024px) and (max-width: 1279px) {
+    #mainContent {
+        padding: 28px 32px;
+        gap: 32px;
+    }
+
+    .class-grid {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* ── Tablet Landscape: 769px – 1023px ── */
+@media (min-width: 769px) and (max-width: 1023px) {
+    #mainContent {
+        padding: 24px 24px;
+        gap: 28px;
+    }
+
+    .hero-banner {
+        padding: 30px 32px;
+        min-height: unset;
+    }
+
+    .class-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 18px;
+    }
+}
+
+/* ── Tablet Portrait: 481px – 768px ── */
+@media (max-width: 768px) {
+    #mainContent {
+        padding: 20px 16px;
+        gap: 24px;
+    }
+
+    .hero-banner {
+        padding: 26px 22px;
+        min-height: unset;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .hero-illustration {
+        display: none;
+    }
+
+    .hero-text {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        gap: 8px;
+    }
+
+    .hero-title {
+        font-size: clamp(1rem, 3.5vw, 1.4rem);
+    }
+
+    .hero-subtitle {
+        font-size: 0.82rem;
+    }
+
+    .hero-btn {
+        font-size: 0.83rem;
+        padding: 10px 18px;
+    }
+
+    .class-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+    }
+}
+
+/* ── Mobile: 361px – 480px ── */
+@media (max-width: 480px) {
+    #mainContent {
+        padding: 14px 12px;
+        gap: 20px;
+    }
+
+    .hero-banner {
+        padding: 20px 18px;
+        border-radius: 16px;
+        min-height: unset;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .hero-illustration {
+        display: none;
+    }
+
+    .hero-text {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        gap: 8px;
+    }
+
+    .hero-title {
+        font-size: clamp(0.95rem, 4.5vw, 1.2rem);
+    }
+
+    .hero-subtitle {
+        font-size: 0.78rem;
+    }
+
+    .hero-btn {
+        font-size: 0.8rem;
+        padding: 10px 16px;
+        width: 100%;
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+        margin-top: 2px;
+    }
+
+    /* Single column on mobile */
+    .class-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .card-subject { font-size: 1.3rem; }
+    .card-top     { min-height: 115px; }
+}
+
+/* ── Small Mobile: 360px and below ── */
+@media (max-width: 360px) {
+    #mainContent {
+        padding: 12px 10px;
+        gap: 16px;
+    }
+
+    .hero-banner {
+        padding: 18px 14px;
+        border-radius: 14px;
+        min-height: unset;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    .hero-illustration {
+        display: none;
+    }
+
+    .hero-text {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        gap: 7px;
+    }
+
+    .hero-title {
+        font-size: clamp(0.9rem, 4vw, 1.1rem);
+    }
+
+    .hero-subtitle {
+        font-size: 0.75rem;
+    }
+
+    .hero-btn {
+        font-size: 0.76rem;
+        padding: 9px 14px;
+        gap: 6px;
+        width: 100%;
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+        margin-top: 2px;
+    }
+
+    .class-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .enrolled-title    { font-size: 1.05rem; }
+    .enrolled-subtitle { font-size: 0.75rem; }
+
+    .card-subject      { font-size: 1.2rem; }
+    .card-top          { min-height: 105px; padding: 18px 16px; }
+    .card-bottom       { padding: 26px 16px 16px; gap: 10px; }
+    .card-teacher-name { font-size: 0.88rem; }
+    .card-teacher-role { font-size: 0.72rem; }
+    .card-enter-btn    { font-size: 0.78rem; padding: 9px 14px; }
+
+    .card-teacher-photo,
+    .card-teacher-photo img,
+    .card-teacher-initials {
+        width: 52px;
+        height: 52px;
+        font-size: 0.9rem;
+    }
+}
+
+/* PHONE HERO FIX */
+@media (max-width: 768px) {
+
+    #mainContent {
+        overflow-y: auto;
+        height: auto;
+        min-height: 100%;
+    }
+
+    .hero-banner {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+
+        min-height: unset;
+        height: auto;
+
+        padding: 24px 20px;
+        overflow: visible;
+    }
+
+    .hero-text {
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero-title {
+        display: block;
+        white-space: normal;
+        line-height: 1.4;
+    }
+
+    .hero-subtitle {
+        display: block;
+        white-space: normal;
+        line-height: 1.6;
+        margin-top: 8px;
+    }
+
+    .hero-btn {
+        margin-top: 14px;
+    }
+}

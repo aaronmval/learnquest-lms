@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Chemistry</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <!-- Icons & Font -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Shared navigation styles -->
+    <link rel="stylesheet" href="../../css/navigation.css">
+
+    <!-- Shared enrolled classroom styles -->
+    <link rel="stylesheet" href="../css/enrolledChemistry.css">
+    <link rel="stylesheet" href="../../css/Pdfmodal.css">
+
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+
+    <!-- ── HEADER ── -->
+    <header>
+
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/studentHome.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-parent">Main</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Chemistry</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button id="joinClassBtn" class="join-class-btn" title="Join a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Join Class</span>
+            </button>
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">A</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Aaron!</div>
+                    <div id="headerProfileRole" class="profile-role">Student</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!-- ── BODY AREA ── -->
+    <div class="body-area">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/studentHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/studentDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- Enrolled dropdown -->
+                <div class="labs-group">
+                    <button id="labsToggleBtn" class="sidebar-link labs-toggle" aria-expanded="false">
+                        <div class="labs-toggle-inner">
+                            <i class="fas fa-graduation-cap icon"></i>
+                            <span class="sidebar-text">Enrolled</span>
+                        </div>
+                        <i id="chevron-icon" class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="courses-dropdown-container" class="courses-dropdown">
+                        <a href="../html/enrolledChemistry.html"
+                           id="nav-chemistry"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Chemistry">
+                            <span class="dot dot-cyan"></span>
+                            <span class="sidebar-text">Chemistry</span>
+                        </a>
+                        <a href="../html/enrolledGeneralbiology.html"
+                           id="nav-general-biology"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="General Biology">
+                            <span class="dot dot-orange"></span>
+                            <span class="sidebar-text">General Biology</span>
+                        </a>
+                        <a href="../html/enrolledPhysics.html"
+                           id="nav-physics"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Physics">
+                            <span class="dot dot-purple"></span>
+                            <span class="sidebar-text">Physics</span>
+                        </a>
+                         <a href="../html/enrolledEarthscience.html"
+                           id="nav-earth-science"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Earth Science">
+                            <span class="dot dot-green"></span>
+                            <span class="sidebar-text">Earth Science</span>
+                        </a>
+                    </div>
+                </div>
+
+
+                <a href="../html/studentQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/studentSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!-- ── MAIN CONTENT ── -->
+        <main id="mainContent">
+
+            <div class="classroom-wrap">
+
+                <!-- CLASS HEADER BANNER -->
+                <section id="classBanner" class="class-banner">
+                    <div class="class-banner-text">
+                        <h1 id="classBannerSubject" class="class-banner-subject">CHEMISTRY</h1>
+                        <p id="classBannerSection" class="class-banner-section">STEM - AMETHYST</p>
+                        <p id="classBannerTeacher" class="class-banner-teacher">Mila D. Valiente</p>
+                        <p class="class-banner-role">Teacher</p>
+                    </div>
+                    <i class="fas fa-book-open class-banner-icon"></i>
+                </section>
+
+                <!-- TWO COLUMN: FEED + SIDE PANEL -->
+                <div class="classroom-grid">
+
+                    <!-- LEFT: Announcement / Lesson feed -->
+                    <div id="feedColumn" class="feed-column">
+                        <!-- Populated dynamically by enrolledchemistry.js -->
+                    </div>
+
+                    <!-- RIGHT: AI tools panel -->
+                    <div class="side-column">
+
+                        <div class="ai-panel">
+                            <button id="summarizeBtn" class="summarize-btn">
+                                <span class="bot-icon"><i class="fas fa-robot"></i></span>
+                                Summarize class note
+                            </button>
+                            <div id="summaryResult" class="hidden"></div>
+                        </div>
+
+                        <div class="ai-insights-card">
+                            <div class="ai-insights-header">
+                                <span class="ai-insights-icon"><i class="fas fa-cloud"></i></span>
+                                <span class="ai-insights-title">AI Insights for You</span>
+                            </div>
+                            <div id="insightsList"></div>
+                            <button id="insightsRefreshBtn" class="insight-refresh">
+                                <i class="fas fa-rotate"></i> Refresh insights
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+        <!-- End of main content -->
+
+    </div>
+    <!-- End of body area -->
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> System Alerts</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JOIN CLASS MODAL -->
+    <div id="joinClassModal">
+        <div id="joinClassModalCard">
+
+            <div class="jc-modal-header">
+                <div class="jc-modal-icon-wrap" id="jcModalIconWrap">
+                    <i class="fas fa-door-open" id="jcModalIcon"></i>
+                </div>
+                <div>
+                    <h3 class="modal-title" id="jcModalTitle">Join a Class</h3>
+                    <p class="jc-modal-subtitle" id="jcModalSubtitle">Enter the class code given by your teacher</p>
+                </div>
+                <button id="joinClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="jc-format-hint" id="jcFormatHint">
+                <i class="fas fa-info-circle"></i>
+                <p>Codes follow the format <strong>SUBJECT-NUMBER</strong> — always with a dash
+                   (e.g. <strong>BIO-2025</strong> or <strong>CHEM-101</strong>).</p>
+            </div>
+
+            <div class="jc-input-wrap" id="jcInputWrap">
+                <label class="jc-label" for="classCodeInput">Class Code</label>
+                <input id="classCodeInput" class="jc-input" type="text"
+                       placeholder="e.g. BIO-2025" maxlength="20"
+                       autocomplete="off" spellcheck="false" />
+                <div class="jc-attempt-bar" id="jcAttemptBar">
+                    <span class="jc-attempt-dot" id="jcDot1"></span>
+                    <span class="jc-attempt-dot" id="jcDot2"></span>
+                    <span class="jc-attempt-dot" id="jcDot3"></span>
+                    <span class="jc-attempt-label" id="jcAttemptLabel">3 attempts remaining</span>
+                </div>
+                <p id="jcError" class="jc-error hidden"></p>
+            </div>
+
+            <div id="jcPreview" class="jc-preview hidden">
+                <div class="jc-preview-dot" id="jcPreviewDot"></div>
+                <div class="jc-preview-info">
+                    <span id="jcPreviewName" class="jc-preview-name"></span>
+                    <span id="jcPreviewTeacher" class="jc-preview-teacher"></span>
+                </div>
+                <i class="fas fa-check-circle jc-preview-check"></i>
+            </div>
+
+            <div id="jcLockoutBanner" class="jc-lockout-banner hidden">
+                <i class="fas fa-lock"></i>
+                <div class="jc-lockout-text">
+                    Too many failed attempts. Please wait
+                    <span class="jc-lockout-timer" id="jcTimerSpan">30s</span>
+                    before trying again.
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="joinClassCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="joinClassConfirmBtn" class="modal-btn modal-btn-confirm jc-confirm-btn" disabled>
+                    <i class="fas fa-sign-in-alt"></i> Join Class
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <!-- PDF VIEWER MODAL══ -->
+    <div id="pdfModal" aria-modal="true" role="dialog" aria-labelledby="pdfModalTitle">
+
+        <!-- Semi-transparent backdrop -->
+        <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
+
+        <!-- Modal card -->
+        <div class="pdf-modal-card">
+
+            <!-- Header -->
+            <div class="pdf-modal-header">
+                <div class="pdf-modal-header-left">
+                    <span class="pdf-modal-file-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span id="pdfModalTitle" class="pdf-modal-title">Lesson.pdf</span>
+                </div>
+                <div class="pdf-modal-header-right">
+                    <a id="pdfModalDownload"
+                       class="pdf-modal-action-btn pdf-modal-download"
+                       href="#"
+                       title="Download PDF"
+                       aria-label="Download PDF">
+                        <i class="fas fa-download"></i>
+                        <span>Download</span>
+                    </a>
+                    <button id="pdfModalClose"
+                            class="pdf-modal-action-btn pdf-modal-close"
+                            aria-label="Close PDF viewer">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Viewer area -->
+            <div class="pdf-modal-body">
+
+                <!-- Real PDF iframe -->
+                <iframe id="pdfModalViewer"
+                        class="pdf-modal-iframe"
+                        title="PDF viewer"
+                        style="display:none;"
+                        frameborder="0">
+                </iframe>
+
+                <!-- Placeholder  -->
+                <div id="pdfModalPlaceholder" class="pdf-modal-placeholder">
+                    <div class="pdf-placeholder-inner">
+                        <i class="fas fa-file-pdf pdf-placeholder-icon"></i>
+                        <p class="pdf-placeholder-title">PDF preview not available</p>
+                        <p class="pdf-placeholder-sub">
+                            The teacher hasn't uploaded this file yet, or it requires a direct download.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Shared navigation JS -->
+    <script src="../../js/navigation.js"></script>
+
+    <!-- This page's own JS -->
+    <script src="../js/enrolledChemistry.js"></script>
+
+
+
+</body>
+</html>

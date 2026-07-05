@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Professor Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../css/navigation.css">
+    <link rel="stylesheet" href="../css/professorDashboard.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+    <!--HEADER-->
+    <header>
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/professorHome.html" class="logo">
+                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-parent">Main</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Dashboard</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Professors create classes instead of joining them -->
+            <button id="createClassBtn" class="join-class-btn" title="Create a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Create Class</span>
+            </button>
+
+            <!-- Notifications -->
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">M</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Ma'am Mila!</div>
+                    <div id="headerProfileRole" class="profile-role">Chemistry Professor</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!--BODY AREA-->
+    <div class="body-area">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/professorHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/professorDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- My Classes — dropdown of all classes the professor teaches.-->
+                <button id="myClassesToggleBtn" class="sidebar-link labs-toggle" type="button">
+                    <span class="labs-toggle-inner">
+                        <i class="fas fa-chalkboard-user icon"></i>
+                        <span class="sidebar-text">My Classes</span>
+                    </span>
+                    <i class="fas fa-chevron-down" id="myClassesChevron"></i>
+                </button>
+
+                <div class="courses-dropdown" id="myClassesDropdownContainer">
+                    <a href="../html/teachingChemistry.html"
+                       id="nav-chemistry"
+                       class="sidebar-link sub-link"
+                       data-parent="My Classes"
+                       data-child="Chemistry">
+                        <span class="dot dot-cyan"></span>
+                        <span class="sidebar-text">Chemistry</span>
+                    </a>
+                </div>
+
+                <a href="../html/professorArchive.html"
+                   id="nav-archive"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Archived Classes">
+                    <i class="fas fa-box-archive icon"></i>
+                    <span class="sidebar-text">Archived Classes</span>
+                </a>
+
+                <a href="../html/professorQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/professorSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!--MAIN CONTENT -->
+        <main id="mainContent">
+
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <h1 class="hero-title">Professor Dashboard</h1>
+                    <p class="hero-subtitle">Comprehensive Monitoring Graphs Management Overview</p>
+                    <a href="../html/professorQuestAI.html" class="hero-btn">
+                        <i class="fas fa-robot"></i> Launch QuestAI Coach
+                    </a>
+                </div>
+                <div class="hero-illustration">
+                    <i class="fas fa-magnifying-glass-chart"></i>
+                </div>
+            </section>
+
+            <!-- FILTER RECORDS -->
+            <section class="filter-section">
+                <h2 class="filter-title">Filter Records</h2>
+                <div class="filter-controls">
+
+                    <div class="filter-group">
+                        <label class="filter-label" for="startDate">
+                            Date Range — (Start and End)
+                        </label>
+                        <div class="date-inputs">
+                            <input type="date" id="startDate" class="filter-input">
+                            <input type="date" id="endDate" class="filter-input">
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label" for="sectionSelect">
+                            Section
+                        </label>
+                        <select id="sectionSelect" class="filter-input filter-select">
+                            <option value="">All Sections</option>
+                            <option value="amethyst">STEM - Amethyst</option>
+                            <option value="sapphire">STEM - Sapphire</option>
+                            <option value="topaz">STEM - Topaz</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label" for="quarterSelect">
+                            Quarter (1<sup>st</sup> to 4<sup>th</sup>)
+                        </label>
+                        <select id="quarterSelect" class="filter-input filter-select">
+                            <option value="">All Quarters</option>
+                            <option value="1">1st Quarter</option>
+                            <option value="2">2nd Quarter</option>
+                            <option value="3">3rd Quarter</option>
+                            <option value="4">4th Quarter</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button id="exportBtn" class="filter-btn filter-btn-export">
+                            <i class="fas fa-arrow-up-from-bracket"></i> Export
+                        </button>
+                        <button id="resetBtn" class="filter-btn filter-btn-reset">
+                            <i class="fas fa-rotate-right"></i> Reset
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- CHARTS GRID -->
+            <section class="charts-grid">
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Class Performance Overview</h3>
+                        <span class="active-filter-badge" id="performanceBadge" style="display:none;">
+                            <i class="fas fa-filter"></i> <span id="performanceBadgeText"></span>
+                        </span>
+                        <span class="chart-header-icon"><i class="fas fa-chart-line"></i></span>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Radar Chart</h3>
+                        <span class="active-filter-badge" id="radarBadge" style="display:none;">
+                            <i class="fas fa-filter"></i> <span id="radarBadgeText"></span>
+                        </span>
+                        <span class="chart-header-icon"><i class="fas fa-chart-area"></i></span>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card insights-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">AI Insights and Recommendation</h3>
+                        <span class="active-filter-badge" id="insightsBadge" style="display:none;">
+                            <i class="fas fa-filter"></i> <span id="insightsBadgeText"></span>
+                        </span>
+                        <span class="chart-header-icon"><i class="fas fa-brain"></i></span>
+                    </div>
+                    <div class="insights-list" id="insightsList">
+                        <!-- Insight items injected by JS -->
+                    </div>
+                </div>
+
+                <div class="chart-card mastery-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Average Mastery per Lesson</h3>
+                        <span class="active-filter-badge" id="masteryBadge" style="display:none;">
+                            <i class="fas fa-filter"></i> <span id="masteryBadgeText"></span>
+                        </span>
+                        <span class="chart-header-icon"><i class="fas fa-graduation-cap"></i></span>
+                    </div>
+                    <div class="mastery-grid" id="masteryGrid">
+                        <!-- Mastery boxes injected by JS -->
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+    <!-- End of body area -->
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> Recent Activity</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CREATE CLASS MODAL — Google Classroom style form -->
+    <div id="createClassModal">
+        <div id="createClassModalCard">
+
+            <div class="cc-modal-header">
+                <h3 class="modal-title cc-modal-title">Create class</h3>
+                <button id="createClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccClassName">Class name<span class="cc-required-star">*</span></label>
+                <input id="ccClassName" class="cc-input" type="text"
+                       placeholder="Class name" maxlength="60"
+                       autocomplete="off" spellcheck="false" />
+                <p id="ccNameError" class="cc-error hidden">*Required</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSection">Section</label>
+                <input id="ccSection" class="cc-input" type="text"
+                       placeholder="Section" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSubject">Subject</label>
+                <input id="ccSubject" class="cc-input" type="text"
+                       placeholder="Subject" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccRoom">Room</label>
+                <input id="ccRoom" class="cc-input" type="text"
+                       placeholder="Room" maxlength="20"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="createClassCancelBtn" class="modal-btn cc-cancel-btn">Cancel</button>
+                <button id="createClassConfirmBtn" class="modal-btn cc-create-btn">Create</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- EXPORT MODAL -->
+    <div id="exportModal">
+        <div id="exportModalCard">
+
+            <!-- Header -->
+            <div class="export-modal-header">
+                <div class="export-modal-icon">
+                    <i class="fas fa-arrow-up-from-bracket"></i>
+                </div>
+                <div>
+                    <p class="export-modal-title">Export Records</p>
+                    <p class="export-modal-subtitle">Choose format and download your data</p>
+                </div>
+                <button id="exportCloseBtn" class="export-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Filter summary  -->
+            <div class="export-summary">
+                <div class="export-summary-row">
+                    <span class="export-summary-label">Date Range</span>
+                    <span class="export-summary-value" id="exportSummaryDate">All dates</span>
+                </div>
+                <div class="export-summary-row">
+                    <span class="export-summary-label">Quarter</span>
+                    <span class="export-summary-value" id="exportSummaryQuarter">All quarters</span>
+                </div>
+                <div class="export-summary-row">
+                    <span class="export-summary-label">Records</span>
+                    <span class="export-summary-value" id="exportSummaryCount">—</span>
+                </div>
+            </div>
+
+            <!-- Format picker -->
+            <div>
+                <p class="export-format-label">Select Format</p>
+                <div class="export-format-options">
+                    <button class="export-format-btn selected" data-format="csv">
+                        <i class="fas fa-file-csv"></i>
+                        CSV
+                    </button>
+                    <button class="export-format-btn" data-format="xlsx">
+                        <i class="fas fa-file-excel"></i>
+                        Excel
+                    </button>
+                    <button class="export-format-btn" data-format="pdf">
+                        <i class="fas fa-file-pdf"></i>
+                        PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Confirm button -->
+            <button id="exportConfirmBtn" class="export-confirm-btn">
+                <i class="fas fa-download"></i> Download
+            </button>
+
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <script src="../../js/navigation.js"></script>
+    <script src="../js/professorDashboard.js"></script>
+
+</body>
+</html>

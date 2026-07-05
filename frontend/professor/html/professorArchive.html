@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Archived Classes</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../css/navigation.css">
+    <link rel="stylesheet" href="../css/professorArchive.css">
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+
+    <!--HEADER-->
+    <header>
+
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/professorHome.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-parent" href="../html/professorDashboard.html">Main</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Archived Classes</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button id="createClassBtn" class="join-class-btn" title="Create a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Create Class</span>
+            </button>
+
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">M</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Ma'am Mila!</div>
+                    <div id="headerProfileRole" class="profile-role">Chemistry Professor</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!-- BODY AREA -->
+    <div class="body-area">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/professorHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/professorDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <button id="myClassesToggleBtn" class="sidebar-link labs-toggle" type="button">
+                    <span class="labs-toggle-inner">
+                        <i class="fas fa-chalkboard-user icon"></i>
+                        <span class="sidebar-text">My Classes</span>
+                    </span>
+                    <i class="fas fa-chevron-down" id="myClassesChevron"></i>
+                </button>
+
+                <div class="courses-dropdown" id="myClassesDropdownContainer">
+                    <a href="../html/teachingChemistry.html"
+                       id="nav-chemistry"
+                       class="sidebar-link sub-link"
+                       data-parent="My Classes"
+                       data-child="Chemistry">
+                        <span class="dot dot-cyan"></span>
+                        <span class="sidebar-text">Chemistry</span>
+                    </a>
+                </div>
+
+                <a href="../html/professorArchive.html"
+                   id="nav-archive"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Archived Classes">
+                    <i class="fas fa-box-archive icon"></i>
+                    <span class="sidebar-text">Archived Classes</span>
+                </a>
+
+                <a href="../html/professorQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/professorSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!--MAIN CONTENT-->
+        <main id="mainContent" class="archive-main">
+
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <h1 class="hero-title">Archived Classes</h1>
+                    <p class="hero-subtitle">
+                        Browse your past Chemistry sections. Use the filters below
+                        to quickly find a class by subject or section.
+                    </p>
+                </div>
+                <div class="hero-illustration" aria-hidden="true">
+                    <i class="fas fa-box-archive"></i>
+                </div>
+            </section>
+
+
+            <!-- QUICK STATS -->
+            <section class="prof-stats-section">
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-blue">
+                        <i class="fas fa-boxes-stacked"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statTotalArchived" class="prof-stat-value">6</span>
+                        <span class="prof-stat-label">Total Archived Classes</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-amber">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statTotalStudents" class="prof-stat-value">234</span>
+                        <span class="prof-stat-label">Total Past Students</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-green">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statYearsActive" class="prof-stat-value">3</span>
+                        <span class="prof-stat-label">School Years</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-purple">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statAvgScore" class="prof-stat-value">85%</span>
+                        <span class="prof-stat-label">Avg Historical Score</span>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- FILTER BAR -->
+            <section class="archive-filter-section">
+                <div class="archive-filter-bar">
+
+                    <!-- Search -->
+                    <div class="archive-search-wrap">
+                        <i class="fas fa-search archive-search-icon"></i>
+                        <input
+                            id="archiveSearch"
+                            class="archive-search-input"
+                            type="text"
+                            placeholder="Search by class name or section…"
+                            autocomplete="off"
+                        />
+                        <button id="archiveSearchClear" class="archive-search-clear hidden" aria-label="Clear search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- Subject filter -->
+                    <div class="archive-filter-group">
+                        <label class="archive-filter-label" for="filterSubject">
+                            <i class="fas fa-book"></i> Subject
+                        </label>
+                        <select id="filterSubject" class="archive-filter-select">
+                            <option value="">All Subjects</option>
+                            <option value="Chemistry">Chemistry</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Biology">Biology</option>
+                        </select>
+                    </div>
+
+                    <!-- Section filter -->
+                    <div class="archive-filter-group">
+                        <label class="archive-filter-label" for="filterSection">
+                            <i class="fas fa-layer-group"></i> Section
+                        </label>
+                        <select id="filterSection" class="archive-filter-select">
+                            <option value="">All Sections</option>
+                            <option value="STEM - Sapphire">STEM - Sapphire</option>
+                            <option value="STEM - Topaz">STEM - Topaz</option>
+                            <option value="STEM - Ruby">STEM - Ruby</option>
+                            <option value="STEM - Emerald">STEM - Emerald</option>
+                            <option value="STEM - Amethyst">STEM - Amethyst</option>
+                            <option value="STEM - Onyx">STEM - Onyx</option>
+                        </select>
+                    </div>
+
+                    <!-- School year filter -->
+                    <div class="archive-filter-group">
+                        <label class="archive-filter-label" for="filterYear">
+                            <i class="fas fa-calendar"></i> School Year
+                        </label>
+                        <select id="filterYear" class="archive-filter-select">
+                            <option value="">All Years</option>
+                            <option value="2024-2025">S.Y. 2024–2025</option>
+                            <option value="2023-2024">S.Y. 2023–2024</option>
+                            <option value="2022-2023">S.Y. 2022–2023</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset -->
+                    <button id="archiveResetFilters" class="archive-reset-btn">
+                        <i class="fas fa-rotate-left"></i> Reset
+                    </button>
+
+                </div>
+
+                <!-- Results count -->
+                <p id="archiveResultCount" class="archive-result-count">Showing 6 classes</p>
+            </section>
+
+
+            <!-- ARCHIVED CLASSES LIST -->
+            <section class="archive-list-section">
+
+                <div id="archiveList" class="archive-card-list">
+
+                    <div class="archive-card"
+                         data-subject="Chemistry"
+                         data-section="STEM - Sapphire"
+                         data-year="2024-2025"
+                         data-name="Chemistry · STEM - Sapphire">
+                        <div class="archive-card-color-bar" style="background: linear-gradient(135deg, #06b6d4, #0891b2);"></div>
+                        <div class="archive-card-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="archive-card-body">
+                            <div class="archive-card-top-row">
+                                <div>
+                                    <p class="archive-card-title">Chemistry</p>
+                                    <p class="archive-card-section">STEM - Sapphire</p>
+                                </div>
+                                <span class="archive-card-year-badge">S.Y. 2024–2025</span>
+                            </div>
+                            <div class="archive-card-meta-row">
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-users"></i> 39 Students
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-calendar-xmark"></i> Archived May 2025
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-chart-bar"></i> Avg Score: 87%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="archive-card-actions">
+                            <a href="#" class="archive-view-btn">
+                                <i class="fas fa-arrow-rotate-left"></i> Restore
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="archive-card"
+                         data-subject="Chemistry"
+                         data-section="STEM - Topaz"
+                         data-year="2023-2024"
+                         data-name="Chemistry · STEM - Topaz">
+                        <div class="archive-card-color-bar" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
+                        <div class="archive-card-icon" style="color: #d97706; background-color: #fef3c7;">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="archive-card-body">
+                            <div class="archive-card-top-row">
+                                <div>
+                                    <p class="archive-card-title">Chemistry</p>
+                                    <p class="archive-card-section">STEM - Topaz</p>
+                                </div>
+                                <span class="archive-card-year-badge">S.Y. 2023–2024</span>
+                            </div>
+                            <div class="archive-card-meta-row">
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-users"></i> 41 Students
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-calendar-xmark"></i> Archived May 2024
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-chart-bar"></i> Avg Score: 83%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="archive-card-actions">
+                            <a href="#" class="archive-view-btn">
+                                <i class="fas fa-arrow-rotate-left"></i> Restore
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="archive-card"
+                         data-subject="Chemistry"
+                         data-section="STEM - Ruby"
+                         data-year="2023-2024"
+                         data-name="Chemistry · STEM - Ruby">
+                        <div class="archive-card-color-bar" style="background: linear-gradient(135deg, #f87171, #dc2626);"></div>
+                        <div class="archive-card-icon" style="color: #dc2626; background-color: #fee2e2;">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="archive-card-body">
+                            <div class="archive-card-top-row">
+                                <div>
+                                    <p class="archive-card-title">Chemistry</p>
+                                    <p class="archive-card-section">STEM - Ruby</p>
+                                </div>
+                                <span class="archive-card-year-badge">S.Y. 2023–2024</span>
+                            </div>
+                            <div class="archive-card-meta-row">
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-users"></i> 38 Students
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-calendar-xmark"></i> Archived May 2024
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-chart-bar"></i> Avg Score: 81%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="archive-card-actions">
+                            <a href="#" class="archive-view-btn">
+                                <i class="fas fa-arrow-rotate-left"></i> Restore
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="archive-card"
+                         data-subject="Chemistry"
+                         data-section="STEM - Emerald"
+                         data-year="2022-2023"
+                         data-name="Chemistry · STEM - Emerald">
+                        <div class="archive-card-color-bar" style="background: linear-gradient(135deg, #4ade80, #16a34a);"></div>
+                        <div class="archive-card-icon" style="color: #16a34a; background-color: #dcfce7;">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="archive-card-body">
+                            <div class="archive-card-top-row">
+                                <div>
+                                    <p class="archive-card-title">Chemistry</p>
+                                    <p class="archive-card-section">STEM - Emerald</p>
+                                </div>
+                                <span class="archive-card-year-badge">S.Y. 2022–2023</span>
+                            </div>
+                            <div class="archive-card-meta-row">
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-users"></i> 40 Students
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-calendar-xmark"></i> Archived May 2023
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-chart-bar"></i> Avg Score: 89%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="archive-card-actions">
+                            <a href="#" class="archive-view-btn">
+                                <i class="fas fa-arrow-rotate-left"></i> Restore
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="archive-card"
+                         data-subject="Chemistry"
+                         data-section="STEM - Amethyst"
+                         data-year="2022-2023"
+                         data-name="Chemistry · STEM - Amethyst">
+                        <div class="archive-card-color-bar" style="background: linear-gradient(135deg, #c084fc, #9333ea);"></div>
+                        <div class="archive-card-icon" style="color: #9333ea; background-color: #f3e8ff;">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="archive-card-body">
+                            <div class="archive-card-top-row">
+                                <div>
+                                    <p class="archive-card-title">Chemistry</p>
+                                    <p class="archive-card-section">STEM - Amethyst</p>
+                                </div>
+                                <span class="archive-card-year-badge">S.Y. 2022–2023</span>
+                            </div>
+                            <div class="archive-card-meta-row">
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-users"></i> 37 Students
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-calendar-xmark"></i> Archived May 2023
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-chart-bar"></i> Avg Score: 86%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="archive-card-actions">
+                            <a href="#" class="archive-view-btn">
+                                <i class="fas fa-arrow-rotate-left"></i> Restore
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="archive-card"
+                         data-subject="Chemistry"
+                         data-section="STEM - Onyx"
+                         data-year="2022-2023"
+                         data-name="Chemistry · STEM - Onyx">
+                        <div class="archive-card-color-bar" style="background: linear-gradient(135deg, #94a3b8, #475569);"></div>
+                        <div class="archive-card-icon" style="color: #475569; background-color: #f1f5f9;">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="archive-card-body">
+                            <div class="archive-card-top-row">
+                                <div>
+                                    <p class="archive-card-title">Chemistry</p>
+                                    <p class="archive-card-section">STEM - Onyx</p>
+                                </div>
+                                <span class="archive-card-year-badge">S.Y. 2022–2023</span>
+                            </div>
+                            <div class="archive-card-meta-row">
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-users"></i> 39 Students
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-calendar-xmark"></i> Archived May 2023
+                                </span>
+                                <span class="archive-card-meta-item">
+                                    <i class="fas fa-chart-bar"></i> Avg Score: 84%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="archive-card-actions">
+                            <a href="#" class="archive-view-btn">
+                                <i class="fas fa-arrow-rotate-left"></i> Restore
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Empty state shown when filters return no results -->
+                <div id="archiveEmpty" class="archive-empty hidden">
+                    <div class="archive-empty-icon"><i class="fas fa-boxes-stacked"></i></div>
+                    <p class="archive-empty-title">No classes found</p>
+                    <p class="archive-empty-sub">Try adjusting your filters or search term.</p>
+                    <button id="archiveEmptyReset" class="archive-reset-btn" style="margin-top:12px;">
+                        <i class="fas fa-rotate-left"></i> Reset Filters
+                    </button>
+                </div>
+
+            </section>
+
+        </main>
+        <!-- End of main content -->
+
+    </div>
+    <!-- End of body area -->
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> Recent Activity</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CREATE CLASS MODAL -->
+    <div id="createClassModal">
+        <div id="createClassModalCard">
+
+            <div class="cc-modal-header">
+                <h3 class="modal-title cc-modal-title">Create class</h3>
+                <button id="createClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccClassName">Class name<span class="cc-required-star">*</span></label>
+                <input id="ccClassName" class="cc-input" type="text"
+                       placeholder="Class name" maxlength="60"
+                       autocomplete="off" spellcheck="false" />
+                <p id="ccNameError" class="cc-error hidden">*Required</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSection">Section</label>
+                <input id="ccSection" class="cc-input" type="text"
+                       placeholder="Section" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSubject">Subject</label>
+                <input id="ccSubject" class="cc-input" type="text"
+                       placeholder="Subject" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccRoom">Room</label>
+                <input id="ccRoom" class="cc-input" type="text"
+                       placeholder="Room" maxlength="20"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="createClassCancelBtn" class="modal-btn cc-cancel-btn">Cancel</button>
+                <button id="createClassConfirmBtn" class="modal-btn cc-create-btn">Create</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="../../js/navigation.js"></script>
+    <script src="../js/professorArchive.js"></script>
+
+</body>
+</html>
