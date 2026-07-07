@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | Homepage</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <!-- Icons & Font -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Shared navigation styles -->
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+
+        <!-- This page's own styles -->
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/student/student-home.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        Welcome to your Portal Hub,
+                        <span id="heroName">Aaron</span>!
+                    </h1>
+                    <p class="hero-subtitle">
+                        Stay sharp, track assignments, use simulated
+                        experimental modules.
+                    </p>
+                    <a href="student-quest-ai.html" class="hero-btn">
+                        <i class="fas fa-robot"></i> Launch QuestAI Coach
+                    </a>
+                </div>
+                <div class="hero-illustration">
+                    <i class="fas fa-school"></i>
+                </div>
+            </section>
+
+            <!-- ENROLLED CLASSES SECTION -->
+            <section class="enrolled-section">
+                <div class="enrolled-heading">
+                    <h2 class="enrolled-title">Enrolled Classes</h2>
+                    <p class="enrolled-subtitle">
+                        Access your digital rooms and learning resources
+                    </p>
+                </div>
+
+                <!-- CLASS CARDS GRID -->
+                <div class="class-grid" id="classGrid">
+                    <!-- Chemistry Card — whole card is now an <a> tag -->
+                    <a
+                        href="enrolled-chemistry.html"
+                        class="class-card"
+                        style="--card-color: #22d3ee"
+                    >
+                        <div
+                            class="card-top"
+                            style="
+                                background: linear-gradient(
+                                    135deg,
+                                    #06b6d4,
+                                    #0891b2
+                                );
+                            "
+                        >
+                            <div class="card-subject">CHEMISTRY</div>
+                            <div class="card-section">STEM - AMETHYST</div>
+                            <div class="card-teacher-photo">
+                                <img
+                                    src="../../assets/images/teachers/chemistry.jpg"
+                                    alt="Mila D. Valiente"
+                                    onerror="
+                                        this.style.display = 'none';
+                                        this.nextElementSibling.style.display =
+                                            'flex';
+                                    "
+                                />
+                                <div
+                                    class="card-teacher-initials"
+                                    style="display: none"
+                                >
+                                    MV
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-teacher-info">
+                                <p class="card-teacher-name">
+                                    Mila D. Valiente
+                                </p>
+                                <p class="card-teacher-role">Teacher</p>
+                            </div>
+                            <span class="card-enter-btn">
+                                Enter Classroom
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </a>
+
+                    <!-- General Biology Card -->
+                    <a
+                        href="enrolled-generalbiology.html"
+                        class="class-card"
+                        style="--card-color: #f97316"
+                    >
+                        <div
+                            class="card-top"
+                            style="
+                                background: linear-gradient(
+                                    135deg,
+                                    #f97316,
+                                    #ea580c
+                                );
+                            "
+                        >
+                            <div class="card-subject">GENERAL BIOLOGY</div>
+                            <div class="card-section">STEM - AMETHYST</div>
+                            <div class="card-teacher-photo">
+                                <img
+                                    src="../../assets/images/teachers/generalbiology.jpg"
+                                    alt="Dr. Jane Smith"
+                                    onerror="
+                                        this.style.display = 'none';
+                                        this.nextElementSibling.style.display =
+                                            'flex';
+                                    "
+                                />
+                                <div
+                                    class="card-teacher-initials"
+                                    style="display: none"
+                                >
+                                    JS
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-teacher-info">
+                                <p class="card-teacher-name">Dr. Jane Smith</p>
+                                <p class="card-teacher-role">Teacher</p>
+                            </div>
+                            <span class="card-enter-btn">
+                                Enter Classroom
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </a>
+
+                    <!-- Physics Card -->
+                    <a
+                        href="enrolled-physics.html"
+                        class="class-card"
+                        style="--card-color: #a855f7"
+                    >
+                        <div
+                            class="card-top"
+                            style="
+                                background: linear-gradient(
+                                    135deg,
+                                    #a855f7,
+                                    #9333ea
+                                );
+                            "
+                        >
+                            <div class="card-subject">PHYSICS</div>
+                            <div class="card-section">STEM - AMETHYST</div>
+                            <div class="card-teacher-photo">
+                                <img
+                                    src="../../assets/images/teachers/physics.jpg"
+                                    alt="John Michael C. Bautista"
+                                    onerror="
+                                        this.style.display = 'none';
+                                        this.nextElementSibling.style.display =
+                                            'flex';
+                                    "
+                                />
+                                <div
+                                    class="card-teacher-initials"
+                                    style="display: none"
+                                >
+                                    JB
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-teacher-info">
+                                <p class="card-teacher-name">
+                                    John Michael C. Bautista
+                                </p>
+                                <p class="card-teacher-role">Teacher</p>
+                            </div>
+                            <span class="card-enter-btn">
+                                Enter Classroom
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </a>
+
+                    <!-- Earth Science Card -->
+                    <a
+                        href="enrolled-earthscience.html"
+                        class="class-card"
+                        style="--card-color: #22c55e"
+                    >
+                        <div
+                            class="card-top"
+                            style="
+                                background: linear-gradient(
+                                    135deg,
+                                    #22c55e,
+                                    #16a34a
+                                );
+                            "
+                        >
+                            <div class="card-subject">EARTH SCIENCE</div>
+                            <div class="card-section">STEM - AMETHYST</div>
+                            <div class="card-teacher-photo">
+                                <img
+                                    src="../../assets/images/teachers/english.jpg"
+                                    alt="Patricia L. Garcia"
+                                    onerror="
+                                        this.style.display = 'none';
+                                        this.nextElementSibling.style.display =
+                                            'flex';
+                                    "
+                                />
+                                <div
+                                    class="card-teacher-initials"
+                                    style="display: none"
+                                >
+                                    PG
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-teacher-info">
+                                <p class="card-teacher-name">
+                                    Patricia L. Garcia
+                                </p>
+                                <p class="card-teacher-role">Teacher</p>
+                            </div>
+                            <span class="card-enter-btn">
+                                Enter Classroom
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <!-- End of class grid -->
+            </section>
+        </main>
+        <script src="../../assets/js/pages/student/student-home.js"></script>
+    </body>
+</html>

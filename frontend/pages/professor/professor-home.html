@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | Professor Homepage</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/professor/professor-home.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        Welcome back, <span id="heroName">Ma'am Mila</span>!
+                    </h1>
+                    <p class="hero-subtitle">
+                        Manage your Chemistry class, review student submissions,
+                        and post announcements — all in one place.
+                    </p>
+                    <a href="teaching-chemistry.html" class="hero-btn">
+                        <i class="fas fa-bullhorn"></i> Post an Announcement
+                    </a>
+                </div>
+                <div class="hero-illustration">
+                    <i class="fas fa-flask"></i>
+                </div>
+            </section>
+
+            <!-- QUICK STATS — scoped to Chemistry only -->
+            <section class="prof-stats-section">
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-blue">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statTotalStudents" class="prof-stat-value"
+                            >42</span
+                        >
+                        <span class="prof-stat-label"
+                            >Students in Chemistry</span
+                        >
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-amber">
+                        <i class="fas fa-file-circle-exclamation"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span
+                            id="statPendingSubmissions"
+                            class="prof-stat-value"
+                            >8</span
+                        >
+                        <span class="prof-stat-label">Pending Submissions</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-green">
+                        <i class="fas fa-chalkboard"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statActiveSections" class="prof-stat-value"
+                            >1</span
+                        >
+                        <span class="prof-stat-label">Active Section</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-purple">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statAvgScore" class="prof-stat-value"
+                            >88%</span
+                        >
+                        <span class="prof-stat-label">Average Class Score</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MY CLASS SECTION -->
+            <section class="enrolled-section">
+                <div class="enrolled-heading">
+                    <h2 class="enrolled-title">My Classes</h2>
+                    <p class="enrolled-subtitle">
+                        Manage lessons, announcements, and student progress
+                    </p>
+                </div>
+
+                <!-- CLASS CARDS GRID -->
+                <div class="class-grid class-grid-single" id="classGrid">
+                    <!-- Chemistry Card -->
+                    <a
+                        href="teaching-chemistry.html"
+                        class="class-card"
+                        style="--card-color: #22d3ee"
+                    >
+                        <div
+                            class="card-top"
+                            style="
+                                background: linear-gradient(
+                                    135deg,
+                                    #06b6d4,
+                                    #0891b2
+                                );
+                            "
+                        >
+                            <div class="card-subject">CHEMISTRY</div>
+                            <div class="card-section">STEM - AMETHYST</div>
+                            <div class="card-teacher-photo">
+                                <img
+                                    src="../../assets/images/teachers/chemistry.jpg"
+                                    alt="Mila D. Valiente"
+                                    onerror="
+                                        this.style.display = 'none';
+                                        this.nextElementSibling.style.display =
+                                            'flex';
+                                    "
+                                />
+                                <div
+                                    class="card-teacher-initials"
+                                    style="display: none"
+                                >
+                                    MV
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-teacher-info">
+                                <p class="card-teacher-name">42 Students</p>
+                                <p class="card-teacher-role">
+                                    8 Pending Submissions
+                                </p>
+                            </div>
+                            <span class="card-enter-btn">
+                                Manage Class
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <!-- End of class grid -->
+            </section>
+
+            <!-- ARCHIVED CLASSES SECTION -->
+            <section class="prof-archive-section">
+                <div class="enrolled-heading">
+                    <h2 class="enrolled-title">Archived Classes</h2>
+                    <p class="enrolled-subtitle">
+                        Past Chemistry sections from previous school years
+                    </p>
+                </div>
+
+                <div class="prof-archive-list" id="archiveList">
+                    <div class="prof-archive-row">
+                        <div class="prof-archive-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="prof-archive-text">
+                            <p class="prof-archive-title">
+                                Chemistry &middot; STEM - Sapphire
+                            </p>
+                            <p class="prof-archive-meta">
+                                S.Y. 2024 - 2025 &middot; 39 Students &middot;
+                                Archived May 2025
+                            </p>
+                        </div>
+                        <a
+                            href="professor-archive.html"
+                            class="prof-archive-action"
+                        >
+                            <i class="fas fa-box-open"></i> View
+                        </a>
+                    </div>
+
+                    <div class="prof-archive-row">
+                        <div class="prof-archive-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="prof-archive-text">
+                            <p class="prof-archive-title">
+                                Chemistry &middot; STEM - Topaz
+                            </p>
+                            <p class="prof-archive-meta">
+                                S.Y. 2023 - 2024 &middot; 41 Students &middot;
+                                Archived May 2024
+                            </p>
+                        </div>
+                        <a
+                            href="professor-archive.html"
+                            class="prof-archive-action"
+                        >
+                            <i class="fas fa-box-open"></i> View
+                        </a>
+                    </div>
+
+                    <div class="prof-archive-empty-link">
+                        <a href="professor-archive.html">
+                            View all archived classes
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <script src="../../assets/js/pages/professor/professor-home.js"></script>
+    </body>
+</html>

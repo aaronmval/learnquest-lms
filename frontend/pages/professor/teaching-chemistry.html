@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | Myclass- Chemistry</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/professor/teaching-chemistry.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+                <div class="classroom-wrap">
+                    <!-- CLASS HEADER BANNER -->
+                    <section id="classBanner" class="class-banner">
+                        <div class="class-banner-text">
+                            <h1
+                                id="classBannerSubject"
+                                class="class-banner-subject"
+                            >
+                                CHEMISTRY
+                            </h1>
+                            <p
+                                id="classBannerSection"
+                                class="class-banner-section"
+                            >
+                                STEM - AMETHYST
+                            </p>
+                            <p
+                                id="classBannerTeacher"
+                                class="class-banner-teacher"
+                            >
+                                Mila D. Valiente
+                            </p>
+                            <p class="class-banner-role">Teacher</p>
+                        </div>
+                        <i class="fas fa-book-open class-banner-icon"></i>
+                    </section>
+
+                    <!-- TWO COLUMN: FEED + SIDE PANEL -->
+                    <div class="classroom-grid">
+                        <!-- LEFT: Announcement / Lesson feed -->
+                        <div id="feedColumn" class="feed-column">
+                            <!-- Populated dynamically by teachingChemistry.js -->
+                        </div>
+
+                        <!-- RIGHT: Class info / quick stats panel -->
+                        <div class="side-column">
+                            <div class="ai-panel teach-quickpost-panel">
+                                <button id="quickPostBtn" class="summarize-btn">
+                                    <span class="bot-icon"
+                                        ><i class="fas fa-bullhorn"></i
+                                    ></span>
+                                    Create a new post
+                                </button>
+                            </div>
+
+                            <div class="ai-insights-card">
+                                <div class="ai-insights-header">
+                                    <span class="ai-insights-icon"
+                                        ><i class="fas fa-users"></i
+                                    ></span>
+                                    <span class="ai-insights-title"
+                                        >Class Snapshot</span
+                                    >
+                                </div>
+                                <div id="classSnapshotList">
+                                    <div class="insight-item">
+                                        <strong>Students:</strong>
+                                        <span id="snapshotStudents">42</span>
+                                        enrolled
+                                    </div>
+                                    <div class="insight-item">
+                                        <strong>Posts:</strong>
+                                        <span id="snapshotPosts">0</span> total
+                                        this quarter
+                                    </div>
+                                    <div class="insight-item">
+                                        <strong>Last activity:</strong>
+                                        <span id="snapshotLastActivity">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+    <script src="../../assets/js/pages/professor/teaching-chemistry.js"></script>
+    </body>
+</html>
+

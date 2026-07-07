@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | Earth Science - Classwork</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <!-- Icons & Font -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Shared navigation styles -->
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+
+        <!-- Classwork (lesson detail) page styles -->
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/student/student-classwork-earthscience.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+                <div class="classroom-wrap">
+                    <!-- CLASS HEADER BANNER -->
+                    <section id="classBanner" class="class-banner">
+                        <div class="class-banner-text">
+                            <h1
+                                id="classBannerSubject"
+                                class="class-banner-subject"
+                            >
+                                EARTH SCIENCE
+                            </h1>
+                            <p
+                                id="classBannerSection"
+                                class="class-banner-section"
+                            >
+                                STEM - AMETHYST
+                            </p>
+                            <p
+                                id="classBannerTeacher"
+                                class="class-banner-teacher"
+                            >
+                                Patricia L. Garcia
+                            </p>
+                            <p class="class-banner-role">Teacher</p>
+                        </div>
+                        <i class="fas fa-globe class-banner-icon"></i>
+                    </section>
+
+                    <!-- BACK BUTTON -->
+                    <button
+                        id="backToClassBtn"
+                        class="back-to-class-btn"
+                        type="button"
+                    >
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Earth Science</span>
+                    </button>
+
+                    <!-- TWO COLUMN: LESSON DETAIL + SIDE PANEL -->
+                    <div class="classroom-grid">
+                        <!-- LEFT: Single lesson card (the one that was clicked) + Summary of Lesson -->
+                        <div class="lesson-detail-column">
+                            <div id="feedColumn" class="feed-column">
+                                <!-- Populated dynamically by studentClassworkEarthscience.js with the specific lesson -->
+                            </div>
+
+                            <div class="summary-card">
+                                <div class="summary-card-header">
+                                    <span class="summary-card-title"
+                                        >Summary of Lesson</span
+                                    >
+                                    <span class="summary-card-icon"
+                                        ><i class="fas fa-robot"></i
+                                    ></span>
+                                </div>
+                                <div
+                                    id="summaryResult"
+                                    class="summary-result"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Quiz card -->
+                        <div class="side-column">
+                            <div class="quiz-card">
+                                <div class="quiz-card-header">
+                                    <span
+                                        id="quizCardTitle"
+                                        class="quiz-card-title"
+                                        >Quiz</span
+                                    >
+                                    <span class="quiz-card-icon"
+                                        ><i class="fas fa-brain"></i
+                                    ></span>
+                                </div>
+                                <button id="takeQuizBtn" class="take-quiz-btn">
+                                    Take Quiz
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+    <script src="../../assets/js/pages/student/student-classwork-earthscience.js"></script>
+    </body>
+</html>
+
