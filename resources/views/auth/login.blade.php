@@ -10,14 +10,191 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
   <link rel="stylesheet" href="/assets/css/pages/auth/login-page.css">
+  <style>
+    /* Role Selection Modal Styles */
+    .role-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .role-modal.show {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .role-modal-content {
+      background-color: white;
+      padding: 40px;
+      border-radius: 15px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    .role-modal-content h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .role-modal-content p {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .role-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .role-button {
+      flex: 1;
+      padding: 12px 20px;
+      border: 2px solid #e0e0e0;
+      background-color: white;
+      color: #1f2937;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .role-button:hover {
+      border-color: #4a90e2;
+      color: #000;
+    }
+
+    .role-button.selected {
+      background-color: #4a90e2;
+      color: #000;
+      border-color: #4a90e2;
+    }
+
+    .role-button i {
+      font-size: 24px;
+      color: inherit;
+    }
+
+    .role-button.selected i {
+      color: #000;
+    }
+
+    .role-modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .role-modal-buttons button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-cancel {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-cancel:hover {
+      background-color: #e0e0e0;
+    }
+
+    .btn-confirm {
+      background-color: #4a90e2;
+      color: white;
+    }
+
+    .btn-confirm:hover {
+      background-color: #357abd;
+    }
+
+    .btn-confirm:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .error-message {
+      display: none;
+      color: #d32f2f;
+      background-color: #ffebee;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      border-left: 4px solid #d32f2f;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .success-message {
+      display: none;
+      color: #388e3c;
+      background-color: #e8f5e9;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      border-left: 4px solid #388e3c;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+  </style>
 </head>
 
 <body>
 
 <div class="container" id="container">
 
+  <!-- LOGIN -->
   <div class="form-container sign-in-container">
-    <form action="#">
+    <form method="POST" action="{{ route('login') }}">
+      @csrf
       <h1><i class="fas fa-graduation-cap"></i> Log In</h1>
 
       <p>
@@ -25,12 +202,19 @@
         Ready to level up?
       </p>
 
-      <input type="text" placeholder="USERNAME" required>
-      <small id="loginEmailError" class="error-text"></small>
+      @if ($errors->getBag('login')->any())
+        <div class="error-message show">{{ $errors->getBag('login')->first() }}</div>
+      @endif
+
+      <input type="email" name="email" placeholder="EMAIL" value="{{ old('email') }}" required>
+      @error('email', 'login')
+        <small class="error-text">{{ $message }}</small>
+      @enderror
 
       <div class="password-wrapper">
         <input type="password"
                id="loginPassword"
+               name="password"
                placeholder="PASSWORD"
                required>
 
@@ -39,20 +223,22 @@
       </div>
 
       <label class="remember">
-        <input type="checkbox">
+        <input type="checkbox" name="remember" value="on">
         Remember Me
       </label>
 
       <button type="submit">LOG IN</button>
 
-      <a href="#" class="forgot-password-link">
+      <a href="{{ route('password.request') }}" class="forgot-password-link">
         Forgot Password?
       </a>
     </form>
   </div>
 
+  <!-- SIGN UP -->
   <div class="form-container sign-up-container">
-    <form action="#" id="signupForm">
+    <form method="POST" action="{{ route('register') }}" id="signupForm">
+      @csrf
 
       <h1>Sign Up</h1>
 
@@ -61,14 +247,24 @@
         Start your journey in LearnQuest LMS.
       </p>
 
-      <input type="email"
-             placeholder="EMAIL ADDRESS"
-             required>
-      <small id="signupEmailError" class="error-text"></small>
+      @if ($errors->getBag('register')->any())
+        <div class="error-message show">{{ $errors->getBag('register')->first() }}</div>
+      @endif
+
+      <input type="text" name="name" placeholder="FULL NAME" value="{{ old('name') }}" required>
+      @error('name', 'register')
+        <small class="error-text">{{ $message }}</small>
+      @enderror
+
+      <input type="email" name="email" placeholder="EMAIL ADDRESS" value="{{ old('email') }}" required>
+      @error('email', 'register')
+        <small class="error-text">{{ $message }}</small>
+      @enderror
 
       <div class="password-wrapper">
         <input type="password"
                id="signupPassword"
+               name="password"
                placeholder="PASSWORD"
                minlength="8"
                required>
@@ -80,6 +276,7 @@
       <div class="password-wrapper">
         <input type="password"
                id="confirmPassword"
+               name="password_confirmation"
                placeholder="CONFIRM PASSWORD"
                minlength="8"
                required>
@@ -88,16 +285,18 @@
            data-target="confirmPassword"></i>
       </div>
 
-      <small id="passwordError"
-             style="display:none; color:red; margin-bottom:10px;">
-        Passwords do not match.
-      </small>
+      @error('password', 'register')
+        <small class="error-text">{{ $message }}</small>
+      @enderror
 
-      <button type="submit">SIGN UP</button>
+      <!-- Hidden role field -->
+      <input type="hidden" name="role" id="roleField" value="">
 
+      <button type="button" id="signupSubmitBtn">SIGN UP</button>
     </form>
   </div>
 
+  <!-- OVERLAY -->
   <div class="overlay-container">
     <div class="overlay">
 
@@ -146,181 +345,129 @@
 
 </div>
 
+<!-- ROLE SELECTION MODAL -->
+<div class="role-modal" id="roleModal">
+  <div class="role-modal-content">
+    <h2>I am a...</h2>
+    <p>Select your account type to continue</p>
+
+    <div class="role-buttons">
+      <button type="button" class="role-button" data-role="student">
+        <i class="fas fa-user-graduate"></i>
+        Student
+      </button>
+      <button type="button" class="role-button" data-role="professor">
+        <i class="fas fa-chalkboard-teacher"></i>
+        Teacher
+      </button>
+    </div>
+
+    <div class="role-modal-buttons">
+      <button type="button" class="btn-cancel" id="roleCancelBtn">Cancel</button>
+      <button type="button" class="btn-confirm" id="roleConfirmBtn" disabled>Continue</button>
+    </div>
+  </div>
+</div>
+
 <script>
+
   const signUpButton = document.getElementById('signUp');
   const signInButton = document.getElementById('signIn');
   const container = document.getElementById('container');
 
   signUpButton.addEventListener('click', () => {
     container.classList.add('right-panel-active');
-    clearMessages();
   });
 
   signInButton.addEventListener('click', () => {
     container.classList.remove('right-panel-active');
-    clearMessages();
   });
 
-  document.querySelectorAll('.toggle-password').forEach(icon => {
-    icon.addEventListener('click', () => {
+  @if ($errors->getBag('register')->any() || old('name') || old('email'))
+    container.classList.add('right-panel-active');
+  @endif
+
+  // PASSWORD TOGGLE
+  document.querySelectorAll(".toggle-password").forEach(icon => {
+    icon.addEventListener("click", () => {
+
       const target = document.getElementById(icon.dataset.target);
       if (!target) return;
 
-      target.type = target.type === 'password' ? 'text' : 'password';
+      target.type = target.type === "password" ? "text" : "password";
 
-      icon.classList.toggle('fa-eye');
-      icon.classList.toggle('fa-eye-slash');
+      icon.classList.toggle("fa-eye");
+      icon.classList.toggle("fa-eye-slash");
     });
   });
 
-  const signupEmail = document.querySelector('.sign-up-container input[type="email"]');
-  const signupEmailError = document.getElementById('signupEmailError');
-
-  const loginUsername = document.querySelector('.sign-in-container input[type="text"]');
-  const loginPassword = document.getElementById('loginPassword');
-  const loginEmailError = document.getElementById('loginEmailError');
-
-  const signupPassword = document.getElementById('signupPassword');
-  const confirmPassword = document.getElementById('confirmPassword');
-  const passwordError = document.getElementById('passwordError');
-
+  // ROLE SELECTION MODAL
+  const roleModal = document.getElementById('roleModal');
+  const roleButtons = document.querySelectorAll('.role-button');
+  const roleField = document.getElementById('roleField');
   const signupForm = document.getElementById('signupForm');
-  const loginForm = document.querySelector('.sign-in-container form');
+  const signupSubmitBtn = document.getElementById('signupSubmitBtn');
+  const roleConfirmBtn = document.getElementById('roleConfirmBtn');
+  const roleCancelBtn = document.getElementById('roleCancelBtn');
 
-  function isGmail(email) {
-    return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
-  }
+  let selectedRole = null;
 
-  signupEmail.addEventListener('input', () => {
-    const email = signupEmail.value.trim();
+  roleButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      roleButtons.forEach(btn => btn.classList.remove('selected'));
+      button.classList.add('selected');
+      selectedRole = button.dataset.role;
+      roleConfirmBtn.disabled = false;
+    });
+  });
 
-    if (!email) {
-      signupEmail.classList.remove('input-error', 'input-success');
-      signupEmailError.textContent = '';
+  signupSubmitBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    // Validate form before showing modal
+    const name = document.querySelector('.sign-up-container input[name="name"]').value.trim();
+    const email = document.querySelector('.sign-up-container input[name="email"]').value.trim();
+    const password = document.getElementById('signupPassword').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+    if (!name || !email || !password || !confirmPassword) {
+      alert('Please fill in all fields');
       return;
     }
 
-    if (!isGmail(email)) {
-      signupEmail.classList.add('input-error');
-      signupEmail.classList.remove('input-success');
-      signupEmailError.textContent = 'Email must be @gmail.com';
-    } else {
-      signupEmail.classList.remove('input-error');
-      signupEmail.classList.add('input-success');
-      signupEmailError.textContent = '';
-    }
-  });
-
-  loginUsername.addEventListener('input', () => {
-    const email = loginUsername.value.trim();
-
-    if (!email) {
-      loginUsername.classList.remove('input-error', 'input-success');
-      loginEmailError.textContent = '';
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
       return;
     }
 
-    if (!isGmail(email)) {
-      loginUsername.classList.add('input-error');
-      loginUsername.classList.remove('input-success');
-      loginEmailError.textContent = 'Must be a valid @gmail.com';
-    } else {
-      loginUsername.classList.remove('input-error');
-      loginUsername.classList.add('input-success');
-      loginEmailError.textContent = '';
+    if (password.length < 8) {
+      alert('Password must be at least 8 characters');
+      return;
+    }
+
+    // Show role modal
+    roleModal.classList.add('show');
+    selectedRole = null;
+    roleButtons.forEach(btn => btn.classList.remove('selected'));
+    roleConfirmBtn.disabled = true;
+  });
+
+  roleConfirmBtn.addEventListener('click', () => {
+    if (selectedRole) {
+      roleField.value = selectedRole;
+      roleModal.classList.remove('show');
+      signupForm.submit();
     }
   });
 
-  function validatePasswordMatch() {
-    const pass = signupPassword.value.trim();
-    const confirm = confirmPassword.value.trim();
-
-    if (!confirm) {
-      passwordError.textContent = '';
-      confirmPassword.classList.remove('input-error', 'input-success');
-      return true;
-    }
-
-    if (pass !== confirm) {
-      confirmPassword.classList.add('input-error');
-      confirmPassword.classList.remove('input-success');
-      passwordError.style.display = 'block';
-      passwordError.textContent = 'Passwords do not match';
-      return false;
-    }
-
-    confirmPassword.classList.remove('input-error');
-    confirmPassword.classList.add('input-success');
-    passwordError.style.display = 'none';
-    return true;
-  }
-
-  signupPassword.addEventListener('input', validatePasswordMatch);
-  confirmPassword.addEventListener('input', validatePasswordMatch);
-
-  signupForm.addEventListener('submit', function (e) {
-    let valid = true;
-
-    const email = signupEmail.value.trim();
-    const pass = signupPassword.value.trim();
-    const confirm = confirmPassword.value.trim();
-
-    if (!isGmail(email)) {
-      signupEmail.classList.add('input-error');
-      signupEmailError.textContent = 'Please enter @gmail.com email';
-      valid = false;
-    }
-
-    if (!pass || !confirm) {
-      passwordError.style.display = 'block';
-      passwordError.textContent = 'Password fields cannot be empty';
-      valid = false;
-    }
-
-    if (pass !== confirm) {
-      passwordError.style.display = 'block';
-      passwordError.textContent = 'Passwords do not match';
-      valid = false;
-    }
-
-    if (!valid) {
-      e.preventDefault();
-    }
+  roleCancelBtn.addEventListener('click', () => {
+    roleModal.classList.remove('show');
+    selectedRole = null;
+    roleButtons.forEach(btn => btn.classList.remove('selected'));
+    roleConfirmBtn.disabled = true;
   });
 
-  loginForm.addEventListener('submit', function (e) {
-    const email = loginUsername.value.trim();
-    const pass = loginPassword.value.trim();
-
-    let valid = true;
-
-    if (!email || !pass) {
-      valid = false;
-    }
-
-    if (!isGmail(email)) {
-      loginEmailError.textContent = 'Invalid @gmail.com format';
-      loginUsername.classList.add('input-error');
-      valid = false;
-    }
-
-    if (!valid) {
-      e.preventDefault();
-    }
-  });
-
-  function clearMessages() {
-    signupEmail.classList.remove('input-error', 'input-success');
-    loginUsername.classList.remove('input-error', 'input-success');
-    confirmPassword.classList.remove('input-error', 'input-success');
-
-    signupEmailError.textContent = '';
-    loginEmailError.textContent = '';
-    passwordError.textContent = '';
-
-    signupForm.reset();
-    loginForm.reset();
-  }
 </script>
+
 </body>
 </html>
