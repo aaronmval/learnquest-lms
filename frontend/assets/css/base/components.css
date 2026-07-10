@@ -31,6 +31,10 @@ button {
     background: none;
 }
 
+.hidden {
+    display: none !important;
+}
+
 /*DARK MODE */
 body.dark {
     background-color: #0f172a;

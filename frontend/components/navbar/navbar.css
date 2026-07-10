@@ -343,7 +343,8 @@ a.logo {
 }
 
 /* SIDEBAR */
-#sidebar {
+#sidebar,
+#sidebar-professor {
     background-color: #182c44;
     color: #cbd5e1;
     width: 256px;
@@ -367,11 +368,13 @@ a.logo {
         background-color 0.3s;
 }
 
-body.dark #sidebar {
+body.dark #sidebar,
+body.dark #sidebar-professor {
     background-color: #0d1624;
 }
 
-#sidebar.open {
+#sidebar.open,
+#sidebar-professor.open {
     transform: translateX(0);
 }
 
@@ -547,26 +550,32 @@ body.dark .sidebar-bottom {
 }
 
 /* Collapsed sidebar (desktop) */
-#sidebar.collapsed {
+#sidebar.collapsed,
+#sidebar-professor.collapsed {
     width: 72px;
 }
 
-#sidebar.collapsed .sidebar-text {
+#sidebar.collapsed .sidebar-text,
+#sidebar-professor.collapsed .sidebar-text {
     display: none;
 }
-#sidebar.collapsed #chevron-icon {
+#sidebar.collapsed #chevron-icon,
+#sidebar-professor.collapsed #myClassesChevron {
     display: none;
 }
 
 #sidebar.collapsed .sidebar-link,
-#sidebar.collapsed .labs-toggle {
+#sidebar.collapsed .labs-toggle,
+#sidebar-professor.collapsed .sidebar-link,
+#sidebar-professor.collapsed .labs-toggle {
     justify-content: center;
     padding-left: 0;
     padding-right: 0;
     gap: 0;
 }
 
-#sidebar.collapsed .courses-dropdown {
+#sidebar.collapsed .courses-dropdown,
+#sidebar-professor.collapsed .courses-dropdown {
     max-height: 0 !important;
     opacity: 0 !important;
 }
@@ -1391,7 +1400,8 @@ body.dark #toast {
         display: block;
     }
 
-    #sidebar {
+    #sidebar,
+    #sidebar-professor {
         position: relative;
         transform: translateX(0) !important;
     }
@@ -1418,7 +1428,8 @@ body {
 .body-area,
 #mainContent,
 header,
-#sidebar {
+#sidebar,
+#sidebar-professor {
     min-width: 0;
 }
 
@@ -1481,7 +1492,8 @@ header,
 
 /* SIDEBAR */
 @media (max-width: 767px) {
-    #sidebar {
+    #sidebar,
+    #sidebar-professor {
         width: 280px;
         max-width: 85vw;
     }
@@ -1514,7 +1526,8 @@ header,
 
 /* LARGE SCREENS */
 @media (min-width: 1440px) {
-    #sidebar {
+    #sidebar,
+    #sidebar-professor {
         width: 270px;
     }
 

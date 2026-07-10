@@ -1,5 +1,6 @@
 /* KUNIN LAHAT NG ELEMENTS*/
 const sidebar = document.getElementById("sidebar");
+const professorSidebar = document.getElementById("sidebar-professor");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
 const notiDrawer = document.getElementById("notiDrawer");
 const logoutModal = document.getElementById("logoutModal");
@@ -45,6 +46,16 @@ function on(id, event, handler) {
     if (el) el.addEventListener(event, handler);
 }
 
+function getActiveSidebar() {
+    const role = getStoredRole() || "student";
+
+    if (role === "professor" && professorSidebar) {
+        return professorSidebar;
+    }
+
+    return sidebar;
+}
+
 /* NOTIFICATIONS DATA */
 let notifications = [
     {
@@ -79,17 +90,22 @@ document.addEventListener("DOMContentLoaded", () => {
     // I-disable muna ang transition para walang sliding animation on page load
     if (sidebar) {
         sidebar.style.transition = "none";
-        if (localStorage.getItem("sidebarState") === "expanded") {
-            sidebar.classList.remove("collapsed");
-        } else {
-            sidebar.classList.add("collapsed");
-        }
+        const shouldExpand =
+            localStorage.getItem("sidebarState") === "expanded";
+        sidebar.classList.toggle("collapsed", !shouldExpand);
         // I-re-enable ang transition after one frame  para smooth na ulit pag mag-toggle
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 sidebar.style.transition = "";
             });
         });
+    }
+
+    if (professorSidebar) {
+        professorSidebar.classList.toggle(
+            "collapsed",
+            localStorage.getItem("sidebarState") !== "expanded",
+        );
     }
 
     // I-highlight yung active nav link base sa current URL
@@ -292,9 +308,11 @@ function loadFramePage(href) {
 function applyDarkModeToFrame(isDark) {
     if (!contentFrame || !contentFrame.contentWindow) return;
     try {
-        const iframeBody = contentFrame.contentWindow.document.body;
-        if (!iframeBody) return;
-        iframeBody.classList.toggle("dark", isDark);
+        const iframeDoc = contentFrame.contentWindow.document;
+        if (!iframeDoc) return;
+
+        iframeDoc.documentElement?.classList.toggle("dark", isDark);
+        iframeDoc.body?.classList.toggle("dark", isDark);
     } catch (e) {
         // ignore same-origin framing issues
     }
@@ -428,7 +446,6 @@ function applyHostRole(role) {
             role === "professor" ? "Professor" : "Student";
 
     const studentSidebar = document.getElementById("sidebar");
-    const professorSidebar = document.getElementById("sidebar-professor");
     if (studentSidebar) {
         studentSidebar.classList.toggle("hidden", role === "professor");
         studentSidebar.setAttribute(
@@ -441,6 +458,10 @@ function applyHostRole(role) {
         professorSidebar.setAttribute(
             "aria-hidden",
             role !== "professor" ? "true" : "false",
+        );
+        professorSidebar.classList.toggle(
+            "collapsed",
+            localStorage.getItem("sidebarState") !== "expanded",
         );
     }
 
@@ -561,21 +582,28 @@ function highlightActiveLink() {
 
 /* SIDEBAR*/
 function openMobileSidebar() {
-    if (sidebar) sidebar.classList.add("open");
+    const activeSidebar = getActiveSidebar();
+
+    if (activeSidebar) activeSidebar.classList.add("open");
     if (sidebarOverlay) sidebarOverlay.classList.add("visible");
 }
 
 function closeMobileSidebar() {
-    if (sidebar) sidebar.classList.remove("open");
+    const activeSidebar = getActiveSidebar();
+
+    if (activeSidebar) activeSidebar.classList.remove("open");
     if (sidebarOverlay) sidebarOverlay.classList.remove("visible");
 }
 
 function toggleDesktopSidebar() {
-    if (!sidebar) return;
-    sidebar.classList.toggle("collapsed");
+    const activeSidebar = getActiveSidebar();
+
+    if (!activeSidebar) return;
+
+    activeSidebar.classList.toggle("collapsed");
 
     // I-save ang bagong state sa localStorage
-    const isCollapsed = sidebar.classList.contains("collapsed");
+    const isCollapsed = activeSidebar.classList.contains("collapsed");
     localStorage.setItem(
         "sidebarState",
         isCollapsed ? "collapsed" : "expanded",
@@ -649,6 +677,8 @@ function toggleProfessorDropdown() {
 /*DARK MODE*/
 function toggleDarkMode() {
     const isDark = document.body.classList.toggle("dark");
+
+    syncFrameDarkMode();
 
     localStorage.setItem("darkMode", isDark);
 

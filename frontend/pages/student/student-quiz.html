@@ -28,204 +28,310 @@
     </head>
     <body>
         <main id="mainContent">
-                <div class="quiz-wrap">
-                    <!-- QUIZ HEADER BANNER -->
-                    <section id="quizBanner" class="quiz-banner">
-                        <div class="quiz-banner-text">
-                            <span
-                                id="quizBannerEyebrow"
-                                class="quiz-banner-eyebrow"
-                                >Chemistry &middot; STEM - Amethyst</span
+            <div class="quiz-wrap">
+                <!-- QUIZ HEADER BANNER -->
+                <section id="quizBanner" class="quiz-banner">
+                    <div class="quiz-banner-text">
+                        <span id="quizBannerEyebrow" class="quiz-banner-eyebrow"
+                            >Chemistry &middot; STEM - Amethyst</span
+                        >
+                        <h1 id="quizBannerTitle" class="quiz-banner-title">
+                            Periodic Table &amp; Atomic Structure
+                        </h1>
+                        <div class="quiz-banner-meta">
+                            <span class="quiz-meta-pill"
+                                ><i class="fas fa-list-ol"></i>
+                                <span id="quizMetaCount">10 Items</span></span
                             >
-                            <h1 id="quizBannerTitle" class="quiz-banner-title">
-                                Periodic Table &amp; Atomic Structure
-                            </h1>
-                            <div class="quiz-banner-meta">
-                                <span class="quiz-meta-pill"
-                                    ><i class="fas fa-list-ol"></i>
-                                    <span id="quizMetaCount"
-                                        >10 Items</span
-                                    ></span
+                            <span class="quiz-meta-pill"
+                                ><i class="fas fa-hourglass-half"></i>
+                                <span id="quizMetaTime">15:00 Limit</span></span
+                            >
+                            <span class="quiz-meta-pill"
+                                ><i class="fas fa-redo"></i>
+                                <span id="quizMetaAttempts"
+                                    >1 of 2 attempts</span
+                                ></span
+                            >
+                        </div>
+                    </div>
+                    <div class="quiz-timer-ring">
+                        <svg viewBox="0 0 80 80" class="timer-svg">
+                            <circle
+                                cx="40"
+                                cy="40"
+                                r="34"
+                                class="timer-track"
+                            ></circle>
+                            <circle
+                                cx="40"
+                                cy="40"
+                                r="34"
+                                class="timer-progress"
+                                id="timerProgressCircle"
+                            ></circle>
+                        </svg>
+                        <div class="timer-label">
+                            <span id="timerText">15:00</span>
+                            <small>remaining</small>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BACK BUTTON -->
+                <button
+                    id="backToClassworkBtn"
+                    class="back-to-class-btn"
+                    type="button"
+                >
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Classwork</span>
+                </button>
+
+                <!-- TWO COLUMN: QUESTION AREA + NAVIGATOR -->
+                <div class="quiz-grid">
+                    <!-- LEFT: Active question -->
+                    <div class="question-column">
+                        <div class="progress-track-wrap">
+                            <div class="progress-track">
+                                <div
+                                    id="progressFill"
+                                    class="progress-fill"
+                                ></div>
+                            </div>
+                            <span id="progressLabel" class="progress-label"
+                                >Question 1 of 10</span
+                            >
+                        </div>
+
+                        <div id="questionCard" class="question-card">
+                            <div class="question-card-head">
+                                <span
+                                    id="questionNumberBadge"
+                                    class="question-number-badge"
+                                    >Q1</span
                                 >
-                                <span class="quiz-meta-pill"
-                                    ><i class="fas fa-hourglass-half"></i>
-                                    <span id="quizMetaTime"
-                                        >15:00 Limit</span
-                                    ></span
+                                <button
+                                    id="flagBtn"
+                                    class="flag-btn"
+                                    type="button"
+                                    title="Mark for review"
                                 >
-                                <span class="quiz-meta-pill"
-                                    ><i class="fas fa-redo"></i>
-                                    <span id="quizMetaAttempts"
-                                        >1 of 2 attempts</span
-                                    ></span
-                                >
+                                    <i class="far fa-flag"></i>
+                                    <span>Mark for review</span>
+                                </button>
+                            </div>
+                            <p id="questionText" class="question-text">
+                                Loading question…
+                            </p>
+
+                            <div id="optionsList" class="options-list">
+                                <!-- Populated dynamically by studentQuiz.js -->
                             </div>
                         </div>
-                        <div class="quiz-timer-ring">
-                            <svg viewBox="0 0 80 80" class="timer-svg">
-                                <circle
-                                    cx="40"
-                                    cy="40"
-                                    r="34"
-                                    class="timer-track"
-                                ></circle>
-                                <circle
-                                    cx="40"
-                                    cy="40"
-                                    r="34"
-                                    class="timer-progress"
-                                    id="timerProgressCircle"
-                                ></circle>
-                            </svg>
-                            <div class="timer-label">
-                                <span id="timerText">15:00</span>
-                                <small>remaining</small>
-                            </div>
+
+                        <div class="question-nav-actions">
+                            <button
+                                id="prevQBtn"
+                                class="qnav-btn qnav-btn-ghost"
+                                type="button"
+                                disabled
+                            >
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <button
+                                id="nextQBtn"
+                                class="qnav-btn qnav-btn-primary"
+                                type="button"
+                            >
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button
+                                id="submitQuizBtn"
+                                class="qnav-btn qnav-btn-submit"
+                                type="button"
+                            >
+                                <i class="fas fa-paper-plane"></i> Submit Quiz
+                            </button>
                         </div>
-                    </section>
+                    </div>
 
-                    <!-- BACK BUTTON -->
-                    <button
-                        id="backToClassworkBtn"
-                        class="back-to-class-btn"
-                        type="button"
-                    >
-                        <i class="fas fa-arrow-left"></i>
-                        <span>Back to Classwork</span>
-                    </button>
-
-                    <!-- TWO COLUMN: QUESTION AREA + NAVIGATOR -->
-                    <div class="quiz-grid">
-                        <!-- LEFT: Active question -->
-                        <div class="question-column">
-                            <div class="progress-track-wrap">
-                                <div class="progress-track">
-                                    <div
-                                        id="progressFill"
-                                        class="progress-fill"
-                                    ></div>
-                                </div>
-                                <span id="progressLabel" class="progress-label"
-                                    >Question 1 of 10</span
-                                >
-                            </div>
-
-                            <div id="questionCard" class="question-card">
-                                <div class="question-card-head">
-                                    <span
-                                        id="questionNumberBadge"
-                                        class="question-number-badge"
-                                        >Q1</span
+                    <!-- RIGHT: Question navigator -->
+                    <div class="side-column">
+                        <div class="navigator-card">
+                            <button
+                                id="navigatorToggleBtn"
+                                class="navigator-card-header"
+                                aria-expanded="true"
+                                aria-controls="navigatorBody"
+                                type="button"
+                            >
+                                <span class="navigator-card-title-group">
+                                    <span class="navigator-card-icon"
+                                        ><i class="fas fa-map-signs"></i
+                                    ></span>
+                                    <span class="navigator-card-title"
+                                        >Question Navigator</span
                                     >
-                                    <button
-                                        id="flagBtn"
-                                        class="flag-btn"
-                                        type="button"
-                                        title="Mark for review"
-                                    >
-                                        <i class="far fa-flag"></i>
-                                        <span>Mark for review</span>
-                                    </button>
-                                </div>
-                                <p id="questionText" class="question-text">
-                                    Loading question…
-                                </p>
-
-                                <div id="optionsList" class="options-list">
+                                </span>
+                                <i
+                                    id="navigatorChevron"
+                                    class="fas fa-chevron-up navigator-chevron"
+                                ></i>
+                            </button>
+                            <div id="navigatorBody" class="navigator-body">
+                                <div id="navigatorGrid" class="navigator-grid">
                                     <!-- Populated dynamically by studentQuiz.js -->
                                 </div>
-                            </div>
-
-                            <div class="question-nav-actions">
-                                <button
-                                    id="prevQBtn"
-                                    class="qnav-btn qnav-btn-ghost"
-                                    type="button"
-                                    disabled
-                                >
-                                    <i class="fas fa-chevron-left"></i> Previous
-                                </button>
-                                <button
-                                    id="nextQBtn"
-                                    class="qnav-btn qnav-btn-primary"
-                                    type="button"
-                                >
-                                    Next <i class="fas fa-chevron-right"></i>
-                                </button>
-                                <button
-                                    id="submitQuizBtn"
-                                    class="qnav-btn qnav-btn-submit"
-                                    type="button"
-                                >
-                                    <i class="fas fa-paper-plane"></i> Submit
-                                    Quiz
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- RIGHT: Question navigator -->
-                        <div class="side-column">
-                            <div class="navigator-card">
-                                <button
-                                    id="navigatorToggleBtn"
-                                    class="navigator-card-header"
-                                    aria-expanded="true"
-                                    aria-controls="navigatorBody"
-                                    type="button"
-                                >
-                                    <span class="navigator-card-title-group">
-                                        <span class="navigator-card-icon"
-                                            ><i class="fas fa-map-signs"></i
-                                        ></span>
-                                        <span class="navigator-card-title"
-                                            >Question Navigator</span
-                                        >
-                                    </span>
-                                    <i
-                                        id="navigatorChevron"
-                                        class="fas fa-chevron-up navigator-chevron"
-                                    ></i>
-                                </button>
-                                <div id="navigatorBody" class="navigator-body">
-                                    <div
-                                        id="navigatorGrid"
-                                        class="navigator-grid"
+                                <div class="navigator-legend">
+                                    <span
+                                        ><i
+                                            class="legend-dot legend-current"
+                                        ></i>
+                                        Current</span
                                     >
-                                        <!-- Populated dynamically by studentQuiz.js -->
-                                    </div>
-                                    <div class="navigator-legend">
-                                        <span
-                                            ><i
-                                                class="legend-dot legend-current"
-                                            ></i>
-                                            Current</span
-                                        >
-                                        <span
-                                            ><i
-                                                class="legend-dot legend-answered"
-                                            ></i>
-                                            Answered</span
-                                        >
-                                        <span
-                                            ><i
-                                                class="legend-dot legend-flagged"
-                                            ></i>
-                                            Flagged</span
-                                        >
-                                        <span
-                                            ><i
-                                                class="legend-dot legend-unanswered"
-                                            ></i>
-                                            Unanswered</span
-                                        >
-                                    </div>
+                                    <span
+                                        ><i
+                                            class="legend-dot legend-answered"
+                                        ></i>
+                                        Answered</span
+                                    >
+                                    <span
+                                        ><i
+                                            class="legend-dot legend-flagged"
+                                        ></i>
+                                        Flagged</span
+                                    >
+                                    <span
+                                        ><i
+                                            class="legend-dot legend-unanswered"
+                                        ></i>
+                                        Unanswered</span
+                                    >
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </main>
-    <script src="../../assets/js/pages/student/student-quiz.js"></script>
+            </div>
+        </main>
+
+        <div
+            id="submitConfirmModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="submitConfirmTitle"
+        >
+            <div id="submitConfirmModalCard">
+                <div class="modal-icon-wrap modal-icon-wrap-warn">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <h3 id="submitConfirmTitle" class="modal-title">
+                    Submit Quiz?
+                </h3>
+                <p id="submitConfirmDesc" class="modal-desc"></p>
+                <div class="modal-actions">
+                    <button
+                        id="submitCancelBtn"
+                        class="modal-btn modal-btn-cancel"
+                        type="button"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        id="submitConfirmBtn"
+                        class="modal-btn modal-btn-confirm"
+                        type="button"
+                    >
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div
+            id="resultsModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resultsTitle"
+        >
+            <div id="resultsModalCard">
+                <div class="results-score-ring">
+                    <svg viewBox="0 0 120 120" class="results-svg">
+                        <circle
+                            cx="60"
+                            cy="60"
+                            r="52"
+                            class="results-track"
+                        ></circle>
+                        <circle
+                            id="resultsProgressCircle"
+                            cx="60"
+                            cy="60"
+                            r="52"
+                            class="results-progress"
+                        ></circle>
+                    </svg>
+                    <div class="results-score-label">
+                        <span id="resultsScoreText">0/0</span>
+                        <small id="resultsPercentText">0%</small>
+                    </div>
+                </div>
+
+                <h3 id="resultsTitle" class="modal-title">Quiz Complete</h3>
+                <p id="resultsDesc" class="modal-desc"></p>
+
+                <div class="results-breakdown">
+                    <div class="results-stat">
+                        <span
+                            id="resultsCorrectCount"
+                            class="results-stat-value"
+                            >0</span
+                        >
+                        <span class="results-stat-label">Correct</span>
+                    </div>
+                    <div class="results-stat">
+                        <span
+                            id="resultsIncorrectCount"
+                            class="results-stat-value"
+                            >0</span
+                        >
+                        <span class="results-stat-label">Incorrect</span>
+                    </div>
+                    <div class="results-stat">
+                        <span
+                            id="resultsSkippedCount"
+                            class="results-stat-value"
+                            >0</span
+                        >
+                        <span class="results-stat-label">Skipped</span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button
+                        id="reviewAnswersBtn"
+                        class="modal-btn modal-btn-cancel"
+                        type="button"
+                    >
+                        Review Answers
+                    </button>
+                    <button
+                        id="backToClassworkResultsBtn"
+                        class="modal-btn modal-btn-confirm"
+                        type="button"
+                    >
+                        Back to Classwork
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" role="status" aria-live="polite">
+            <i class="fas fa-circle-info toast-icon"></i>
+            <span id="toastMessage"></span>
+        </div>
+
+        <script src="../../assets/js/pages/student/student-quiz.js"></script>
     </body>
 </html>
-
