@@ -20,7 +20,13 @@ const contentFrame = document.getElementById("contentFrame");
 const roleSelector = document.getElementById("roleSelector");
 const createClassBtn = document.getElementById("createClassBtn");
 const logoLink = document.getElementById("nav-logo-link");
+const headerAvatar = document.getElementById("headerAvatar");
+const headerProfileName = document.getElementById("headerProfileName");
 const headerProfileRole = document.getElementById("headerProfileRole");
+
+function getHostConfig() {
+    return window.LQ_HOST_CONFIG || {};
+}
 
 /* ────────────────────────────────
    SAFE EVENT-BINDING HELPER
@@ -388,6 +394,9 @@ function pruneIframeSharedShell() {
 }
 
 function getStoredRole() {
+    const hostRole = getHostConfig().role;
+    if (hostRole) return hostRole;
+
     return (
         (window.localStorage &&
             localStorage.getItem &&
@@ -399,7 +408,21 @@ function getStoredRole() {
 function applyHostRole(role) {
     if (!role) return;
 
-    if (roleSelector) roleSelector.value = role;
+    if (roleSelector) {
+        roleSelector.value = role;
+        roleSelector.disabled = !getHostConfig().allowRoleSwitch;
+    }
+
+    const profileName = getHostConfig().profileName;
+
+    if (headerProfileName && profileName) {
+        headerProfileName.textContent = `Welcome, ${profileName}!`;
+    }
+
+    if (headerAvatar && profileName) {
+        headerAvatar.textContent = profileName.charAt(0).toUpperCase();
+    }
+
     if (headerProfileRole)
         headerProfileRole.textContent =
             role === "professor" ? "Professor" : "Student";
@@ -431,9 +454,15 @@ function applyHostRole(role) {
 }
 
 function getDefaultRolePage(role) {
+    const hostInitialPage = getHostConfig().initialPage;
+
+    if (hostInitialPage && getHostConfig().role === role) {
+        return hostInitialPage;
+    }
+
     return role === "professor"
-        ? "../../pages/professor/professor-home.html"
-        : "../../pages/student/student-home.html";
+        ? "/pages/professor/professor-home.html"
+        : "/pages/student/student-home.html";
 }
 
 function loadDefaultFramePage() {
@@ -443,13 +472,17 @@ function loadDefaultFramePage() {
 }
 
 function initHostShell() {
-    const role = getStoredRole() || "student";
+    const role = getHostConfig().role || getStoredRole() || "student";
+
     if (!getStoredRole()) {
         localStorage.setItem("LQ_USER_ROLE", role);
     }
+
+    localStorage.setItem("LQ_USER_ROLE", role);
+
     applyHostRole(role);
 
-    if (roleSelector) {
+    if (roleSelector && getHostConfig().allowRoleSwitch) {
         roleSelector.addEventListener("change", () => {
             const selectedRole = roleSelector.value;
             localStorage.setItem("LQ_USER_ROLE", selectedRole);
@@ -1026,6 +1059,17 @@ function closeLogoutModal() {
 
 function confirmLogout() {
     closeLogoutModal();
+
+    const logoutFormId = getHostConfig().logoutFormId;
+    const logoutForm = logoutFormId
+        ? document.getElementById(logoutFormId)
+        : null;
+
+    if (logoutForm) {
+        logoutForm.submit();
+        return;
+    }
+
     showToast("Session cleared. Entering Guest Mode.");
 }
 

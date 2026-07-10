@@ -1,0 +1,137 @@
+body {
+    margin: 0;
+    padding: 2rem;
+    min-height: 100vh;
+    font-family: "Inter", sans-serif;
+    background: linear-gradient(155deg, #f4fbff 0%, #eef4ff 45%, #f8f9ff 100%);
+    color: #0f172a;
+}
+
+#mainContent {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.5rem;
+}
+
+.worksheets-hero {
+    background: linear-gradient(130deg, #0ea5e9, #2563eb);
+    color: #f8fbff;
+    border-radius: 20px;
+    padding: 1.75rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 16px 35px rgba(37, 99, 235, 0.24);
+}
+
+.hero-kicker {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.worksheets-hero h1 {
+    margin: 0.45rem 0 0.7rem;
+    font-size: clamp(1.35rem, 2.5vw, 2rem);
+}
+
+.worksheets-hero p {
+    margin: 0;
+    max-width: 48ch;
+    line-height: 1.5;
+}
+
+.hero-action-btn {
+    border: none;
+    background: #ffffff;
+    color: #1d4ed8;
+    border-radius: 12px;
+    padding: 0.7rem 1rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.worksheet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.worksheet-card {
+    background: #ffffff;
+    border: 1px solid #dde7ff;
+    border-radius: 16px;
+    padding: 1.2rem;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.worksheet-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.worksheet-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.status-chip {
+    border-radius: 999px;
+    padding: 0.22rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-open {
+    color: #065f46;
+    background: #d1fae5;
+}
+
+.status-review {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.status-draft {
+    color: #3730a3;
+    background: #e0e7ff;
+}
+
+.worksheet-meta {
+    margin: 0.65rem 0 0.9rem;
+    color: #475569;
+}
+
+.worksheet-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.2rem;
+}
+
+@media (max-width: 720px) {
+    body {
+        padding: 1rem;
+    }
+
+    .worksheets-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

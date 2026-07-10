@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FrontendShellController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,16 +22,29 @@ Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name(
 Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/components/navbar/navbar.css', [FrontendShellController::class, 'navbarCss'])->name('shell.navbar.css');
+    Route::get('/components/navbar/navbar.js', [FrontendShellController::class, 'navbarJs'])->name('shell.navbar.js');
+    Route::get('/assets/{path}', [FrontendShellController::class, 'frontendAsset'])
+        ->where('path', '.*');
+});
+
+Route::middleware(['auth', 'student.role'])->prefix('pages/student')->group(function () {
+    Route::get('/{page}.html', [FrontendShellController::class, 'showStudentPage'])
+        ->where('page', '[A-Za-z0-9\-]+');
+});
+
+Route::middleware(['auth', 'professor.role'])->prefix('pages/professor')->group(function () {
+    Route::get('/{page}.html', [FrontendShellController::class, 'showProfessorPage'])
+        ->where('page', '[A-Za-z0-9\-]+');
+});
+
 // Student Routes
 Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('student.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [FrontendShellController::class, 'showShell'])->name('dashboard');
 });
 
 // Professor Routes
 Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('professor.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('professor.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [FrontendShellController::class, 'showShell'])->name('dashboard');
 });
