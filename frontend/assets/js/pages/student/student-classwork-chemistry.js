@@ -20,7 +20,7 @@ let classPosts = [
         quiz: {
             label: "Quiz 1 – Module 6",
             quizId: "quiz-1-module-6",
-            quizUrl: "studentQuiz.html",
+            quizUrl: "student-quiz.html",
         },
     },
     {
@@ -255,7 +255,7 @@ function renderQuizCard() {
         titleEl.textContent = quizPost.quiz.label;
         takeBtn.textContent = "Take Quiz";
         takeBtn.disabled = false;
-        takeBtn.dataset.quizUrl = quizPost.quiz.quizUrl || "studentQuiz.html";
+        takeBtn.dataset.quizUrl = quizPost.quiz.quizUrl || "student-quiz.html";
         takeBtn.dataset.quizId = quizPost.quiz.quizId || "";
     } else {
         titleEl.textContent = "No quiz available yet";
@@ -270,7 +270,7 @@ function handleTakeQuiz() {
     const takeBtn = document.getElementById("takeQuizBtn");
     if (!takeBtn || takeBtn.disabled) return;
 
-    const quizUrl = takeBtn.dataset.quizUrl || "studentQuiz.html";
+    const quizUrl = takeBtn.dataset.quizUrl || "student-quiz.html";
     const quizId = takeBtn.dataset.quizId || "";
 
     const params = new URLSearchParams({
