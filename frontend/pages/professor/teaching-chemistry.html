@@ -103,6 +103,199 @@
                     </div>
                 </div>
             </main>
+
+        <!-- POST COMPOSER MODAL -->
+        <div id="postComposerModal" aria-modal="true" role="dialog">
+            <div id="postComposerCard">
+                <div class="pc-modal-header">
+                    <h3 id="pcModalTitle" class="modal-title">Create post</h3>
+                    <button
+                        id="pcCloseBtn"
+                        class="jc-close-btn"
+                        type="button"
+                        aria-label="Close post composer"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="pc-type-toggle">
+                    <button
+                        id="pcTypeAnnouncement"
+                        class="pc-type-btn active"
+                        type="button"
+                    >
+                        <i class="fas fa-bullhorn"></i>
+                        Announcement
+                    </button>
+                    <button id="pcTypeLesson" class="pc-type-btn" type="button">
+                        <i class="fas fa-book"></i>
+                        Lesson
+                    </button>
+                </div>
+
+                <div class="pc-field">
+                    <label class="jc-label" for="pcTitle">Post title</label>
+                    <input
+                        id="pcTitle"
+                        class="jc-input"
+                        type="text"
+                        placeholder="Enter post title"
+                    />
+                    <p id="pcTitleError" class="jc-error hidden">
+                        <i class="fas fa-circle-exclamation"></i>
+                        Title is required.
+                    </p>
+                </div>
+
+                <div class="pc-field">
+                    <label class="jc-label" for="pcQuarter">Quarter</label>
+                    <select id="pcQuarter" class="jc-input">
+                        <option value="1st Quarter">1st Quarter</option>
+                        <option value="2nd Quarter">2nd Quarter</option>
+                        <option value="3rd Quarter">3rd Quarter</option>
+                        <option value="4th Quarter">4th Quarter</option>
+                    </select>
+                </div>
+
+                <div class="pc-field">
+                    <label class="jc-label" for="pcBody">Post details</label>
+                    <textarea
+                        id="pcBody"
+                        class="jc-input pc-textarea"
+                        rows="4"
+                        placeholder="Write your announcement or lesson context"
+                    ></textarea>
+                </div>
+
+                <div id="pcChecklistField" class="pc-field">
+                    <label class="jc-label" for="pcChecklist"
+                        >Checklist (one item per line)</label
+                    >
+                    <textarea
+                        id="pcChecklist"
+                        class="jc-input pc-textarea"
+                        rows="4"
+                        placeholder="Quiz 1 - Module 6"
+                    ></textarea>
+                </div>
+
+                <div id="pcAttachmentField" class="pc-field hidden">
+                    <label class="jc-label">Lesson attachment</label>
+                    <div class="pc-file-picker">
+                        <button id="pcFilePickBtn" class="pc-file-btn" type="button">
+                            <i class="fas fa-paperclip"></i>
+                            Choose file
+                        </button>
+                        <span id="pcFileName" class="pc-file-name">No file chosen</span>
+                    </div>
+                    <input
+                        id="pcFileInput"
+                        class="pc-file-input-hidden"
+                        type="file"
+                        accept=".pdf"
+                        aria-label="Select lesson PDF"
+                    />
+                    <p class="pc-label-hint">Accepted file type: PDF</p>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="pcCancelBtn" class="modal-btn modal-btn-cancel" type="button">
+                        Cancel
+                    </button>
+                    <button id="pcSaveBtn" class="modal-btn cc-create-btn" type="button">
+                        <span id="pcSaveBtnLabel">Post</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DELETE POST MODAL -->
+        <div id="deletePostModal" aria-modal="true" role="dialog">
+            <div id="deletePostModalCard">
+                <div class="modal-icon-wrap modal-icon-danger">
+                    <i class="fas fa-trash"></i>
+                </div>
+                <h3 class="modal-title">Delete post?</h3>
+                <p class="modal-desc">
+                    This will permanently remove
+                    <strong id="deletePostTitle">this post</strong>.
+                </p>
+                <div class="modal-actions">
+                    <button id="deleteCancelBtn" class="modal-btn modal-btn-cancel" type="button">
+                        Cancel
+                    </button>
+                    <button
+                        id="deleteConfirmBtn"
+                        class="modal-btn modal-btn-danger"
+                        type="button"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF MODAL -->
+        <div id="pdfModal" aria-modal="true" role="dialog" aria-labelledby="pdfModalTitle">
+            <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
+            <div class="pdf-modal-card">
+                <div class="pdf-modal-header">
+                    <div class="pdf-modal-header-left">
+                        <span class="pdf-modal-file-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </span>
+                        <span id="pdfModalTitle" class="pdf-modal-title">Lesson.pdf</span>
+                    </div>
+                    <div class="pdf-modal-header-right">
+                        <a
+                            id="pdfModalDownload"
+                            class="pdf-modal-action-btn pdf-modal-download"
+                            href="#"
+                            title="Download PDF"
+                            aria-label="Download PDF"
+                        >
+                            <i class="fas fa-download"></i>
+                            <span>Download</span>
+                        </a>
+                        <button
+                            id="pdfModalClose"
+                            class="pdf-modal-action-btn pdf-modal-close"
+                            aria-label="Close PDF viewer"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="pdf-modal-body">
+                    <iframe
+                        id="pdfModalViewer"
+                        class="pdf-modal-iframe pdf-viewer-initial-hidden"
+                        title="PDF viewer"
+                        frameborder="0"
+                    ></iframe>
+                    <div id="pdfModalPlaceholder" class="pdf-modal-placeholder">
+                        <div class="pdf-placeholder-inner">
+                            <i class="fas fa-file-pdf pdf-placeholder-icon"></i>
+                            <p class="pdf-placeholder-title">PDF preview not available</p>
+                            <p class="pdf-placeholder-sub">
+                                The teacher has not uploaded this file yet, or it requires
+                                a direct download.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST -->
+        <div id="toast">
+            <div class="toast-icon">
+                <i class="fas fa-circle-info"></i>
+            </div>
+            <span id="toastMessage"></span>
+        </div>
+
     <script src="../../assets/js/pages/professor/teaching-chemistry.js"></script>
     </body>
 </html>

@@ -948,6 +948,130 @@ body.dark #joinClassModalCard {
     transform: scale(1);
 }
 
+/* CREATE CLASS MODAL */
+#createClassModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background-color: rgba(2, 6, 23, 0.6);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#createClassModal.visible {
+    display: flex;
+    opacity: 1;
+}
+
+#createClassModalCard {
+    background-color: #fff;
+    border-radius: 16px;
+    max-width: 420px;
+    width: 100%;
+    padding: 24px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    border: 1px solid #f1f5f9;
+    transform: scale(0.9);
+    transition: transform 0.3s;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+body.dark #createClassModalCard {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+#createClassModalCard.scaled {
+    transform: scale(1);
+}
+
+.cc-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cc-modal-title {
+    margin: 0;
+    text-align: left;
+}
+
+.cc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cc-input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    font-family: "Inter", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0f172a;
+    background-color: #f8fafc;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s,
+        background-color 0.2s;
+    outline: none;
+}
+
+.cc-input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.cc-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    background-color: #fff;
+}
+
+.cc-input.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+body.dark .cc-input {
+    background-color: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+body.dark .cc-input:focus {
+    border-color: #60a5fa;
+}
+
+.cc-modal-actions {
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.cc-cancel-btn {
+    flex: 0 0 auto;
+}
+
+.cc-create-btn {
+    flex: 0 0 auto;
+    background-color: #2563eb;
+    color: #fff;
+}
+
+.cc-create-btn:hover {
+    background-color: #1d4ed8;
+}
+
 /* Modal header row */
 .jc-modal-header {
     display: flex;

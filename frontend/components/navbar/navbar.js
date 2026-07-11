@@ -20,6 +20,16 @@ const pageLoader = document.getElementById("pageLoader");
 const contentFrame = document.getElementById("contentFrame");
 const roleSelector = document.getElementById("roleSelector");
 const createClassBtn = document.getElementById("createClassBtn");
+const createClassModal = document.getElementById("createClassModal");
+const createClassModalCard = document.getElementById("createClassModalCard");
+const createClassCloseBtn = document.getElementById("createClassCloseBtn");
+const createClassCancelBtn = document.getElementById("createClassCancelBtn");
+const createClassConfirmBtn = document.getElementById("createClassConfirmBtn");
+const ccClassNameInput = document.getElementById("ccClassName");
+const ccSectionInput = document.getElementById("ccSection");
+const ccSubjectInput = document.getElementById("ccSubject");
+const ccRoomInput = document.getElementById("ccRoom");
+const ccNameError = document.getElementById("ccNameError");
 const logoLink = document.getElementById("nav-logo-link");
 const headerAvatar = document.getElementById("headerAvatar");
 const headerProfileName = document.getElementById("headerProfileName");
@@ -131,6 +141,41 @@ document.addEventListener("DOMContentLoaded", () => {
     //Header buttons
     on("darkModeBtn", "click", toggleDarkMode);
     on("notiBtn", "click", toggleNotifications);
+    on("createClassBtn", "click", openCreateClassModal);
+
+    if (createClassCloseBtn) {
+        createClassCloseBtn.addEventListener("click", closeCreateClassModal);
+    }
+    if (createClassCancelBtn) {
+        createClassCancelBtn.addEventListener("click", closeCreateClassModal);
+    }
+    if (createClassConfirmBtn) {
+        createClassConfirmBtn.addEventListener("click", confirmCreateClass);
+    }
+    if (createClassModal) {
+        createClassModal.addEventListener("click", (e) => {
+            if (e.target === createClassModal) {
+                closeCreateClassModal();
+            }
+        });
+    }
+
+    [ccClassNameInput, ccSectionInput, ccSubjectInput, ccRoomInput]
+        .filter(Boolean)
+        .forEach((field) => {
+            field.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    confirmCreateClass();
+                }
+            });
+        });
+
+    if (ccClassNameInput) {
+        ccClassNameInput.addEventListener("input", () => {
+            if (ccNameError) ccNameError.classList.add("hidden");
+            ccClassNameInput.classList.remove("error");
+        });
+    }
 
     //Join Class (student pages only)
     on("joinClassBtn", "click", openJoinClass);
@@ -1066,6 +1111,61 @@ function clearNotifications() {
     notifications = [];
     renderNotifications();
     showToast("Cleared all notifications");
+}
+
+/* CREATE CLASS MODAL */
+function resetCreateClassForm() {
+    if (ccClassNameInput) ccClassNameInput.value = "";
+    if (ccSectionInput) ccSectionInput.value = "";
+    if (ccSubjectInput) ccSubjectInput.value = "";
+    if (ccRoomInput) ccRoomInput.value = "";
+
+    if (ccNameError) ccNameError.classList.add("hidden");
+    if (ccClassNameInput) ccClassNameInput.classList.remove("error");
+}
+
+function openCreateClassModal() {
+    if (!createClassModal || !createClassModalCard) return;
+
+    resetCreateClassForm();
+    createClassModal.style.display = "flex";
+
+    setTimeout(() => {
+        createClassModal.style.opacity = "1";
+        createClassModal.classList.add("visible");
+        createClassModalCard.classList.add("scaled");
+        if (ccClassNameInput) ccClassNameInput.focus();
+    }, 10);
+}
+
+function closeCreateClassModal() {
+    if (!createClassModal || !createClassModalCard) return;
+
+    createClassModal.style.opacity = "0";
+    createClassModal.classList.remove("visible");
+    createClassModalCard.classList.remove("scaled");
+
+    setTimeout(() => {
+        createClassModal.style.display = "none";
+    }, 300);
+}
+
+function confirmCreateClass() {
+    if (!ccClassNameInput) return;
+
+    const className = ccClassNameInput.value.trim();
+    if (!className) {
+        if (ccNameError) ccNameError.classList.remove("hidden");
+        ccClassNameInput.classList.add("error");
+        ccClassNameInput.focus();
+        return;
+    }
+
+    if (ccNameError) ccNameError.classList.add("hidden");
+    ccClassNameInput.classList.remove("error");
+
+    closeCreateClassModal();
+    showToast(`Class "${className}" created!`);
 }
 
 /* LOGOUT MODAL */

@@ -357,6 +357,72 @@
         </div>
     </div>
 
+    <!-- CREATE CLASS MODAL (professor) -->
+    <div id="createClassModal">
+        <div id="createClassModalCard">
+            <div class="cc-modal-header">
+                <h3 class="modal-title cc-modal-title">Create Class</h3>
+                <button id="createClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="cc-field">
+                <label class="jc-label" for="ccClassName">Class name</label>
+                <input
+                    id="ccClassName"
+                    class="cc-input"
+                    type="text"
+                    placeholder="e.g. Chemistry"
+                    maxlength="60"
+                />
+                <p id="ccNameError" class="jc-error hidden">Class name is required.</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="jc-label" for="ccSection">Section</label>
+                <input
+                    id="ccSection"
+                    class="cc-input"
+                    type="text"
+                    placeholder="e.g. STEM - AMETHYST"
+                    maxlength="60"
+                />
+            </div>
+
+            <div class="cc-field">
+                <label class="jc-label" for="ccSubject">Subject</label>
+                <input
+                    id="ccSubject"
+                    class="cc-input"
+                    type="text"
+                    placeholder="e.g. Science"
+                    maxlength="60"
+                />
+            </div>
+
+            <div class="cc-field">
+                <label class="jc-label" for="ccRoom">Room</label>
+                <input
+                    id="ccRoom"
+                    class="cc-input"
+                    type="text"
+                    placeholder="e.g. Room 204"
+                    maxlength="40"
+                />
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="createClassCancelBtn" class="modal-btn modal-btn-cancel cc-cancel-btn">
+                    Cancel
+                </button>
+                <button id="createClassConfirmBtn" class="modal-btn cc-create-btn">
+                    Create
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST -->
     <div id="toast">
         <div class="toast-icon">

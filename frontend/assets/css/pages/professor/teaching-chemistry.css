@@ -868,6 +868,14 @@ body.dark .pc-file-btn:hover { background-color: #1a2436; }
     overflow-wrap: anywhere;
 }
 
+.pc-file-input-hidden {
+    display: none;
+}
+
+.pdf-viewer-initial-hidden {
+    display: none;
+}
+
 body.dark .pc-file-name { color: #94a3b8; }
 
 
