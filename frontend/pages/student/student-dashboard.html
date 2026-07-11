@@ -28,136 +28,145 @@
     </head>
     <body>
         <main id="mainContent">
-                <!-- HERO BANNER -->
-                <section class="hero-banner">
-                    <div class="hero-text">
-                        <h1 class="hero-title">Student Dashboard</h1>
-                        <p class="hero-subtitle">
-                            Comprehensive Monitoring Graphs Management Overview
-                        </p>
-                        <a href="student-quest-ai.html" class="hero-btn">
-                            <i class="fas fa-robot"></i> Launch QuestAI Coach
-                        </a>
-                    </div>
-                    <div class="hero-illustration">
-                        <i class="fas fa-magnifying-glass-chart"></i>
-                    </div>
-                </section>
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <h1 class="hero-title">Student Dashboard</h1>
+                    <p class="hero-subtitle">
+                        Comprehensive Monitoring Graphs Management Overview
+                    </p>
+                    <a href="student-quest-ai.html" class="hero-btn">
+                        <i class="fas fa-robot"></i> Launch QuestAI Coach
+                    </a>
+                </div>
+                <div class="hero-illustration">
+                    <i class="fas fa-magnifying-glass-chart"></i>
+                </div>
+            </section>
 
-                <!-- FILTER RECORDS -->
-                <section class="filter-section">
-                    <h2 class="filter-title">Filter Records</h2>
-                    <div class="filter-controls">
-                        <div class="filter-group">
-                            <label class="filter-label" for="startDate">
-                                Date Range — (Start and End)
-                            </label>
-                            <div class="date-inputs">
-                                <input
-                                    type="date"
-                                    id="startDate"
-                                    class="filter-input"
-                                />
-                                <input
-                                    type="date"
-                                    id="endDate"
-                                    class="filter-input"
-                                />
-                            </div>
-                        </div>
-
-                        <div class="filter-group">
-                            <label class="filter-label" for="quarterSelect">
-                                Quarter (1<sup>st</sup> to 4<sup>th</sup>)
-                            </label>
-                            <select
-                                id="quarterSelect"
-                                class="filter-input filter-select"
-                            >
-                                <option value="">All Quarters</option>
-                                <option value="1">1st Quarter</option>
-                                <option value="2">2nd Quarter</option>
-                                <option value="3">3rd Quarter</option>
-                                <option value="4">4th Quarter</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-actions">
-                            <button
-                                id="exportBtn"
-                                class="filter-btn filter-btn-export"
-                            >
-                                <i class="fas fa-arrow-up-from-bracket"></i>
-                                Export
-                            </button>
-                            <button
-                                id="resetBtn"
-                                class="filter-btn filter-btn-reset"
-                            >
-                                <i class="fas fa-rotate-right"></i> Reset
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- CHARTS GRID -->
-                <section class="charts-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3 class="chart-title">Radar Chart</h3>
-                            <span
-                                class="active-filter-badge"
-                                id="radarBadge"
-                                style="display: none"
-                            >
-                                <i class="fas fa-filter"></i>
-                                <span id="radarBadgeText"></span>
-                            </span>
-                        </div>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="radarChart"></canvas>
+            <!-- FILTER RECORDS -->
+            <section class="filter-section">
+                <h2 class="filter-title">Filter Records</h2>
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label class="filter-label" for="startDate">
+                            Date Range — (Start and End)
+                        </label>
+                        <div class="date-inputs">
+                            <input
+                                type="date"
+                                id="startDate"
+                                class="filter-input"
+                                aria-label="Start date"
+                            />
+                            <input
+                                type="date"
+                                id="endDate"
+                                class="filter-input"
+                                aria-label="End date"
+                            />
                         </div>
                     </div>
 
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3 class="chart-title">Performance</h3>
-                            <span
-                                class="active-filter-badge"
-                                id="performanceBadge"
-                                style="display: none"
-                            >
-                                <i class="fas fa-filter"></i>
-                                <span id="performanceBadgeText"></span>
-                            </span>
-                        </div>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="performanceChart"></canvas>
-                        </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="quarterSelect">
+                            Quarter (1<sup>st</sup> to 4<sup>th</sup>)
+                        </label>
+                        <select
+                            id="quarterSelect"
+                            class="filter-input filter-select"
+                        >
+                            <option value="">All Quarters</option>
+                            <option value="1">1st Quarter</option>
+                            <option value="2">2nd Quarter</option>
+                            <option value="3">3rd Quarter</option>
+                            <option value="4">4th Quarter</option>
+                        </select>
                     </div>
 
-                    <div class="chart-card">
-                        <div class="chart-header">
+                    <div class="filter-actions">
+                        <button
+                            id="exportBtn"
+                            class="filter-btn filter-btn-export"
+                        >
+                            <i class="fas fa-arrow-up-from-bracket"></i>
+                            Export
+                        </button>
+                        <button
+                            id="resetBtn"
+                            class="filter-btn filter-btn-reset"
+                        >
+                            <i class="fas fa-rotate-right"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHARTS GRID -->
+            <section class="charts-grid">
+                <div class="chart-card chart-card-main-radar">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Mastery Level by Subject</h3>
+                        <span class="active-filter-badge" id="radarBadge">
+                            <i class="fas fa-filter"></i>
+                            <span id="radarBadgeText"></span>
+                        </span>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card chart-card-mini-radar">
+                    <div class="chart-header">
+                        <div>
                             <h3 class="chart-title">
-                                Mastery Level per Subject
+                                Sub-topic Mastery Breakdown
                             </h3>
-                            <span
-                                class="active-filter-badge"
-                                id="masteryBadge"
-                                style="display: none"
-                            >
-                                <i class="fas fa-filter"></i>
-                                <span id="masteryBadgeText"></span>
-                            </span>
+                            <p class="chart-subtitle" id="subjectRadarTitle">
+                                Select a subject from the radar chart
+                            </p>
                         </div>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="masteryChart"></canvas>
-                        </div>
+                        <span class="active-filter-badge" id="subjectBadge">
+                            <i class="fas fa-filter"></i>
+                            <span id="subjectBadgeText"></span>
+                        </span>
                     </div>
-                </section>
-            </main>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <script src="../../assets/js/pages/student/student-dashboard.js"></script>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="subjectRadarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card chart-card-performance">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Average Quiz Scores</h3>
+                        <span class="active-filter-badge" id="performanceBadge">
+                            <i class="fas fa-filter"></i>
+                            <span id="performanceBadgeText"></span>
+                        </span>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card chart-card-mastery-trend">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            Mastery Level Improvement Over Time
+                        </h3>
+                        <span class="active-filter-badge" id="masteryBadge">
+                            <i class="fas fa-filter"></i>
+                            <span id="masteryBadgeText"></span>
+                        </span>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="masteryChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script src="../../assets/js/pages/student/student-dashboard.js"></script>
     </body>
 </html>
-

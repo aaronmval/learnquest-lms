@@ -86,6 +86,29 @@ const QUIZ_DATA = {
 
 const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
+const SUBJECT_BASE_MASTERY = {
+    chemistry: 85,
+    "general biology": 88,
+    "earth science": 75,
+    physics: 70,
+};
+
+const LESSON_QUIZ_BASE_MASTERY = {
+    "quiz-1-module-6": 72,
+};
+
+const params = new URLSearchParams(window.location.search);
+const quizSubject = params.get("subject") || QUIZ_DATA.subject;
+const quizSubjectKey = quizSubject.toLowerCase();
+const quizId = params.get("quizId") || "";
+const lessonTitle = params.get("lessonTitle") || QUIZ_DATA.title;
+const subjectMasteryBefore =
+    SUBJECT_BASE_MASTERY[quizSubjectKey] ?? SUBJECT_BASE_MASTERY.chemistry;
+const lessonMasteryBefore =
+    Number(params.get("lessonMastery")) ||
+    LESSON_QUIZ_BASE_MASTERY[quizId] ||
+    70;
+
 /* STATE */
 let currentIndex = 0;
 let userAnswers = new Array(QUIZ_DATA.questions.length).fill(null);
@@ -101,7 +124,7 @@ const RESULTS_CIRCUMFERENCE = 326.7;
 document.addEventListener("DOMContentLoaded", () => {
     // Populate banner meta
     document.getElementById("quizBannerEyebrow").textContent =
-        `${QUIZ_DATA.subject} · ${QUIZ_DATA.section}`;
+        `${quizSubject} · ${QUIZ_DATA.section}`;
     document.getElementById("quizBannerTitle").textContent = QUIZ_DATA.title;
     document.getElementById("quizMetaCount").textContent =
         `${QUIZ_DATA.questions.length} Items`;
@@ -141,12 +164,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document
         .getElementById("backToClassworkBtn")
         .addEventListener("click", () => {
-            window.location.href = "student-classwork-chemistry.html";
+            window.location.href = resolveClassworkPage();
         });
     document
         .getElementById("backToClassworkResultsBtn")
         .addEventListener("click", () => {
-            window.location.href = "student-classwork-chemistry.html";
+            window.location.href = resolveClassworkPage();
         });
 
     // Review answers from results modal
@@ -396,6 +419,30 @@ function showResults(correct, incorrect, skipped) {
     document.getElementById("resultsIncorrectCount").textContent = incorrect;
     document.getElementById("resultsSkippedCount").textContent = skipped;
 
+    const subjectMasteryAfter = calculateUpdatedMastery(
+        subjectMasteryBefore,
+        percent,
+    );
+    const lessonMasteryAfter = calculateUpdatedMastery(
+        lessonMasteryBefore,
+        percent,
+    );
+
+    renderMasteryComparison(
+        "subjectMasteryBefore",
+        "subjectMasteryAfter",
+        "subjectMasteryDelta",
+        subjectMasteryBefore,
+        subjectMasteryAfter,
+    );
+    renderMasteryComparison(
+        "lessonMasteryBefore",
+        "lessonMasteryAfter",
+        "lessonMasteryDelta",
+        lessonMasteryBefore,
+        lessonMasteryAfter,
+    );
+
     let title, desc, ringColor;
     if (percent >= 80) {
         title = "Excellent Work!";
@@ -411,7 +458,8 @@ function showResults(correct, incorrect, skipped) {
         ringColor = "#f87171";
     }
     document.getElementById("resultsTitle").textContent = title;
-    document.getElementById("resultsDesc").textContent = desc;
+    document.getElementById("resultsDesc").textContent =
+        `${desc} ${lessonTitle ? `Lesson: ${lessonTitle}.` : ""}`;
 
     const circle = document.getElementById("resultsProgressCircle");
     circle.style.stroke = ringColor;
@@ -425,6 +473,55 @@ function showResults(correct, incorrect, skipped) {
             circle.style.strokeDashoffset = offset;
         }, 50);
     });
+}
+
+function calculateUpdatedMastery(beforeMastery, quizPercent) {
+    const updated = Math.round(beforeMastery * 0.72 + quizPercent * 0.28);
+    return Math.max(0, Math.min(100, updated));
+}
+
+function renderMasteryComparison(beforeId, afterId, deltaId, before, after) {
+    const beforeEl = document.getElementById(beforeId);
+    const afterEl = document.getElementById(afterId);
+    const deltaEl = document.getElementById(deltaId);
+    if (!beforeEl || !afterEl || !deltaEl) {
+        return;
+    }
+
+    const delta = after - before;
+    const sign = delta >= 0 ? "+" : "";
+
+    beforeEl.textContent = `${before}%`;
+    afterEl.textContent = `${after}%`;
+    deltaEl.textContent = `${sign}${delta}%`;
+    deltaEl.classList.remove(
+        "delta-positive",
+        "delta-negative",
+        "delta-neutral",
+    );
+    deltaEl.classList.add(
+        delta > 0
+            ? "delta-positive"
+            : delta < 0
+              ? "delta-negative"
+              : "delta-neutral",
+    );
+}
+
+function resolveClassworkPage() {
+    if (quizSubjectKey.includes("earth")) {
+        return "student-classwork-earthscience.html";
+    }
+
+    if (quizSubjectKey.includes("biology")) {
+        return "student-classwork-generalbiology.html";
+    }
+
+    if (quizSubjectKey.includes("physics")) {
+        return "student-classwork-physics.html";
+    }
+
+    return "student-classwork-chemistry.html";
 }
 
 /*  MODAL HELPERS  */

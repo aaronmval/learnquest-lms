@@ -31,75 +31,71 @@
     </head>
     <body>
         <main id="mainContent">
-                <div class="classroom-wrap">
-                    <!-- CLASS HEADER BANNER -->
-                    <section id="classBanner" class="class-banner">
-                        <div class="class-banner-text">
-                            <h1
-                                id="classBannerSubject"
-                                class="class-banner-subject"
-                            >
-                                PHYSICS
-                            </h1>
-                            <p
-                                id="classBannerSection"
-                                class="class-banner-section"
-                            >
-                                STEM - AMETHYST
-                            </p>
-                            <p
-                                id="classBannerTeacher"
-                                class="class-banner-teacher"
-                            >
-                                John Michael C. Bautista
-                            </p>
-                            <p class="class-banner-role">Teacher</p>
+            <div class="classroom-wrap">
+                <!-- CLASS HEADER BANNER -->
+                <section id="classBanner" class="class-banner">
+                    <div class="class-banner-text">
+                        <h1
+                            id="classBannerSubject"
+                            class="class-banner-subject"
+                        >
+                            PHYSICS
+                        </h1>
+                        <p id="classBannerSection" class="class-banner-section">
+                            STEM - AMETHYST
+                        </p>
+                        <p id="classBannerTeacher" class="class-banner-teacher">
+                            John Michael C. Bautista
+                        </p>
+                        <p class="class-banner-role">Teacher</p>
+                        <p
+                            id="classBannerMastery"
+                            class="class-banner-mastery"
+                        ></p>
+                    </div>
+                    <i class="fas fa-atom class-banner-icon"></i>
+                </section>
+
+                <!-- TWO COLUMN: FEED + SIDE PANEL -->
+                <div class="classroom-grid">
+                    <!-- LEFT: Announcement / Lesson feed -->
+                    <div id="feedColumn" class="feed-column">
+                        <!-- Populated dynamically by enrolledPhysics.js -->
+                    </div>
+
+                    <!-- RIGHT: AI tools panel -->
+                    <div class="side-column">
+                        <div class="ai-panel">
+                            <button id="summarizeBtn" class="summarize-btn">
+                                <span class="bot-icon"
+                                    ><i class="fas fa-robot"></i
+                                ></span>
+                                Summarize class note
+                            </button>
+                            <div id="summaryResult" class="hidden"></div>
                         </div>
-                        <i class="fas fa-atom class-banner-icon"></i>
-                    </section>
 
-                    <!-- TWO COLUMN: FEED + SIDE PANEL -->
-                    <div class="classroom-grid">
-                        <!-- LEFT: Announcement / Lesson feed -->
-                        <div id="feedColumn" class="feed-column">
-                            <!-- Populated dynamically by enrolledPhysics.js -->
-                        </div>
-
-                        <!-- RIGHT: AI tools panel -->
-                        <div class="side-column">
-                            <div class="ai-panel">
-                                <button id="summarizeBtn" class="summarize-btn">
-                                    <span class="bot-icon"
-                                        ><i class="fas fa-robot"></i
-                                    ></span>
-                                    Summarize class note
-                                </button>
-                                <div id="summaryResult" class="hidden"></div>
-                            </div>
-
-                            <div class="ai-insights-card">
-                                <div class="ai-insights-header">
-                                    <span class="ai-insights-icon"
-                                        ><i class="fas fa-cloud"></i
-                                    ></span>
-                                    <span class="ai-insights-title"
-                                        >AI Insights for You</span
-                                    >
-                                </div>
-                                <div id="insightsList"></div>
-                                <button
-                                    id="insightsRefreshBtn"
-                                    class="insight-refresh"
+                        <div class="ai-insights-card">
+                            <div class="ai-insights-header">
+                                <span class="ai-insights-icon"
+                                    ><i class="fas fa-cloud"></i
+                                ></span>
+                                <span class="ai-insights-title"
+                                    >AI Insights for You</span
                                 >
-                                    <i class="fas fa-rotate"></i> Refresh
-                                    insights
-                                </button>
                             </div>
+                            <div id="insightsList"></div>
+                            <button
+                                id="insightsRefreshBtn"
+                                class="insight-refresh"
+                            >
+                                <i class="fas fa-rotate"></i> Refresh insights
+                            </button>
                         </div>
                     </div>
                 </div>
-            </main>
-    <script src="../../assets/js/pages/student/enrolled-physics.js"></script>
+            </div>
+        </main>
+        <script src="../../assets/js/pages/student/enrolled-physics.js"></script>
     </body>
 </html>
-

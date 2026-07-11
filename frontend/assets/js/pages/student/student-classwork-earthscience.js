@@ -2,9 +2,43 @@ const CLASS_INFO = window.CLASS_INFO || {
     subject: "EARTH SCIENCE",
     section: "STEM - AMETHYST",
     teacher: "Patricia L. Garcia",
+    subjectMastery: 75,
     teacherPhoto: "../../assets/images/teachers/earthscience.jpg",
     teacherInitials: "JS",
     gradient: "linear-gradient(135deg, #22c55e, #16a34a)",
+};
+
+const LESSON_SUMMARIES = {
+    2: {
+        mastery: 70,
+        overview:
+            "This lesson covers Earth's layered systems and interactions between geosphere, hydrosphere, and atmosphere.",
+        highlights: [
+            "Explained how plate movement affects landforms and geologic events.",
+            "Connected water cycle stages with climate and weather processes.",
+            "Interpreted Earth-system diagrams to identify feedback loops.",
+        ],
+    },
+    3: {
+        mastery: 74,
+        overview:
+            "This lesson expands to hazards, resources, and evidence-based environmental interpretation.",
+        highlights: [
+            "Classified common geologic hazards and early warning indicators.",
+            "Compared renewable and non-renewable resources with sustainability impact.",
+            "Applied map and data-reading strategies to scenario questions.",
+        ],
+    },
+    default: {
+        mastery: 69,
+        overview:
+            "The lesson develops Earth science literacy through system thinking and data interpretation.",
+        highlights: [
+            "Reviewed core Earth layers and cycles in a concept map.",
+            "Linked observations with causes using guided examples.",
+            "Built a short reviewer for terms likely to appear in quizzes.",
+        ],
+    },
 };
 
 let classPosts = [
@@ -31,6 +65,7 @@ let classPosts = [
         date: "Jan 5, 2026",
         title: "Material for this Week 2",
         body: "",
+        lessonMastery: 70,
         attachment: { name: "Lesson 1.pdf", url: "#" },
     },
     {
@@ -41,6 +76,7 @@ let classPosts = [
         date: "Jan 12, 2026",
         title: "Material for Week 3",
         body: "",
+        lessonMastery: 74,
         attachment: { name: "Lesson 2.pdf", url: "#" },
     },
 ];
@@ -69,6 +105,7 @@ function resolveLessonPost() {
             date: "",
             title: params.get("title"),
             body: "",
+            lessonMastery: Number(params.get("lessonMastery")) || undefined,
             attachment: params.get("file")
                 ? {
                       name: params.get("file"),
@@ -94,6 +131,11 @@ function renderClassBanner() {
         CLASS_INFO.section;
     document.getElementById("classBannerTeacher").textContent =
         CLASS_INFO.teacher;
+
+    const bannerMastery = document.getElementById("classBannerMastery");
+    if (bannerMastery) {
+        bannerMastery.textContent = `Current Mastery Level: ${CLASS_INFO.subjectMastery}%`;
+    }
 }
 
 /* ────────────────────────────────
@@ -178,6 +220,11 @@ function buildPostCard(post) {
             </div>`;
     }
 
+    const lessonMasteryBadge =
+        typeof post.lessonMastery === "number"
+            ? `<span class="post-badge badge-mastery-level">Mastery ${post.lessonMastery}%</span>`
+            : "";
+
     return `
         <article class="post-card" data-post-id="${post.id}" data-type="${post.type}">
             <div class="post-header">
@@ -191,6 +238,7 @@ function buildPostCard(post) {
                 <div class="post-badges">
                     <span class="post-badge ${badgeClass}">${badgeLabel}</span>
                     <span class="post-badge ${quarterClass}">${post.quarter}</span>
+                    ${lessonMasteryBadge}
                 </div>
             </div>
             <h3 class="post-title">${post.title}</h3>
@@ -283,6 +331,8 @@ function handleTakeQuiz() {
     const params = new URLSearchParams({
         subject: CLASS_INFO.subject,
         ...(quizId ? { quizId } : {}),
+        lessonTitle: resolveLessonPost()?.title || "",
+        lessonMastery: resolveLessonPost()?.lessonMastery || "",
     });
 
     window.location.href = `${quizUrl}?${params.toString()}`;
@@ -291,8 +341,28 @@ function handleTakeQuiz() {
 /* SUMMARY OF LESSON (static box) */
 function renderLessonSummary() {
     const result = document.getElementById("summaryResult");
+    const masteryEl = document.getElementById("summaryLessonMastery");
     if (!result) return;
-    result.innerHTML = "";
+
+    const lesson = resolveLessonPost();
+    const summary =
+        (lesson && LESSON_SUMMARIES[String(lesson.id)]) ||
+        LESSON_SUMMARIES.default;
+    const lessonMastery =
+        typeof lesson?.lessonMastery === "number"
+            ? lesson.lessonMastery
+            : summary.mastery;
+
+    if (masteryEl) {
+        masteryEl.textContent = `Lesson Mastery: ${lessonMastery}%`;
+    }
+
+    result.innerHTML = `
+        <p class="summary-overview">${summary.overview}</p>
+        <ul class="summary-points">
+            ${summary.highlights.map((item) => `<li>${item}</li>`).join("")}
+        </ul>
+    `;
 }
 
 /* BACK TO CLASS BUTTON */

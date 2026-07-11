@@ -2,6 +2,7 @@ const CLASS_INFO = window.CLASS_INFO || {
     subject: "GENERAL BIOLOGY",
     section: "STEM - AMETHYST",
     teacher: "Jane Smith",
+    subjectMastery: 88,
     teacherPhoto: "../../assets/images/teachers/generalbiology.jpg",
     teacherInitials: "JS",
     gradient: "linear-gradient(135deg, #FF8D21 , #ea580c)",
@@ -26,6 +27,7 @@ let classPosts = [
         date: "Jan 5, 2026",
         title: "Material for this Week 2",
         body: "",
+        lessonMastery: 84,
         attachment: { name: "Lesson 1.pdf", url: "#" },
     },
     {
@@ -36,6 +38,7 @@ let classPosts = [
         date: "Jan 12, 2026",
         title: "Material for Week 3",
         body: "",
+        lessonMastery: 87,
         attachment: { name: "Lesson 2.pdf", url: "#" },
     },
 ];
@@ -53,6 +56,11 @@ function renderClassBanner() {
         CLASS_INFO.section;
     document.getElementById("classBannerTeacher").textContent =
         CLASS_INFO.teacher;
+
+    const bannerMastery = document.getElementById("classBannerMastery");
+    if (bannerMastery) {
+        bannerMastery.textContent = `Current Mastery Level: ${CLASS_INFO.subjectMastery}%`;
+    }
 }
 
 /* RENDER — feed */
@@ -110,6 +118,9 @@ function openLessonClasswork(postId) {
         ...(post.attachment
             ? { file: post.attachment.name, fileUrl: post.attachment.url || "" }
             : {}),
+        ...(typeof post.lessonMastery === "number"
+            ? { lessonMastery: post.lessonMastery }
+            : {}),
     });
     window.location.href = `student-classwork-generalbiology.html?${params.toString()}`;
 }
@@ -157,6 +168,11 @@ function buildPostCard(post) {
             </div>`;
     }
 
+    const lessonMasteryBadge =
+        typeof post.lessonMastery === "number"
+            ? `<span class="post-badge badge-mastery-level">Mastery ${post.lessonMastery}%</span>`
+            : "";
+
     const cardAttrs =
         post.type === "lesson"
             ? `role="button" tabindex="0" aria-label="Open ${post.title}"`
@@ -175,6 +191,7 @@ function buildPostCard(post) {
                 <div class="post-badges">
                     <span class="post-badge ${badgeClass}">${badgeLabel}</span>
                     <span class="post-badge ${quarterClass}">${post.quarter}</span>
+                    ${lessonMasteryBadge}
                 </div>
             </div>
             <h3 class="post-title">${post.title}</h3>
