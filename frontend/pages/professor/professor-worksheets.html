@@ -29,80 +29,103 @@
         <main id="mainContent">
             <section class="worksheets-hero">
                 <div>
-                    <p class="hero-kicker">Worksheet Manager</p>
-                    <h1>Build and track class worksheets</h1>
+                    <p class="hero-kicker">AI Quiz Validator</p>
+                    <h1>Validate generated multiple-choice quizzes</h1>
                     <p>
-                        Draft activities, publish deadlines, and monitor which
-                        learners still need feedback.
+                        Select an uploaded lesson material, tune mastery level,
+                        then accept or reject generated questions for students.
                     </p>
                 </div>
-                <button type="button" class="hero-action-btn">
-                    <i class="fas fa-plus"></i>
-                    Create Worksheet
-                </button>
             </section>
 
-            <section class="worksheet-grid">
-                <article class="worksheet-card">
-                    <div class="worksheet-card-header">
-                        <h2>Chemical Bonding Drill</h2>
-                        <span class="status-chip status-open">Open</span>
+            <section class="validator-layout" aria-label="AI generated quiz validator">
+                <aside class="materials-panel" aria-label="Uploaded materials list">
+                    <div class="panel-title-row">
+                        <h2>Uploaded Materials</h2>
+                        <span class="panel-kicker">Hardcoded Prototype</span>
                     </div>
-                    <p class="worksheet-meta">
-                        STEM - Amethyst | Due Jul 18, 2026
+                    <p class="panel-subtext">
+                        Click a material to proceed to multiple-choice validator.
                     </p>
-                    <div class="worksheet-stats">
-                        <div>
-                            <span class="stat-label">Submitted</span>
-                            <strong>34 / 42</strong>
-                        </div>
-                        <div>
-                            <span class="stat-label">Avg Score</span>
-                            <strong>86%</strong>
-                        </div>
-                    </div>
-                </article>
+                    <ul id="materialsList" class="materials-list" role="list"></ul>
+                </aside>
 
-                <article class="worksheet-card">
-                    <div class="worksheet-card-header">
-                        <h2>Stoichiometry Lab Sheet</h2>
-                        <span class="status-chip status-review">To Review</span>
+                <article id="validatorPanel" class="validator-panel" aria-live="polite">
+                    <div class="panel-title-row">
+                        <h2 id="selectedMaterialTitle">Select a material</h2>
+                        <span id="validatorStatus" class="status-chip status-pending">Not Checked</span>
                     </div>
-                    <p class="worksheet-meta">
-                        STEM - Amethyst | Due Jul 12, 2026
+                    <p id="selectedMaterialMeta" class="panel-subtext">
+                        Pick from the left panel to start validating generated quiz items.
                     </p>
-                    <div class="worksheet-stats">
-                        <div>
-                            <span class="stat-label">Submitted</span>
-                            <strong>42 / 42</strong>
-                        </div>
-                        <div>
-                            <span class="stat-label">Needs Grading</span>
-                            <strong>11</strong>
-                        </div>
-                    </div>
-                </article>
 
-                <article class="worksheet-card">
-                    <div class="worksheet-card-header">
-                        <h2>Periodic Trends Reflection</h2>
-                        <span class="status-chip status-draft">Draft</span>
+                    <div class="mastery-box">
+                        <div class="mastery-header">
+                            <span>Mastery Slider</span>
+                            <strong id="masteryValue">50%</strong>
+                        </div>
+                        <label for="masterySlider" class="mastery-label">Mastery level</label>
+                        <input
+                            id="masterySlider"
+                            class="mastery-slider"
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value="50"
+                            disabled
+                        />
+                        <div class="mastery-scale" aria-hidden="true">
+                            <span>0% easier questions</span>
+                            <span>100% harder questions</span>
+                        </div>
                     </div>
-                    <p class="worksheet-meta">
-                        STEM - Amethyst | Not published
+
+                    <div class="preview-box">
+                        <div class="preview-header">
+                            <h3>Generated Multiple-Choice Preview</h3>
+                            <span id="difficultyLabel" class="difficulty-label">Balanced</span>
+                        </div>
+                        <div id="questionPreviewCard" class="question-preview-card">
+                            <p id="mcqQuestionText" class="mcq-question-text">
+                                Select a material to preview a generated question.
+                            </p>
+                            <ul id="mcqOptionsList" class="mcq-options-list" aria-label="Multiple-choice options">
+                                <li class="mcq-option-item">Option preview will appear here.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="validator-actions">
+                        <button
+                            id="checkBtn"
+                            type="button"
+                            class="action-btn check-btn"
+                            title="Accept generated question"
+                            aria-label="Accept generated question"
+                            disabled
+                        >
+                            ✓
+                        </button>
+                        <button
+                            id="rejectBtn"
+                            type="button"
+                            class="action-btn reject-btn"
+                            title="Reject this generated quiz"
+                            aria-label="Reject this generated quiz"
+                            disabled
+                        >
+                            X
+                        </button>
+                    </div>
+
+                    <p id="validatorHint" class="validator-hint">
+                        Use ✓ to accept and publish to student chemistry classwork, or X to reject and hide it.
                     </p>
-                    <div class="worksheet-stats">
-                        <div>
-                            <span class="stat-label">Questions</span>
-                            <strong>8</strong>
-                        </div>
-                        <div>
-                            <span class="stat-label">Points</span>
-                            <strong>40</strong>
-                        </div>
-                    </div>
                 </article>
             </section>
         </main>
+
+        <script src="../../assets/js/pages/professor/professor-worksheets.js"></script>
     </body>
 </html>

@@ -1,7 +1,11 @@
 body {
     margin: 0;
     padding: 2rem;
+    height: auto;
     min-height: 100vh;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
     font-family: "Inter", sans-serif;
     background: linear-gradient(155deg, #f4fbff 0%, #eef4ff 45%, #f8f9ff 100%);
     color: #0f172a;
@@ -45,84 +49,368 @@ body {
     line-height: 1.5;
 }
 
-.hero-action-btn {
-    border: none;
-    background: #ffffff;
-    color: #1d4ed8;
-    border-radius: 12px;
-    padding: 0.7rem 1rem;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-}
-
-.worksheet-grid {
+.validator-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 1.25rem;
 }
 
-.worksheet-card {
+.materials-panel,
+.validator-panel {
     background: #ffffff;
     border: 1px solid #dde7ff;
     border-radius: 16px;
-    padding: 1.2rem;
+    padding: 1.2rem 1.1rem;
     box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
 }
 
-.worksheet-card-header {
+.panel-title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.6rem;
 }
 
-.worksheet-card h2 {
+.panel-title-row h2 {
     margin: 0;
     font-size: 1.05rem;
+    line-height: 1.3;
+}
+
+.panel-kicker {
+    border-radius: 999px;
+    padding: 0.16rem 0.62rem;
+    font-size: 0.67rem;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: #dbeafe;
+}
+
+.panel-subtext {
+    margin: 0.65rem 0 0.95rem;
+    color: #475569;
+    line-height: 1.45;
+    font-size: 0.92rem;
+}
+
+.materials-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+}
+
+.material-item {
+    width: 100%;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 0.72rem;
+    display: grid;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.material-item:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+    transform: translateY(-1px);
+}
+
+.material-item.active {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+}
+
+.material-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.material-title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.material-meta {
+    color: #64748b;
+    font-size: 0.82rem;
 }
 
 .status-chip {
     border-radius: 999px;
-    padding: 0.22rem 0.65rem;
-    font-size: 0.72rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.68rem;
     font-weight: 700;
     white-space: nowrap;
 }
 
-.status-open {
+.status-pending {
+    color: #1e3a8a;
+    background: #dbeafe;
+}
+
+.status-checked {
+    color: #0f766e;
+    background: #ccfbf1;
+}
+
+.status-saved {
     color: #065f46;
     background: #d1fae5;
 }
 
-.status-review {
-    color: #92400e;
-    background: #fef3c7;
+.status-rejected {
+    color: #991b1b;
+    background: #fee2e2;
 }
 
-.status-draft {
-    color: #3730a3;
-    background: #e0e7ff;
+.mastery-box,
+.preview-box {
+    border: 1px solid #dbe7ff;
+    border-radius: 14px;
+    padding: 0.9rem;
+    background: #fbfdff;
 }
 
-.worksheet-meta {
-    margin: 0.65rem 0 0.9rem;
-    color: #475569;
+.mastery-box {
+    margin-bottom: 0.9rem;
 }
 
-.worksheet-stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.7rem;
+.mastery-header,
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.stat-label {
-    display: block;
+.mastery-header span {
+    color: #334155;
+    font-weight: 600;
+}
+
+.mastery-header strong {
+    color: #1d4ed8;
+    font-size: 1rem;
+}
+
+.mastery-slider {
+    --slider-stop: 50%;
+    --slider-track-color: hsl(60, 70%, 45%);
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    margin: 0.72rem 0 0.45rem;
+    border-radius: 999px;
+    border: 1px solid #dbe7ff;
+    background: linear-gradient(
+        90deg,
+        var(--slider-track-color) 0%,
+        var(--slider-track-color) var(--slider-stop),
+        #e2e8f0 var(--slider-stop),
+        #e2e8f0 100%
+    );
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.14);
+    cursor: pointer;
+    transition: background 0.22s ease;
+}
+
+.mastery-slider::-webkit-slider-runnable-track {
+    height: 12px;
+    border-radius: 999px;
+    background: transparent;
+}
+
+.mastery-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    margin-top: -5px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    background: #0f172a;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28);
+}
+
+.mastery-slider::-moz-range-track {
+    height: 12px;
+    border-radius: 999px;
+    border: 1px solid #dbe7ff;
+    background: #e2e8f0;
+}
+
+.mastery-slider::-moz-range-progress {
+    height: 12px;
+    border-radius: 999px;
+    background: var(--slider-track-color);
+}
+
+.mastery-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: #0f172a;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28);
+}
+
+.mastery-label {
+    margin-top: 0.45rem;
+    display: inline-block;
     font-size: 0.75rem;
     color: #64748b;
-    margin-bottom: 0.2rem;
+}
+
+.mastery-slider:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.mastery-scale {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    font-size: 0.77rem;
+    color: #64748b;
+}
+
+.mastery-scale span:last-child {
+    text-align: right;
+}
+
+.preview-header h3 {
+    margin: 0;
+    font-size: 0.94rem;
+    color: #0f172a;
+}
+
+.difficulty-label {
+    font-size: 0.72rem;
+    padding: 0.18rem 0.62rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 700;
+}
+
+.question-preview-card {
+    margin-top: 0.75rem;
+    border: 1px solid #dbe7ff;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 0.85rem;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.question-preview-card.is-fading-out {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.question-preview-card.is-fading-in {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+
+.question-preview-card.is-fading-in.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mcq-question-text {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.mcq-options-list {
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.mcq-option-item {
+    border: 1px solid #dbe7ff;
+    border-radius: 9px;
+    padding: 0.52rem 0.66rem;
+    background: #f8fafc;
+    color: #1f2937;
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+.mcq-option-item.correct-answer {
+    border-color: #16a34a;
+    background: #dcfce7;
+    color: #14532d;
+    font-weight: 700;
+}
+
+.validator-actions {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.action-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 0.58rem 0.92rem;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: transform 0.14s ease, opacity 0.14s ease;
+}
+
+.action-btn:active {
+    transform: translateY(1px);
+}
+
+.action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.check-btn {
+    background: #16a34a;
+    color: #f8fbff;
+    min-width: 44px;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.reject-btn {
+    background: #ef4444;
+    color: #fff7f7;
+    min-width: 44px;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.validator-hint {
+    margin: 0.72rem 0 0;
+    color: #475569;
+    line-height: 1.4;
+    font-size: 0.88rem;
 }
 
 @media (max-width: 720px) {
@@ -133,5 +421,13 @@ body {
     .worksheets-hero {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .validator-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .validator-actions {
+        flex-wrap: wrap;
     }
 }

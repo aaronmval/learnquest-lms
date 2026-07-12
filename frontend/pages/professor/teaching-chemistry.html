@@ -28,81 +28,75 @@
     </head>
     <body>
         <main id="mainContent">
-                <div class="classroom-wrap">
-                    <!-- CLASS HEADER BANNER -->
-                    <section id="classBanner" class="class-banner">
-                        <div class="class-banner-text">
-                            <h1
-                                id="classBannerSubject"
-                                class="class-banner-subject"
-                            >
-                                CHEMISTRY
-                            </h1>
-                            <p
-                                id="classBannerSection"
-                                class="class-banner-section"
-                            >
-                                STEM - AMETHYST
-                            </p>
-                            <p
-                                id="classBannerTeacher"
-                                class="class-banner-teacher"
-                            >
-                                Mila D. Valiente
-                            </p>
-                            <p class="class-banner-role">Teacher</p>
-                        </div>
-                        <i class="fas fa-book-open class-banner-icon"></i>
-                    </section>
+            <div class="classroom-wrap">
+                <!-- CLASS HEADER BANNER -->
+                <section id="classBanner" class="class-banner">
+                    <div class="class-banner-text">
+                        <h1
+                            id="classBannerSubject"
+                            class="class-banner-subject"
+                        >
+                            CHEMISTRY
+                        </h1>
+                        <p id="classBannerSection" class="class-banner-section">
+                            STEM - AMETHYST
+                        </p>
+                        <p id="classBannerTeacher" class="class-banner-teacher">
+                            Mila D. Valiente
+                        </p>
+                        <p class="class-banner-role">Teacher</p>
+                    </div>
+                    <i class="fas fa-book-open class-banner-icon"></i>
+                </section>
 
-                    <!-- TWO COLUMN: FEED + SIDE PANEL -->
-                    <div class="classroom-grid">
-                        <!-- LEFT: Announcement / Lesson feed -->
-                        <div id="feedColumn" class="feed-column">
-                            <!-- Populated dynamically by teachingChemistry.js -->
+                <!-- TWO COLUMN: FEED + SIDE PANEL -->
+                <div class="classroom-grid">
+                    <!-- LEFT: Announcement / Lesson feed -->
+                    <div id="feedColumn" class="feed-column">
+                        <!-- Populated dynamically by teachingChemistry.js -->
+                    </div>
+
+                    <!-- RIGHT: Class info / quick stats panel -->
+                    <div class="side-column">
+                        <div class="ai-panel teach-quickpost-panel">
+                            <button id="quickPostBtn" class="summarize-btn">
+                                <span class="bot-icon"
+                                    ><i class="fas fa-bullhorn"></i
+                                ></span>
+                                Create a new post
+                            </button>
                         </div>
 
-                        <!-- RIGHT: Class info / quick stats panel -->
-                        <div class="side-column">
-                            <div class="ai-panel teach-quickpost-panel">
-                                <button id="quickPostBtn" class="summarize-btn">
-                                    <span class="bot-icon"
-                                        ><i class="fas fa-bullhorn"></i
-                                    ></span>
-                                    Create a new post
-                                </button>
+                        <div class="ai-insights-card">
+                            <div class="ai-insights-header">
+                                <span class="ai-insights-icon"
+                                    ><i class="fas fa-users"></i
+                                ></span>
+                                <span class="ai-insights-title"
+                                    >Class Snapshot</span
+                                >
                             </div>
-
-                            <div class="ai-insights-card">
-                                <div class="ai-insights-header">
-                                    <span class="ai-insights-icon"
-                                        ><i class="fas fa-users"></i
-                                    ></span>
-                                    <span class="ai-insights-title"
-                                        >Class Snapshot</span
-                                    >
+                            <div id="classSnapshotList">
+                                <div class="insight-item">
+                                    <strong>Students:</strong>
+                                    <span id="snapshotStudents">42</span>
+                                    enrolled
                                 </div>
-                                <div id="classSnapshotList">
-                                    <div class="insight-item">
-                                        <strong>Students:</strong>
-                                        <span id="snapshotStudents">42</span>
-                                        enrolled
-                                    </div>
-                                    <div class="insight-item">
-                                        <strong>Posts:</strong>
-                                        <span id="snapshotPosts">0</span> total
-                                        this quarter
-                                    </div>
-                                    <div class="insight-item">
-                                        <strong>Last activity:</strong>
-                                        <span id="snapshotLastActivity">—</span>
-                                    </div>
+                                <div class="insight-item">
+                                    <strong>Posts:</strong>
+                                    <span id="snapshotPosts">0</span> total this
+                                    quarter
+                                </div>
+                                <div class="insight-item">
+                                    <strong>Last activity:</strong>
+                                    <span id="snapshotLastActivity">—</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
+        </main>
 
         <!-- POST COMPOSER MODAL -->
         <div id="postComposerModal" aria-modal="true" role="dialog">
@@ -135,22 +129,22 @@
                 </div>
 
                 <div class="pc-field">
-                    <label class="jc-label" for="pcTitle">Post title</label>
+                    <label class="pc-label" for="pcTitle">Post title</label>
                     <input
                         id="pcTitle"
-                        class="jc-input"
+                        class="pc-input"
                         type="text"
                         placeholder="Enter post title"
                     />
-                    <p id="pcTitleError" class="jc-error hidden">
+                    <p id="pcTitleError" class="pc-error hidden">
                         <i class="fas fa-circle-exclamation"></i>
                         Title is required.
                     </p>
                 </div>
 
                 <div class="pc-field">
-                    <label class="jc-label" for="pcQuarter">Quarter</label>
-                    <select id="pcQuarter" class="jc-input">
+                    <label class="pc-label" for="pcQuarter">Quarter</label>
+                    <select id="pcQuarter" class="pc-input">
                         <option value="1st Quarter">1st Quarter</option>
                         <option value="2nd Quarter">2nd Quarter</option>
                         <option value="3rd Quarter">3rd Quarter</option>
@@ -159,35 +153,41 @@
                 </div>
 
                 <div class="pc-field">
-                    <label class="jc-label" for="pcBody">Post details</label>
+                    <label class="pc-label" for="pcBody">Post details</label>
                     <textarea
                         id="pcBody"
-                        class="jc-input pc-textarea"
+                        class="pc-input pc-textarea"
                         rows="4"
                         placeholder="Write your announcement or lesson context"
                     ></textarea>
                 </div>
 
                 <div id="pcChecklistField" class="pc-field">
-                    <label class="jc-label" for="pcChecklist"
+                    <label class="pc-label" for="pcChecklist"
                         >Checklist (one item per line)</label
                     >
                     <textarea
                         id="pcChecklist"
-                        class="jc-input pc-textarea"
+                        class="pc-input pc-textarea"
                         rows="4"
                         placeholder="Quiz 1 - Module 6"
                     ></textarea>
                 </div>
 
                 <div id="pcAttachmentField" class="pc-field hidden">
-                    <label class="jc-label">Lesson attachment</label>
+                    <label class="pc-label">Lesson attachment</label>
                     <div class="pc-file-picker">
-                        <button id="pcFilePickBtn" class="pc-file-btn" type="button">
+                        <button
+                            id="pcFilePickBtn"
+                            class="pc-file-btn"
+                            type="button"
+                        >
                             <i class="fas fa-paperclip"></i>
                             Choose file
                         </button>
-                        <span id="pcFileName" class="pc-file-name">No file chosen</span>
+                        <span id="pcFileName" class="pc-file-name"
+                            >No file chosen</span
+                        >
                     </div>
                     <input
                         id="pcFileInput"
@@ -200,10 +200,18 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button id="pcCancelBtn" class="modal-btn modal-btn-cancel" type="button">
+                    <button
+                        id="pcCancelBtn"
+                        class="modal-btn modal-btn-cancel"
+                        type="button"
+                    >
                         Cancel
                     </button>
-                    <button id="pcSaveBtn" class="modal-btn cc-create-btn" type="button">
+                    <button
+                        id="pcSaveBtn"
+                        class="modal-btn cc-create-btn"
+                        type="button"
+                    >
                         <span id="pcSaveBtnLabel">Post</span>
                     </button>
                 </div>
@@ -222,7 +230,11 @@
                     <strong id="deletePostTitle">this post</strong>.
                 </p>
                 <div class="modal-actions">
-                    <button id="deleteCancelBtn" class="modal-btn modal-btn-cancel" type="button">
+                    <button
+                        id="deleteCancelBtn"
+                        class="modal-btn modal-btn-cancel"
+                        type="button"
+                    >
                         Cancel
                     </button>
                     <button
@@ -237,7 +249,12 @@
         </div>
 
         <!-- PDF MODAL -->
-        <div id="pdfModal" aria-modal="true" role="dialog" aria-labelledby="pdfModalTitle">
+        <div
+            id="pdfModal"
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="pdfModalTitle"
+        >
             <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
             <div class="pdf-modal-card">
                 <div class="pdf-modal-header">
@@ -245,7 +262,9 @@
                         <span class="pdf-modal-file-icon">
                             <i class="fas fa-file-pdf"></i>
                         </span>
-                        <span id="pdfModalTitle" class="pdf-modal-title">Lesson.pdf</span>
+                        <span id="pdfModalTitle" class="pdf-modal-title"
+                            >Lesson.pdf</span
+                        >
                     </div>
                     <div class="pdf-modal-header-right">
                         <a
@@ -277,10 +296,12 @@
                     <div id="pdfModalPlaceholder" class="pdf-modal-placeholder">
                         <div class="pdf-placeholder-inner">
                             <i class="fas fa-file-pdf pdf-placeholder-icon"></i>
-                            <p class="pdf-placeholder-title">PDF preview not available</p>
+                            <p class="pdf-placeholder-title">
+                                PDF preview not available
+                            </p>
                             <p class="pdf-placeholder-sub">
-                                The teacher has not uploaded this file yet, or it requires
-                                a direct download.
+                                The teacher has not uploaded this file yet, or
+                                it requires a direct download.
                             </p>
                         </div>
                     </div>
@@ -296,7 +317,6 @@
             <span id="toastMessage"></span>
         </div>
 
-    <script src="../../assets/js/pages/professor/teaching-chemistry.js"></script>
+        <script src="../../assets/js/pages/professor/teaching-chemistry.js"></script>
     </body>
 </html>
-

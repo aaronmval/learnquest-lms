@@ -8,6 +8,8 @@ const CLASS_INFO = window.CLASS_INFO || {
     gradient: "linear-gradient(135deg, #06b6d4, #0891b2)",
 };
 
+const STUDENT_GENERATED_QUIZ_STORAGE_KEY = "lq_student_generated_ai_quiz_v1";
+
 const LESSON_SUMMARIES = {
     2: {
         mastery: 78,
@@ -292,10 +294,50 @@ function findLatestQuizPost() {
     return sorted.find((p) => p.type === "announcement" && p.quiz) || null;
 }
 
+function getGeneratedValidatorQuiz() {
+    try {
+        const payload = JSON.parse(
+            localStorage.getItem(STUDENT_GENERATED_QUIZ_STORAGE_KEY) || "{}",
+        );
+
+        if (!payload || typeof payload !== "object") {
+            return null;
+        }
+
+        if (!payload.visible || payload.subject !== "CHEMISTRY") {
+            return null;
+        }
+
+        return {
+            label: payload.label || "AI Generated MCQ",
+            quizId: payload.quizId || "ai-generated-mcq",
+            quizUrl: payload.quizUrl || "student-quiz.html",
+            lessonTitle: payload.materialTitle || "AI Generated Worksheet",
+            lessonMastery:
+                typeof payload.mastery === "number" ? payload.mastery : "",
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
 function renderQuizCard() {
     const titleEl = document.getElementById("quizCardTitle");
     const takeBtn = document.getElementById("takeQuizBtn");
     if (!titleEl || !takeBtn) return;
+
+    const generatedQuiz = getGeneratedValidatorQuiz();
+
+    if (generatedQuiz) {
+        titleEl.textContent = generatedQuiz.label;
+        takeBtn.textContent = "Take AI Quiz";
+        takeBtn.disabled = false;
+        takeBtn.dataset.quizUrl = generatedQuiz.quizUrl;
+        takeBtn.dataset.quizId = generatedQuiz.quizId;
+        takeBtn.dataset.lessonTitle = generatedQuiz.lessonTitle;
+        takeBtn.dataset.lessonMastery = String(generatedQuiz.lessonMastery);
+        return;
+    }
 
     const quizPost = findLatestQuizPost();
 
@@ -305,12 +347,16 @@ function renderQuizCard() {
         takeBtn.disabled = false;
         takeBtn.dataset.quizUrl = quizPost.quiz.quizUrl || "student-quiz.html";
         takeBtn.dataset.quizId = quizPost.quiz.quizId || "";
+        delete takeBtn.dataset.lessonTitle;
+        delete takeBtn.dataset.lessonMastery;
     } else {
         titleEl.textContent = "No quiz available yet";
         takeBtn.textContent = "Take Quiz";
         takeBtn.disabled = true;
         delete takeBtn.dataset.quizUrl;
         delete takeBtn.dataset.quizId;
+        delete takeBtn.dataset.lessonTitle;
+        delete takeBtn.dataset.lessonMastery;
     }
 }
 
@@ -320,12 +366,15 @@ function handleTakeQuiz() {
 
     const quizUrl = takeBtn.dataset.quizUrl || "student-quiz.html";
     const quizId = takeBtn.dataset.quizId || "";
+    const lessonTitle = takeBtn.dataset.lessonTitle || resolveLessonPost()?.title || "";
+    const lessonMastery =
+        takeBtn.dataset.lessonMastery || resolveLessonPost()?.lessonMastery || "";
 
     const params = new URLSearchParams({
         subject: CLASS_INFO.subject,
         ...(quizId ? { quizId } : {}),
-        lessonTitle: resolveLessonPost()?.title || "",
-        lessonMastery: resolveLessonPost()?.lessonMastery || "",
+        lessonTitle,
+        lessonMastery,
     });
 
     window.location.href = `${quizUrl}?${params.toString()}`;
