@@ -154,7 +154,10 @@ function loadState() {
 }
 
 function persistState() {
-    localStorage.setItem(PROFESSOR_VALIDATOR_STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(
+        PROFESSOR_VALIDATOR_STORAGE_KEY,
+        JSON.stringify(state),
+    );
 }
 
 function ensureMaterialState(materialId) {
@@ -170,7 +173,11 @@ function ensureMaterialState(materialId) {
 }
 
 function getSelectedMaterial() {
-    return MATERIALS.find((material) => material.id === state.selectedMaterialId) || null;
+    return (
+        MATERIALS.find(
+            (material) => material.id === state.selectedMaterialId,
+        ) || null
+    );
 }
 
 function difficultyForMastery(mastery) {
@@ -229,7 +236,10 @@ function saveStudentGeneratedQuiz(material, materialState) {
         updatedAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(STUDENT_GENERATED_QUIZ_STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(
+        STUDENT_GENERATED_QUIZ_STORAGE_KEY,
+        JSON.stringify(payload),
+    );
 }
 
 function statusInfoForMaterial(materialState) {
@@ -331,7 +341,8 @@ function getCurrentQuestion(materialId, level) {
         return null;
     }
 
-    const index = Number(state.questionIndexByMaterial[materialId] || 0) % bank.length;
+    const index =
+        Number(state.questionIndexByMaterial[materialId] || 0) % bank.length;
     return bank[index];
 }
 
@@ -341,7 +352,8 @@ function renderQuestionPreview(materialId, mastery) {
 
     if (!currentQuestion) {
         dom.mcqQuestionText.textContent = "No generated question available.";
-        dom.mcqOptionsList.innerHTML = "<li class=\"mcq-option-item\">No options available.</li>";
+        dom.mcqOptionsList.innerHTML =
+            '<li class="mcq-option-item">No options available.</li>';
         return;
     }
 
@@ -376,7 +388,7 @@ function renderEmptyPreview() {
     dom.mcqQuestionText.textContent =
         "Select a material to preview a generated question.";
     dom.mcqOptionsList.innerHTML =
-        "<li class=\"mcq-option-item\">Option preview will appear here.</li>";
+        '<li class="mcq-option-item">Option preview will appear here.</li>';
 }
 
 function cycleToNextQuestion(materialId, mastery) {
@@ -396,8 +408,11 @@ function cycleToNextQuestion(materialId, mastery) {
     dom.questionPreviewCard.classList.add("is-fading-out");
 
     setTimeout(() => {
-        const currentIndex = Number(state.questionIndexByMaterial[materialId] || 0);
-        state.questionIndexByMaterial[materialId] = (currentIndex + 1) % bankSize;
+        const currentIndex = Number(
+            state.questionIndexByMaterial[materialId] || 0,
+        );
+        state.questionIndexByMaterial[materialId] =
+            (currentIndex + 1) % bankSize;
 
         renderQuestionPreview(materialId, mastery);
         persistState();

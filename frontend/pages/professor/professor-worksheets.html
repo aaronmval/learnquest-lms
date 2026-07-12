@@ -38,25 +38,45 @@
                 </div>
             </section>
 
-            <section class="validator-layout" aria-label="AI generated quiz validator">
-                <aside class="materials-panel" aria-label="Uploaded materials list">
+            <section
+                class="validator-layout"
+                aria-label="AI generated quiz validator"
+            >
+                <aside
+                    class="materials-panel"
+                    aria-label="Uploaded materials list"
+                >
                     <div class="panel-title-row">
                         <h2>Uploaded Materials</h2>
                         <span class="panel-kicker">Hardcoded Prototype</span>
                     </div>
                     <p class="panel-subtext">
-                        Click a material to proceed to multiple-choice validator.
+                        Click a material to proceed to multiple-choice
+                        validator.
                     </p>
-                    <ul id="materialsList" class="materials-list" role="list"></ul>
+                    <ul
+                        id="materialsList"
+                        class="materials-list"
+                        role="list"
+                    ></ul>
                 </aside>
 
-                <article id="validatorPanel" class="validator-panel" aria-live="polite">
+                <article
+                    id="validatorPanel"
+                    class="validator-panel"
+                    aria-live="polite"
+                >
                     <div class="panel-title-row">
                         <h2 id="selectedMaterialTitle">Select a material</h2>
-                        <span id="validatorStatus" class="status-chip status-pending">Not Checked</span>
+                        <span
+                            id="validatorStatus"
+                            class="status-chip status-pending"
+                            >Not Checked</span
+                        >
                     </div>
                     <p id="selectedMaterialMeta" class="panel-subtext">
-                        Pick from the left panel to start validating generated quiz items.
+                        Pick from the left panel to start validating generated
+                        quiz items.
                     </p>
 
                     <div class="mastery-box">
@@ -64,7 +84,9 @@
                             <span>Mastery Slider</span>
                             <strong id="masteryValue">50%</strong>
                         </div>
-                        <label for="masterySlider" class="mastery-label">Mastery level</label>
+                        <label for="masterySlider" class="mastery-label"
+                            >Mastery level</label
+                        >
                         <input
                             id="masterySlider"
                             class="mastery-slider"
@@ -84,14 +106,26 @@
                     <div class="preview-box">
                         <div class="preview-header">
                             <h3>Generated Multiple-Choice Preview</h3>
-                            <span id="difficultyLabel" class="difficulty-label">Balanced</span>
+                            <span id="difficultyLabel" class="difficulty-label"
+                                >Balanced</span
+                            >
                         </div>
-                        <div id="questionPreviewCard" class="question-preview-card">
+                        <div
+                            id="questionPreviewCard"
+                            class="question-preview-card"
+                        >
                             <p id="mcqQuestionText" class="mcq-question-text">
-                                Select a material to preview a generated question.
+                                Select a material to preview a generated
+                                question.
                             </p>
-                            <ul id="mcqOptionsList" class="mcq-options-list" aria-label="Multiple-choice options">
-                                <li class="mcq-option-item">Option preview will appear here.</li>
+                            <ul
+                                id="mcqOptionsList"
+                                class="mcq-options-list"
+                                aria-label="Multiple-choice options"
+                            >
+                                <li class="mcq-option-item">
+                                    Option preview will appear here.
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -120,7 +154,8 @@
                     </div>
 
                     <p id="validatorHint" class="validator-hint">
-                        Use ✓ to accept and publish to student chemistry classwork, or X to reject and hide it.
+                        Use ✓ to accept and publish to student chemistry
+                        classwork, or X to reject and hide it.
                     </p>
                 </article>
             </section>

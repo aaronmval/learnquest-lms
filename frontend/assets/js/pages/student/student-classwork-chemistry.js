@@ -366,9 +366,12 @@ function handleTakeQuiz() {
 
     const quizUrl = takeBtn.dataset.quizUrl || "student-quiz.html";
     const quizId = takeBtn.dataset.quizId || "";
-    const lessonTitle = takeBtn.dataset.lessonTitle || resolveLessonPost()?.title || "";
+    const lessonTitle =
+        takeBtn.dataset.lessonTitle || resolveLessonPost()?.title || "";
     const lessonMastery =
-        takeBtn.dataset.lessonMastery || resolveLessonPost()?.lessonMastery || "";
+        takeBtn.dataset.lessonMastery ||
+        resolveLessonPost()?.lessonMastery ||
+        "";
 
     const params = new URLSearchParams({
         subject: CLASS_INFO.subject,
