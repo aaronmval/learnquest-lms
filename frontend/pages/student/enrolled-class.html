@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <script src="../../assets/js/common/frame-guard.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | My Class</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/student/enrolled-class.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+            <!-- CLASS NOT FOUND / NOT ENROLLED STATE -->
+            <div id="classNotFound" class="class-not-found hidden">
+                <i class="fas fa-circle-exclamation"></i>
+                <h1>Class not found</h1>
+                <p>
+                    This class doesn't exist, or you're not enrolled in it.
+                </p>
+                <a href="student-home.html" class="hero-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+
+            <div id="classroomWrap" class="classroom-wrap">
+                <!-- CLASS HEADER BANNER -->
+                <section id="classBanner" class="class-banner">
+                    <div class="class-banner-text">
+                        <h1
+                            id="classBannerSubject"
+                            class="class-banner-subject"
+                        ></h1>
+                        <p id="classBannerSection" class="class-banner-section"></p>
+                        <p id="classBannerTeacher" class="class-banner-teacher"></p>
+                        <p class="class-banner-role">Teacher</p>
+                    </div>
+                    <i class="fas fa-book-open class-banner-icon"></i>
+                </section>
+
+                <!-- ENROLLED STATUS -->
+                <div class="enrolled-status-card">
+                    <i class="fas fa-circle-check"></i>
+                    <div class="enrolled-status-text">
+                        <h2>You're enrolled in this class</h2>
+                        <p>
+                            Your professor's announcements and lesson
+                            materials will show up here soon.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <script src="../../assets/js/pages/student/enrolled-class.js"></script>
+    </body>
+</html>

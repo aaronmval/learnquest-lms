@@ -643,6 +643,10 @@ function initHostShell() {
         loadProfessorClasses();
     }
 
+    if (role === "student") {
+        loadEnrolledClasses();
+    }
+
     if (roleSelector && getHostConfig().allowRoleSwitch) {
         roleSelector.addEventListener("change", () => {
             const selectedRole = roleSelector.value;
@@ -829,39 +833,28 @@ function toggleDarkMode() {
 
 /*  JOIN CLASS MODAL (student pages only) */
 
-const CLASS_REGISTRY = {
-    "CHEM-101": {
-        name: "Chemistry",
-        teacher: "Ms. Valiente",
-        color: "#22d3ee",
-        href: "/enrolled/chemistry/index.html",
-    },
-    "BIO-101": {
-        name: "General Biology",
-        teacher: "Dr. Smith",
-        color: "#f97316",
-        href: "/enrolled/general-biology/index.html",
-    },
-    "PHY-303": {
-        name: "Physics ",
-        teacher: "Mr. Bautista",
-        color: "#a855f7",
-        href: "/enrolled/physics/index.html",
-    },
-    "EARTHSCI-101": {
-        name: "Earth Science",
-        teacher: "Ms. Garcia",
-        color: "#22c55e",
-        href: "/enrolled/earth-science/index.html",
-    },
+/* The student's real enrolled classes, fetched from the database (see
+   loadEnrolledClasses() below) — replaces the old hardcoded CLASS_REGISTRY
+   mock and its matching enrolledClasses Set. */
+let enrolledClassesCache = [];
+const STUDENT_CLASS_DOT_COLORS = [
+    "dot-blue",
+    "dot-orange",
+    "dot-purple",
+    "dot-green",
+    "dot-cyan",
+    "dot-amber",
+];
+// Hex equivalents of the CSS dot-* classes above, for the modal's live
+// preview dot (which sets an inline background-color, not a CSS class).
+const CLASS_DOT_HEX = {
+    "dot-blue": "#3b82f6",
+    "dot-orange": "#f97316",
+    "dot-purple": "#a855f7",
+    "dot-green": "#22c55e",
+    "dot-cyan": "#22d3ee",
+    "dot-amber": "#f59e0b",
 };
-
-const enrolledClasses = new Set([
-    "CHEM-101",
-    "BIO-101",
-    "PHY-303",
-    "EARTHSCI-101",
-]);
 
 const MAX_ATTEMPTS = 3;
 const COOLDOWN_SECS = 30;
@@ -1039,12 +1032,14 @@ function closeJoinClassModal() {
     }, 300);
 }
 
+let lookupDebounceTimer = null;
+let lookupRequestSeq = 0;
+
 if (classCodeInput) {
     classCodeInput.addEventListener("input", () => {
         if (lockedUntil && Date.now() < lockedUntil) return;
 
         const raw = classCodeInput.value.trim().toUpperCase();
-        const data = CLASS_REGISTRY[raw];
 
         classCodeInput.classList.remove("error");
         if (jcError) jcError.classList.add("hidden");
@@ -1052,22 +1047,11 @@ if (classCodeInput) {
         resolvedClass = null;
         if (joinClassConfirmBtn) joinClassConfirmBtn.disabled = true;
 
+        clearTimeout(lookupDebounceTimer);
         if (!raw) return;
 
-        if (data) {
-            if (enrolledClasses.has(raw)) {
-                showJcError("You are already enrolled in this class.");
-                return;
-            }
-
-            resolvedClass = { code: raw, ...data };
-            if (jcPreviewDot) jcPreviewDot.style.backgroundColor = data.color;
-            if (jcPreviewName) jcPreviewName.textContent = data.name;
-            if (jcPreviewTeacher)
-                jcPreviewTeacher.textContent = "Teacher: " + data.teacher;
-            if (jcPreview) jcPreview.classList.remove("hidden");
-            if (joinClassConfirmBtn) joinClassConfirmBtn.disabled = false;
-        }
+        const seq = ++lookupRequestSeq;
+        lookupDebounceTimer = setTimeout(() => lookupClassCode(raw, seq), 350);
     });
 
     classCodeInput.addEventListener("keydown", (e) => {
@@ -1080,6 +1064,45 @@ if (classCodeInput) {
     });
 }
 
+async function lookupClassCode(code, seq) {
+    try {
+        const res = await fetch(
+            `/student/classes/lookup/${encodeURIComponent(code)}`,
+            { credentials: "same-origin", headers: { Accept: "application/json" } },
+        );
+
+        // A newer keystroke already started a fresher lookup, or the field
+        // changed since this one began — ignore this now-stale response.
+        if (seq !== lookupRequestSeq) return;
+        if (!classCodeInput || classCodeInput.value.trim().toUpperCase() !== code)
+            return;
+
+        if (!res.ok) return; // not found — no preview, submit will report it properly
+
+        const data = await res.json();
+
+        if (enrolledClassesCache.some((c) => c.id === data.id)) {
+            showJcError("You are already enrolled in this class.");
+            return;
+        }
+
+        resolvedClass = { code, ...data };
+        const dotClass =
+            STUDENT_CLASS_DOT_COLORS[data.id % STUDENT_CLASS_DOT_COLORS.length];
+        if (jcPreviewDot)
+            jcPreviewDot.style.backgroundColor = CLASS_DOT_HEX[dotClass];
+        if (jcPreviewName) jcPreviewName.textContent = data.name;
+        if (jcPreviewTeacher)
+            jcPreviewTeacher.textContent =
+                "Teacher: " + (data.professor?.name || "—");
+        if (jcPreview) jcPreview.classList.remove("hidden");
+        if (joinClassConfirmBtn) joinClassConfirmBtn.disabled = false;
+    } catch (e) {
+        // Network hiccup — leave the field as-is, confirmJoinClass() below
+        // will surface a real error if the professor tries to submit anyway.
+    }
+}
+
 function showJcError(msg) {
     if (!classCodeInput || !jcError || !joinClassConfirmBtn) return;
     classCodeInput.classList.add("error");
@@ -1089,7 +1112,7 @@ function showJcError(msg) {
     resolvedClass = null;
 }
 
-function confirmJoinClass() {
+async function confirmJoinClass() {
     if (!classCodeInput) return;
     const raw = classCodeInput.value.trim().toUpperCase();
 
@@ -1098,68 +1121,109 @@ function confirmJoinClass() {
         return;
     }
 
-    if (!CLASS_REGISTRY[raw]) {
-        failedAttempts++;
-        updateAttemptDots();
-        if (failedAttempts >= MAX_ATTEMPTS) {
-            startLockout();
+    try {
+        const res = await fetch("/student/classes/join", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify({ code: raw }),
+        });
+
+        if (res.status === 404) {
+            failedAttempts++;
+            updateAttemptDots();
+            if (failedAttempts >= MAX_ATTEMPTS) {
+                startLockout();
+                return;
+            }
+            const rem = MAX_ATTEMPTS - failedAttempts;
+            showJcError(
+                "Class code not found. " +
+                    rem +
+                    " attempt" +
+                    (rem === 1 ? "" : "s") +
+                    " remaining.",
+            );
             return;
         }
-        const rem = MAX_ATTEMPTS - failedAttempts;
-        showJcError(
-            "Class code not found. " +
-                rem +
-                " attempt" +
-                (rem === 1 ? "" : "s") +
-                " remaining.",
-        );
-        return;
-    }
 
-    if (enrolledClasses.has(raw)) {
-        showJcError("You are already enrolled in this class.");
-        return;
-    }
-    if (!resolvedClass) return;
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            showJcError(body.message || "Something went wrong. Please try again.");
+            return;
+        }
 
-    enrolledClasses.add(raw);
-    addClassToSidebar(resolvedClass);
-    closeJoinClassModal();
-    showToast("Successfully joined " + resolvedClass.name + "!");
+        const joined = await res.json();
+        await loadEnrolledClasses();
+        closeJoinClassModal();
+        showToast("Successfully joined " + joined.name + "!");
+
+        // Make the newly joined class immediately visible, same as before.
+        if (sidebar) {
+            sidebar.classList.remove("collapsed");
+            localStorage.setItem("sidebarState", "expanded");
+        }
+        openEnrolledDropdown();
+    } catch (e) {
+        showJcError("Network error — please try again.");
+    }
 }
 
-function addClassToSidebar(cls) {
-    if (!dropdown || !sidebar) return;
+/* "Enrolled" sidebar dropdown — fetched from the database, not hardcoded */
+async function loadEnrolledClasses() {
+    if (!dropdown) return;
 
-    const newLink = document.createElement("a");
-    newLink.href = cls.href;
-    newLink.id = "nav-" + cls.code.toLowerCase().replace(/[^a-z0-9]/g, "-");
-    newLink.className = "sidebar-link sub-link";
-    newLink.dataset.parent = "Enrolled";
-    newLink.dataset.child = cls.name;
-    newLink.innerHTML = `
-        <span class="dot" style="background-color:${cls.color}"></span>
-        <span class="sidebar-text">${cls.name}</span>
-    `;
-    newLink.addEventListener("click", closeMobileSidebar);
-
-    // I-enable din ang preloading transition para sa bagong tab na idinagdag
-    attachPageTransition(newLink);
-
-    dropdown.appendChild(newLink);
-
-    // I-expand ang sidebar at i-save ang state
-    sidebar.classList.remove("collapsed");
-    localStorage.setItem("sidebarState", "expanded");
-
-    if (!dropdown.classList.contains("open")) {
-        openEnrolledDropdown();
-    } else {
-        // FIX: also defer the height recalc here for consistency
-        requestAnimationFrame(() => {
-            dropdown.style.maxHeight = dropdown.scrollHeight + "px";
+    try {
+        const res = await fetch("/student/classes", {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
         });
+        if (!res.ok) throw new Error("failed to load enrolled classes");
+
+        enrolledClassesCache = await res.json();
+        renderEnrolledDropdown();
+        syncActiveLinkFromIframe();
+    } catch (e) {
+        // Leave the dropdown showing its empty state; the student can retry
+        // by revisiting the page.
     }
+}
+
+function renderEnrolledDropdown() {
+    if (!dropdown) return;
+
+    if (!enrolledClassesCache.length) {
+        dropdown.innerHTML =
+            '<p class="courses-dropdown-empty">No classes yet</p>';
+        return;
+    }
+
+    dropdown.innerHTML = enrolledClassesCache
+        .map((cls, index) => {
+            const dotClass =
+                STUDENT_CLASS_DOT_COLORS[index % STUDENT_CLASS_DOT_COLORS.length];
+            const name = escapeHtmlForNavbar(cls.name);
+            return `
+                <a href="../../pages/student/enrolled-class.html?id=${cls.id}"
+                   id="nav-enrolled-${cls.id}"
+                   class="sidebar-link sub-link"
+                   data-parent="Enrolled"
+                   data-child="${name}">
+                    <span class="dot ${dotClass}"></span>
+                    <span class="sidebar-text">${name}</span>
+                </a>
+            `;
+        })
+        .join("");
+
+    dropdown.querySelectorAll("a.sidebar-link").forEach((link) => {
+        link.addEventListener("click", closeMobileSidebar);
+        attachPageTransition(link);
+    });
 }
 
 /* NOTIFICATION DRAWER */

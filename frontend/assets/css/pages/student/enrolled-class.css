@@ -1,0 +1,223 @@
+/* MAIN CONTENT AREA */
+#mainContent {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 28px 32px;
+    background-color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: unset;
+    justify-content: unset;
+    transition: background-color 0.3s;
+}
+
+body.dark #mainContent {
+    background-color: #0f172a;
+}
+
+.classroom-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* CLASS NOT FOUND / NOT ENROLLED STATE */
+.class-not-found {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+    padding: 80px 24px;
+    color: #64748b;
+}
+
+.class-not-found i {
+    font-size: 2.5rem;
+    color: #f59e0b;
+    margin-bottom: 6px;
+}
+
+.class-not-found h1 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+body.dark .class-not-found h1 {
+    color: #f1f5f9;
+}
+
+body.dark .class-not-found {
+    color: #94a3b8;
+}
+
+.class-not-found .hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    background-color: #1e293b;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+}
+
+.class-not-found .hero-btn:hover {
+    background-color: #0f172a;
+}
+
+/* CLASS HEADER BANNER */
+.class-banner {
+    border-radius: 20px;
+    padding: 36px 40px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.class-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    max-width: min(560px, 65%);
+    min-width: 0;
+    flex-shrink: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.class-banner-subject {
+    font-size: clamp(1.25rem, 2.8vw, 1.75rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.class-banner-section {
+    font-size: clamp(0.75rem, 1.3vw, 0.875rem);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 16px;
+}
+
+.class-banner-teacher {
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+    font-weight: 700;
+    color: #fff;
+}
+
+.class-banner-role {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+.class-banner-icon {
+    font-size: clamp(4rem, 8vw, 7rem);
+    color: rgba(255, 255, 255, 0.18);
+    flex-shrink: 0;
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
+}
+
+/* ENROLLED STATUS CARD */
+.enrolled-status-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background-color: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+body.dark .enrolled-status-card {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+.enrolled-status-card > i {
+    font-size: 1.5rem;
+    color: #16a34a;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+body.dark .enrolled-status-card > i {
+    color: #4ade80;
+}
+
+.enrolled-status-text h2 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px;
+}
+
+body.dark .enrolled-status-text h2 {
+    color: #f1f5f9;
+}
+
+.enrolled-status-text p {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.6;
+}
+
+body.dark .enrolled-status-text p {
+    color: #94a3b8;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    #mainContent {
+        padding: 20px 16px;
+    }
+
+    .class-banner {
+        padding: 26px 22px;
+        min-height: unset;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .class-banner-text {
+        max-width: 100%;
+    }
+
+    .class-banner-icon {
+        display: none;
+    }
+
+    .enrolled-status-card {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

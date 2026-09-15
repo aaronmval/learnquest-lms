@@ -1,6 +1,7 @@
 /* CLASS_INFO is no longer hardcoded — it's populated from the database by
    loadClassInfo() below, based on the ?id= query param. */
 let CLASS_INFO = null;
+let CLASS_ID = null;
 
 const CLASS_GRADIENT_PALETTE = [
     "linear-gradient(135deg, #06b6d4, #0891b2)",
@@ -10,61 +11,27 @@ const CLASS_GRADIENT_PALETTE = [
     "linear-gradient(135deg, #fbbf24, #d97706)",
 ];
 
-/* Seed data — same starting mock posts as before, editable but not persisted.
-   Populated once CLASS_INFO is available (see buildInitialPosts()). */
+/* Posts — fetched from the database (GET /professor/classes/{id}/posts),
+   mapped into the shape the existing render functions expect. */
 let classPosts = [];
-
-let nextPostId = 4;
-
-function buildInitialPosts(teacher) {
-    return [
-        {
-            id: 1,
-            type: "announcement",
-            quarter: "1st Quarter",
-            author: teacher,
-            date: "Jan 5, 2026",
-            title: "Announcement: June 11, 2026",
-            body: "Please be informed that we will have the following:",
-            checklist: ["Quiz 1 – Module 6 (30 Items)"],
-            edited: false,
-        },
-        {
-            id: 2,
-            type: "lesson",
-            quarter: "1st Quarter",
-            author: teacher,
-            date: "Jan 5, 2026",
-            title: "Material for this Week 2",
-            body: "",
-            attachment: { name: "Lesson 1.pdf", url: "#" },
-            edited: false,
-        },
-        {
-            id: 3,
-            type: "lesson",
-            quarter: "1st Quarter",
-            author: teacher,
-            date: "Jan 12, 2026",
-            title: "Material for Week 3",
-            body: "",
-            attachment: { name: "Lesson 2.pdf", url: "#" },
-            edited: false,
-        },
-    ];
-}
 
 /* Composer state — tracks whether we're creating or editing, and which post */
 let composerMode = "create"; // 'create' | 'edit'
 let composerEditingId = null;
 let composerType = "announcement"; // 'announcement' | 'lesson'
-let composerPickedFileName = null;
+let composerPickedFileName = null; // display label only
+let composerPickedFile = null; // the real File object to upload, if any was newly chosen
 
 /* Which post's kebab menu is currently open (for outside-click closing) */
 let openKebabPostId = null;
 
 /* Pending delete target */
 let pendingDeleteId = null;
+
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : "";
+}
 
 /* LOAD — fetch the real class from the database, keyed by ?id= */
 async function loadClassInfo() {
@@ -88,6 +55,7 @@ async function loadClassInfo() {
 
         const data = await res.json();
         const teacher = data.professor?.name || "Your class";
+        CLASS_ID = data.id;
 
         CLASS_INFO = {
             subject: (data.subject || data.name || "").toUpperCase(),
@@ -95,13 +63,14 @@ async function loadClassInfo() {
             teacher,
             teacherInitials: initialsFor(teacher),
             gradient: CLASS_GRADIENT_PALETTE[data.id % CLASS_GRADIENT_PALETTE.length],
+            code: data.code || "",
+            studentsCount: typeof data.students_count === "number" ? data.students_count : 0,
         };
 
-        classPosts = buildInitialPosts(teacher);
-
         renderClassBanner();
-        renderFeed();
-        renderClassSnapshot();
+        renderInviteCode();
+
+        await loadPosts();
     } catch (e) {
         showClassNotFound();
     }
@@ -135,12 +104,21 @@ function renderClassBanner() {
         CLASS_INFO.teacher;
 }
 
+/* RENDER — invite code card */
+function renderInviteCode() {
+    const codeEl = document.getElementById("inviteCodeValue");
+    if (!codeEl || !CLASS_INFO) return;
+    codeEl.textContent = CLASS_INFO.code || "—";
+}
+
 /* RENDER — class snapshot side panel */
 function renderClassSnapshot() {
+    const studentsEl = document.getElementById("snapshotStudents");
     const postsEl = document.getElementById("snapshotPosts");
     const lastActivityEl = document.getElementById("snapshotLastActivity");
-    if (!postsEl || !lastActivityEl) return;
+    if (!studentsEl || !postsEl || !lastActivityEl) return;
 
+    studentsEl.textContent = CLASS_INFO ? CLASS_INFO.studentsCount : 0;
     postsEl.textContent = classPosts.length;
 
     if (classPosts.length) {
@@ -149,6 +127,55 @@ function renderClassSnapshot() {
     } else {
         lastActivityEl.textContent = "—";
     }
+}
+
+/* POSTS — fetch from the database and map into the feed's expected shape */
+function formatPostDate(isoString) {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+function mapServerPost(post) {
+    return {
+        id: post.id,
+        type: post.type,
+        quarter: post.quarter,
+        author: CLASS_INFO ? CLASS_INFO.teacher : "",
+        date: formatPostDate(post.created_at),
+        title: post.title,
+        body: post.body || "",
+        checklist: Array.isArray(post.checklist) ? post.checklist : [],
+        attachment: post.attachment_path
+            ? { name: post.attachment_name || "Attachment.pdf", postId: post.id }
+            : null,
+        edited: !!post.edited,
+    };
+}
+
+async function loadPosts() {
+    if (!CLASS_ID) return;
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/posts`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error("failed to load posts");
+
+        const data = await res.json();
+        classPosts = data.map(mapServerPost);
+    } catch (e) {
+        classPosts = [];
+        showToast("Could not load posts. Please refresh the page.");
+    }
+
+    renderFeed();
 }
 
 /* RENDER — feed */
@@ -173,13 +200,13 @@ function renderFeed() {
     feed.querySelectorAll(".post-attachment").forEach((att) => {
         att.addEventListener("click", (e) => {
             e.stopPropagation();
-            openPdfModal(att.dataset.filename, att.dataset.url);
+            openPdfModal(att.dataset.filename, att.dataset.postId);
         });
         att.addEventListener("keydown", (e) => {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 e.stopPropagation();
-                openPdfModal(att.dataset.filename, att.dataset.url);
+                openPdfModal(att.dataset.filename, att.dataset.postId);
             }
         });
     });
@@ -225,11 +252,7 @@ function buildPostCard(post) {
         ? "badge-quarter-green"
         : "badge-quarter-orange";
 
-    const authorPhotoHtml = CLASS_INFO.teacherPhoto
-        ? `<img class="post-author-photo" src="${CLASS_INFO.teacherPhoto}" alt="${escapeHtml(post.author)}"
-                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-           <div class="post-author-initials" style="display:none;">${CLASS_INFO.teacherInitials}</div>`
-        : `<div class="post-author-initials">${CLASS_INFO.teacherInitials}</div>`;
+    const authorPhotoHtml = `<div class="post-author-initials">${CLASS_INFO.teacherInitials}</div>`;
 
     let bodyHtml = "";
     if (post.body)
@@ -255,7 +278,7 @@ function buildPostCard(post) {
                  tabindex="0"
                  aria-label="Open ${escapeHtml(post.attachment.name)}"
                  data-filename="${escapeHtml(post.attachment.name)}"
-                 data-url="${escapeHtml(post.attachment.url || "#")}">
+                 data-post-id="${post.attachment.postId}">
                 <span class="pdf-icon">PDF</span>
                 <span class="attachment-name">${escapeHtml(post.attachment.name)}</span>
             </div>`;
@@ -332,8 +355,8 @@ function closeAllKebabMenus() {
     openKebabPostId = null;
 }
 
-/* PDF MODAL (read-only preview, same behavior as student view) */
-function openPdfModal(filename, url) {
+/* PDF MODAL — real attachment, served by ClassPostController::attachment() */
+function openPdfModal(filename, postId) {
     const modal = document.getElementById("pdfModal");
     const title = document.getElementById("pdfModalTitle");
     const viewer = document.getElementById("pdfModalViewer");
@@ -344,13 +367,14 @@ function openPdfModal(filename, url) {
 
     title.textContent = filename;
 
-    const isReal = url && url !== "#";
+    const isReal = postId != null && CLASS_ID != null;
 
     if (isReal) {
-        viewer.src = url;
+        const viewUrl = `/professor/classes/${CLASS_ID}/posts/${postId}/attachment`;
+        viewer.src = viewUrl;
         viewer.style.display = "block";
         placeholder.style.display = "none";
-        dlBtn.href = url;
+        dlBtn.href = `${viewUrl}?download=1`;
         dlBtn.download = filename;
         dlBtn.style.display = "flex";
     } else {
@@ -384,6 +408,7 @@ function openComposerForCreate() {
     composerEditingId = null;
     composerType = "announcement";
     composerPickedFileName = null;
+    composerPickedFile = null;
 
     document.getElementById("pcModalTitle").textContent = "Create post";
     document.getElementById("pcSaveBtnLabel").textContent = "Post";
@@ -409,6 +434,7 @@ function openComposerForEdit(postId) {
     composerEditingId = post.id;
     composerType = post.type;
     composerPickedFileName = post.attachment ? post.attachment.name : null;
+    composerPickedFile = null; // no new file chosen yet — keep existing attachment unless replaced
 
     document.getElementById("pcModalTitle").textContent = "Edit post";
     document.getElementById("pcSaveBtnLabel").textContent = "Save changes";
@@ -476,15 +502,9 @@ function hideFieldError(errorId, inputId) {
     document.getElementById(inputId)?.classList.remove("pc-input-error");
 }
 
-function todayFormatted() {
-    return new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-}
+async function saveComposerPost() {
+    if (!CLASS_ID) return;
 
-function saveComposerPost() {
     const titleInput = document.getElementById("pcTitle");
     const title = titleInput.value.trim();
 
@@ -504,47 +524,48 @@ function saveComposerPost() {
         .map((s) => s.trim())
         .filter(Boolean);
 
-    let attachment = null;
-    if (composerType === "lesson" && composerPickedFileName) {
-        attachment = { name: composerPickedFileName, url: "#" };
+    const formData = new FormData();
+    formData.append("type", composerType);
+    formData.append("quarter", quarter);
+    formData.append("title", title);
+    formData.append("body", body);
+    if (composerType === "announcement") {
+        checklist.forEach((item) => formData.append("checklist[]", item));
+    }
+    if (composerPickedFile) {
+        formData.append("attachment", composerPickedFile);
     }
 
-    if (composerMode === "create") {
-        const newPost = {
-            id: nextPostId++,
-            type: composerType,
-            quarter,
-            author: CLASS_INFO.teacher,
-            date: todayFormatted(),
-            title,
-            body,
-            edited: false,
-        };
-        if (composerType === "announcement") newPost.checklist = checklist;
-        if (composerType === "lesson") newPost.attachment = attachment;
+    const isEdit = composerMode === "edit";
+    const url = isEdit
+        ? `/professor/classes/${CLASS_ID}/posts/${composerEditingId}`
+        : `/professor/classes/${CLASS_ID}/posts`;
+    if (isEdit) formData.append("_method", "PUT");
 
-        classPosts.push(newPost);
-        showToast("Post published to your class");
-    } else {
-        const post = classPosts.find((p) => p.id === composerEditingId);
-        if (!post) return;
+    const saveBtn = document.getElementById("pcSaveBtn");
+    if (saveBtn) saveBtn.disabled = true;
 
-        post.title = title;
-        post.quarter = quarter;
-        post.body = body;
-        post.edited = true;
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+            body: formData,
+        });
 
-        if (post.type === "announcement") {
-            post.checklist = checklist;
-        } else if (post.type === "lesson") {
-            post.attachment = attachment || post.attachment;
-        }
+        if (!res.ok) throw new Error("failed to save post");
 
-        showToast("Post updated");
+        await loadPosts();
+        showToast(isEdit ? "Post updated" : "Post published to your class");
+        closeComposerModal();
+    } catch (e) {
+        showToast("Could not save the post. Please try again.");
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
     }
-
-    closeComposerModal();
-    renderFeed();
 }
 
 /* DELETE POST*/
@@ -567,14 +588,81 @@ function closeDeleteModal() {
     pendingDeleteId = null;
 }
 
-function confirmDeletePost() {
-    if (pendingDeleteId === null) return;
+async function confirmDeletePost() {
+    if (pendingDeleteId === null || !CLASS_ID) return;
 
-    classPosts = classPosts.filter((p) => p.id !== pendingDeleteId);
-    showToast("Post deleted");
-
+    const postId = pendingDeleteId;
     closeDeleteModal();
-    renderFeed();
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/posts/${postId}`, {
+            method: "DELETE",
+            credentials: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+        });
+
+        if (!res.ok) throw new Error("failed to delete post");
+
+        await loadPosts();
+        showToast("Post deleted");
+    } catch (e) {
+        showToast("Could not delete the post. Please try again.");
+    }
+}
+
+/* INVITE CODE — copy & regenerate */
+async function copyInviteCode() {
+    if (!CLASS_INFO || !CLASS_INFO.code) return;
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(CLASS_INFO.code);
+        } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = CLASS_INFO.code;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            textarea.remove();
+        }
+        showToast("Invite code copied!");
+    } catch (e) {
+        showToast("Could not copy the code — please copy it manually.");
+    }
+}
+
+async function regenerateInviteCode() {
+    if (!CLASS_ID) return;
+
+    const btn = document.getElementById("regenerateCodeBtn");
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/regenerate-code`, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+        });
+
+        if (!res.ok) throw new Error("failed to regenerate code");
+
+        const data = await res.json();
+        CLASS_INFO.code = data.code;
+        renderInviteCode();
+        showToast("New invite code generated — the old one no longer works.");
+    } catch (e) {
+        showToast("Could not generate a new code. Please try again.");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
 }
 
 /* TOAST helper (mirrors navigation.js showToast if present, with a safe fallback) */
@@ -604,11 +692,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* The header's "Create Class" button belongs to the shared shell, not
        this page. The side-panel quick post button opens the announcement/
-       lesson composer below (still page-local mock data, unrelated to the
-       class record itself). */
+       lesson composer below, now backed by the database. */
     const quickPostBtn = document.getElementById("quickPostBtn");
     if (quickPostBtn)
         quickPostBtn.addEventListener("click", openComposerForCreate);
+
+    /* Invite code card */
+    document
+        .getElementById("copyInviteCodeBtn")
+        ?.addEventListener("click", copyInviteCode);
+    document
+        .getElementById("regenerateCodeBtn")
+        ?.addEventListener("click", regenerateInviteCode);
 
     /* Composer type toggle */
     document
@@ -642,9 +737,11 @@ document.addEventListener("DOMContentLoaded", () => {
         pcFilePickBtn.addEventListener("click", () => pcFileInput.click());
         pcFileInput.addEventListener("change", () => {
             const file = pcFileInput.files && pcFileInput.files[0];
-            composerPickedFileName = file ? file.name : composerPickedFileName;
-            document.getElementById("pcFileName").textContent =
-                composerPickedFileName || "No file chosen";
+            if (file) {
+                composerPickedFile = file;
+                composerPickedFileName = file.name;
+                document.getElementById("pcFileName").textContent = file.name;
+            }
         });
     }
 

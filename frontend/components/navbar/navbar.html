@@ -130,43 +130,7 @@
                         <i id="chevron-icon" class="fas fa-chevron-down"></i>
                     </button>
                     <div id="courses-dropdown-container" class="courses-dropdown">
-
-                        <a href="../../pages/student/enrolled-chemistry.html"
-                           id="nav-chemistry"
-                           class="sidebar-link sub-link"
-                           data-parent="Enrolled"
-                           data-child="Chemistry">
-                            <span class="dot dot-blue"></span>
-                            <span class="sidebar-text">Chemistry</span>
-                        </a>
-
-                        <a href="../../pages/student/enrolled-generalbiology.html"
-                           id="nav-generalbiology"
-                           class="sidebar-link sub-link"
-                           data-parent="Enrolled"
-                           data-child="General Biology">
-                            <span class="dot dot-orange"></span>
-                            <span class="sidebar-text">General Biology</span>
-                        </a>
-
-                        <a href="../../pages/student/enrolled-physics.html"
-                           id="nav-physics"
-                           class="sidebar-link sub-link"
-                           data-parent="Enrolled"
-                           data-child="Physics">
-                            <span class="dot dot-purple"></span>
-                            <span class="sidebar-text">Physics</span>
-                        </a>
-
-                        <a href="../../pages/student/enrolled-earthscience.html"
-                           id="nav-earthscience"
-                           class="sidebar-link sub-link"
-                           data-parent="Enrolled"
-                           data-child="Earth Science">
-                            <span class="dot dot-green"></span>
-                            <span class="sidebar-text">Earth Science</span>
-                        </a>
-
+                        <!-- Populated dynamically by navbar.js's renderEnrolledDropdown() -->
                     </div>
                 </div>
 
@@ -314,13 +278,13 @@
 
             <div class="jc-format-hint" id="jcFormatHint">
                 <i class="fas fa-info-circle"></i>
-                <p>Codes follow the format <strong>SUBJECT-NUMBER</strong> — always with a dash (e.g. <strong>BIO-2025</strong> or <strong>CHEM-101</strong>).</p>
+                <p>Codes follow the format <strong>SUBJECT-XXXXXX</strong> — always with a dash (e.g. <strong>BIOL-7F2AK9</strong> or <strong>CHEM-8RFDPC</strong>).</p>
             </div>
 
             <div class="jc-input-wrap" id="jcInputWrap">
                 <label class="jc-label" for="classCodeInput">Class Code</label>
                 <input id="classCodeInput" class="jc-input" type="text"
-                       placeholder="e.g. BIO-2025" maxlength="20"
+                       placeholder="e.g. CHEM-8RFDPC" maxlength="20"
                        autocomplete="off" spellcheck="false" />
                 <div class="jc-attempt-bar" id="jcAttemptBar">
                     <span class="jc-attempt-dot" id="jcDot1"></span>

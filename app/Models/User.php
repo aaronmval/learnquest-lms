@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -55,5 +56,14 @@ class User extends Authenticatable
     public function classes(): HasMany
     {
         return $this->hasMany(ClassRoom::class, 'professor_id');
+    }
+
+    /**
+     * The classes this user is enrolled in (student role).
+     */
+    public function enrolledClasses(): BelongsToMany
+    {
+        return $this->belongsToMany(ClassRoom::class, 'class_enrollments', 'student_id', 'class_id')
+            ->withTimestamps();
     }
 }

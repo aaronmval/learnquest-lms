@@ -135,6 +135,32 @@ body.dark .enrolled-subtitle { color: #94a3b8; }
     gap: 20px;
 }
 
+.class-grid-empty,
+.class-grid-error {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 32px 20px;
+    border-radius: 16px;
+    border: 1.5px dashed #e2e8f0;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.class-grid-error {
+    color: #dc2626;
+}
+
+body.dark .class-grid-empty,
+body.dark .class-grid-error {
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+body.dark .class-grid-error {
+    color: #f87171;
+}
+
 .class-card {
     background-color: #fff;
     border-radius: 16px;

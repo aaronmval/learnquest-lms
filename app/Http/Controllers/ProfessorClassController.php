@@ -39,6 +39,19 @@ class ProfessorClassController extends Controller
         abort_unless($class->professor_id === $request->user()->id, 404);
 
         $class->load('professor:id,name');
+        $class->loadCount('students');
+
+        return response()->json($class);
+    }
+
+    /**
+     * Replace a class's invite code with a freshly generated one.
+     */
+    public function regenerateCode(Request $request, ClassRoom $class): JsonResponse
+    {
+        abort_unless($class->professor_id === $request->user()->id, 404);
+
+        $class->regenerateCode();
 
         return response()->json($class);
     }
