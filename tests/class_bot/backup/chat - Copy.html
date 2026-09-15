@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy AI - Your Learning Companion</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+            --gray: #95a5a6;
+            --border: #e9ecef;
+            --creative: #f093fb;
+            --creative-dark: #f5576c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+            display: flex;
+            height: 90vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: var(--dark);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .sidebar-header h2 {
+            color: var(--light);
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-tabs {
+            display: flex;
+            background: #34495e;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #34495e;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--secondary);
+            background: rgba(52, 152, 219, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .file-upload-area i {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+            color: var(--secondary);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: #34495e;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            border-left: 4px solid var(--secondary);
+            display: none;
+        }
+
+        .file-info .file-name {
+            font-weight: bold;
+            color: var(--secondary);
+        }
+
+        .file-info .file-size {
+            color: var(--gray);
+            font-size: 0.85em;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3);
+        }
+
+        .action-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        .action-btn i {
+            font-size: 1.2em;
+        }
+
+        .quiz-status {
+            background: linear-gradient(135deg, var(--success) 0%, #2ecc71 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+            animation: pulse 2s infinite;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+        }
+
+        /* Creative Tools Tab */
+        .creative-tools {
+            background: linear-gradient(135deg, var(--creative) 0%, var(--creative-dark) 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .creative-tools h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .creative-tools p {
+            opacity: 0.9;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            color: var(--light);
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group label i {
+            color: var(--secondary);
+            font-size: 18px;
+        }
+
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            background: #34495e;
+            border: 2px solid #2c3e50;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        .code-preview {
+            background: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .code-header {
+            background: #2d2d2d;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-family: monospace;
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .code-actions button {
+            padding: 6px 12px;
+            background: #444;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .code-actions button:hover {
+            background: var(--secondary);
+        }
+
+        .code-content {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .code-content pre {
+            margin: 0;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--light);
+            position: relative;
+        }
+
+        .chat-header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .chat-header h1 {
+            color: var(--dark);
+            font-size: 1.6em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-header .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--gray);
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .messages {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 18px;
+            border-radius: 18px;
+            line-height: 1.6;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: white;
+            color: #333;
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 5px;
+        }
+
+        .ai-message h3 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-message h3 i {
+            font-size: 0.9em;
+        }
+
+        .ai-message ul, .ai-message ol {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+
+        .ai-message li {
+            margin-bottom: 8px;
+        }
+
+        .ai-message code {
+            background: #f1f1f1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--danger);
+        }
+
+        .ai-message pre {
+            background: #1a1a1a;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .quiz-instructions {
+            background: #e8f4fd;
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+
+        .message-time {
+            font-size: 0.75em;
+            color: var(--gray);
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .input-area {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid var(--border);
+            border-radius: 30px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        #userInput:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #sendBtn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #sendBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        #sendBtn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 18px;
+            border-bottom-left-radius: 5px;
+            color: var(--gray);
+            font-style: italic;
+            margin: 0 25px 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            gap: 3px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--gray);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            padding: 8px 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            border-radius: 20px;
+            color: var(--secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(52, 152, 219, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Subject Quick Actions */
+        .subject-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .subject-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .subject-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .subject-btn i {
+            font-size: 1.5em;
+            color: var(--secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                height: 95vh;
+            }
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+            }
+            .message {
+                max-width: 85%;
+            }
+            .subject-actions {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .chat-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            .input-area {
+                padding: 15px;
+            }
+            #sendBtn span {
+                display: none;
+            }
+            #sendBtn {
+                padding: 15px 20px;
+            }
+            .subject-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-message h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .welcome-message p {
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        /* Learning Tips */
+        .learning-tips {
+            background: #e8f4fd;
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+
+        .learning-tips h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Enhanced Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-heart"></i> StudyBuddy AI</h2>
+                <button class="action-btn" onclick="toggleSidebar()" style="padding: 8px 12px;">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <div class="toggle-tabs">
+                <button class="tab-btn active" onclick="switchTab('documents')">
+                    <i class="fas fa-book"></i> Study
+                </button>
+                <button class="tab-btn" onclick="switchTab('creative')">
+                    <i class="fas fa-palette"></i> Create
+                </button>
+            </div>
+
+            <!-- Documents Tab -->
+            <div class="tab-content active" id="documents-tab">
+                <div class="welcome-message">
+                    <h3><i class="fas fa-graduation-cap"></i> Learning Tools</h3>
+                    <p>Upload study materials or explore any subject you're curious about!</p>
+                </div>
+                
+                <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Upload Study Materials</h3>
+                    <p>Drag & drop or click to browse</p>
+                    <small>Supports: PDF, DOCX, PPTX, TXT</small>
+                </div>
+                
+                <input type="file" id="fileInput" accept=".pdf,.docx,.pptx,.txt" multiple>
+                
+                <div class="file-info" id="fileInfo">
+                    <div class="file-name" id="fileName"></div>
+                    <div class="file-size" id="fileSize"></div>
+                </div>
+
+                <div class="quiz-status" id="quizStatus">
+                    <i class="fas fa-trophy"></i> Active Quiz - Learning in Progress!
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="quickAction('summarize')" id="summarizeBtn" disabled>
+                        <i class="fas fa-file-contract"></i> Summarize
+                    </button>
+                    <button class="action-btn" onclick="quickAction('quiz')" id="quizBtn" disabled>
+                        <i class="fas fa-question-circle"></i> Create Quiz
+                    </button>
+                    <button class="action-btn" onclick="quickAction('explain')" id="explainBtn" disabled>
+                        <i class="fas fa-lightbulb"></i> Explain
+                    </button>
+                    <button class="action-btn" onclick="clearChat()" id="clearBtn">
+                        <i class="fas fa-broom"></i> Fresh Start
+                    </button>
+                </div>
+
+                <div class="subject-actions">
+                    <div class="subject-btn" onclick="quickChat('Explain the basics of photosynthesis')">
+                        <i class="fas fa-seedling"></i>
+                        <span>Science</span>
+                    </div>
+                    <div class="subject-btn" onclick="quickChat('Tell me about the Renaissance period')">
+                        <i class="fas fa-landmark"></i>
+                        <span>History</span>
+                    </div>
+                    <div class="subject-btn" onclick="quickChat('Explain algebra basics')">
+                        <i class="fas fa-calculator"></i>
+                        <span>Math</span>
+                    </div>
+                    <div class="subject-btn" onclick="quickChat('Discuss symbolism in literature')">
+                        <i class="fas fa-book-open"></i>
+                        <span>Literature</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Creative Tools Tab -->
+            <div class="tab-content" id="creative-tab">
+                <div class="creative-tools">
+                    <h3><i class="fas fa-magic"></i> Creative Studio</h3>
+                    <p>Generate code, creative writing, or any digital content. Perfect for everyone!</p>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-palette"></i> Creative Format</label>
+                    <select id="creativeFormat">
+                        <option value="python">Python Script</option>
+                        <option value="html">HTML/CSS Webpage</option>
+                        <option value="javascript">JavaScript Application</option>
+                        <option value="text">Creative Writing</option>
+                        <option value="markdown">Documentation</option>
+                        <option value="json">Data Structure</option>
+                        <option value="sql">Database Query</option>
+                        <option value="java">Java Program</option>
+                        <option value="cpp">C++ Application</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-layer-group"></i> Complexity Level</label>
+                    <select id="creativeComplexity">
+                        <option value="beginner">Beginner Friendly</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                        <option value="creative">Creative/Artistic</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lightbulb"></i> What would you like to create?</label>
+                    <textarea id="creativeRequirements" placeholder="Describe what you'd like to generate. Be creative! Example: 'A poem about learning' or 'A simple webpage for a bookstore'"></textarea>
+                </div>
+
+                <button class="action-btn" onclick="generateCreative()" id="generateCreativeBtn">
+                    <i class="fas fa-sparkles"></i> Create Now
+                </button>
+
+                <div class="code-preview" id="creativePreview">
+                    <div class="code-header">
+                        <span id="creativeFilename">your_creation.txt</span>
+                        <div class="code-actions">
+                            <button onclick="copyCreative()"><i class="fas fa-copy"></i> Copy</button>
+                            <button onclick="downloadCreative()"><i class="fas fa-download"></i> Download</button>
+                        </div>
+                    </div>
+                    <div class="code-content">
+                        <pre><code id="creativeOutput" class="language-text">// Your creation will appear here</code></pre>
+                    </div>
+                </div>
+
+                <div class="subject-actions" style="margin-top: 20px;">
+                    <div class="subject-btn" onclick="loadCreativeExample('A Python script that generates beautiful fractal patterns')">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>Fractal Art</span>
+                    </div>
+                    <div class="subject-btn" onclick="loadCreativeExample('An HTML/CSS page for a cozy bookstore with responsive design')">
+                        <i class="fas fa-book"></i>
+                        <span>Bookstore Site</span>
+                    </div>
+                    <div class="subject-btn" onclick="loadCreativeExample('A short motivational poem about the joy of learning')">
+                        <i class="fas fa-feather-alt"></i>
+                        <span>Learning Poem</span>
+                    </div>
+                    <div class="subject-btn" onclick="loadCreativeExample('A JavaScript interactive quiz about world history')">
+                        <i class="fas fa-globe-americas"></i>
+                        <span>History Quiz</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h1><i class="fas fa-heart"></i> StudyBuddy AI</h1>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="connectionStatus">Connected & Ready to Learn!</span>
+                </div>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="message ai-message">
+                    <h3><i class="fas fa-heart"></i> Welcome to StudyBuddy AI!</h3>
+                    <p>🌟 <strong>Your Compassionate Learning Companion</strong> 🌟</p>
+                    
+                    <p>I'm here to make learning joyful, accessible, and effective for <strong>EVERYONE</strong> - students, professionals, lifelong learners, and curious minds!</p>
+                    
+                    <div class="learning-tips">
+                        <h4><i class="fas fa-lightbulb"></i> What I Can Help With:</h4>
+                        <ul>
+                            <li><strong>📚 All Subjects:</strong> Science, History, Arts, Literature, Math, Languages</li>
+                            <li><strong>💬 Learning Support:</strong> Explanations, summaries, Q&A on any topic</li>
+                            <li><strong>🎨 Creative Tools:</strong> Generate code, writing, or digital content</li>
+                            <li><strong>📝 Study Materials:</strong> Upload documents for analysis and quizzes</li>
+                            <li><strong>💝 Emotional Support:</strong> Encouragement and motivation for your learning journey</li>
+                        </ul>
+                    </div>
+                    
+                    <p>💡 <strong>Try saying:</strong> "I want to learn about..." or "Can you help me understand..."</p>
+                    <p>🌈 <strong>Remember:</strong> Every question is a step toward growth!</p>
+                    
+                    <div class="quick-actions">
+                        <div class="quick-action-btn" onclick="quickChat('I\'m excited to learn something new today!')">
+                            <i class="fas fa-star"></i> I'm Excited!
+                        </div>
+                        <div class="quick-action-btn" onclick="quickChat('Help me understand calculus basics')">
+                            <i class="fas fa-calculator"></i> Math Help
+                        </div>
+                        <div class="quick-action-btn" onclick="quickChat('Tell me an educational joke')">
+                            <i class="fas fa-laugh"></i> Tell a Joke
+                        </div>
+                        <div class="quick-action-btn" onclick="quickChat('What can you help me learn?')">
+                            <i class="fas fa-question-circle"></i> Learning Guide
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <i class="fas fa-heart"></i> Thinking with care
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="userInput" placeholder="What would you like to learn or create today?">
+                <button id="sendBtn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script>
+        // Add Prism language components
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load additional Prism languages if needed
+            const languages = [
+                'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-html.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js'
+            ];
+            
+            languages.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src;
+                document.head.appendChild(script);
+            });
+        });
+
+        let currentFile = null;
+        let hasActiveQuiz = false;
+        let sidebarVisible = true;
+        const API_BASE = 'http://localhost:8000';
+        let generatedCreativeData = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateInputPlaceholder();
+            testConnection();
+            
+            // Auto-resize creative textarea
+            document.getElementById('creativeRequirements').addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // Auto-focus input
+            document.getElementById('userInput').focus();
+        });
+
+        // Test API connection
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                if (data.status === 'healthy') {
+                    document.getElementById('connectionStatus').textContent = 'Connected & Ready!';
+                    document.getElementById('connectionStatus').style.color = '#27ae60';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').textContent = 'Connecting...';
+                document.getElementById('connectionStatus').style.color = '#f39c12';
+                addMessage('ai', '🌱 Connecting to StudyBuddy... Please wait a moment!');
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // Toggle sidebar visibility
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebarVisible = !sidebarVisible;
+            
+            if (sidebarVisible) {
+                sidebar.style.width = '320px';
+                event.currentTarget.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            } else {
+                sidebar.style.width = '60px';
+                event.currentTarget.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+            }
+        }
+
+        // File upload handling
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                currentFile = e.target.files[0];
+                document.getElementById('fileName').textContent = currentFile.name;
+                document.getElementById('fileSize').textContent = formatFileSize(currentFile.size);
+                document.getElementById('fileInfo').style.display = 'block';
+                
+                // Enable action buttons
+                document.getElementById('summarizeBtn').disabled = false;
+                document.getElementById('quizBtn').disabled = false;
+                document.getElementById('explainBtn').disabled = false;
+
+                addMessage('user', `📄 Uploaded: ${currentFile.name}`);
+                addMessage('ai', '✅ Wonderful! I\'ve received your document. We can now explore it together or use the learning tools! 🌟');
+            }
+        });
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Update input placeholder based on quiz status
+        function updateInputPlaceholder() {
+            const input = document.getElementById('userInput');
+            if (hasActiveQuiz) {
+                input.placeholder = 'Submit quiz answers (e.g., 1. answer, 2. answer) or type commands...';
+            } else {
+                input.placeholder = 'What would you like to learn or create today?';
+            }
+        }
+
+        // Quick action buttons
+        async function quickAction(action) {
+            if (!currentFile) {
+                addMessage('ai', '📁 Please upload a document first to use this feature. Or ask me anything - I\'m here to help! 💫');
+                return;
+            }
+
+            let message = '';
+            switch(action) {
+                case 'summarize':
+                    message = 'Please summarize this document in an engaging way';
+                    break;
+                case 'quiz':
+                    message = 'Create an interactive quiz based on this document';
+                    break;
+                case 'explain':
+                    message = 'Explain the main concepts in this document';
+                    break;
+            }
+
+            addMessage('user', `🔧 ${message}`);
+            await processAction(action);
+        }
+
+        // Send message from input
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+            showTyping(true);
+
+            try {
+                const formData = new FormData();
+                let url = `${API_BASE}/chat`;
+                
+                if (currentFile && !hasActiveQuiz) {
+                    url = `${API_BASE}/module`;
+                    formData.append('module_file', currentFile);
+                    formData.append('action', 'explain');
+                    formData.append('question', message);
+                } else {
+                    formData.append('chat_message', message);
+                }
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.result) {
+                    addMessage('ai', data.result);
+                    
+                    // Update quiz status
+                    if (data.result.includes('🎯') || data.result.includes('📝')) {
+                        hasActiveQuiz = true;
+                        document.getElementById('quizStatus').style.display = 'block';
+                        updateInputPlaceholder();
+                    }
+                    
+                    if (data.result.includes('🔍 **QUIZ COMPLETE') || data.result.includes('Quiz completed')) {
+                        hasActiveQuiz = false;
+                        document.getElementById('quizStatus').style.display = 'none';
+                        updateInputPlaceholder();
+                    }
+                    
+                } else if (data.error) {
+                    addMessage('ai', `❌ Hmm, something went wrong: ${data.error}`);
+                }
+            } catch (error) {
+                addMessage('ai', `❌ Connection issue: ${error.message}. Let's try again!`);
+            } finally {
+                showTyping(false);
+            }
+        }
+
+        // Enter key to send message
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Quick chat actions
+        function quickChat(message) {
+            document.getElementById('userInput').value = message;
+            sendMessage();
+        }
+
+        // Process API actions
+        async function processAction(action, question = '') {
+            showTyping(true);
+
+            const formData = new FormData();
+            formData.append('module_file', currentFile);
+            formData.append('action', action);
+            if (question) {
+                formData.append('question', question);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/module`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.result) {
+                    addMessage('ai', data.result);
+                    
+                    if (action === 'quiz' && (data.result.includes('🎯') || data.result.includes('📝'))) {
+                        hasActiveQuiz = true;
+                        document.getElementById('quizStatus').style.display = 'block';
+                        updateInputPlaceholder();
+                    }
+                } else if (data.error) {
+                    addMessage('ai', `❌ Oops: ${data.error}`);
+                }
+            } catch (error) {
+                addMessage('ai', `❌ Network hiccup: ${error.message}`);
+            } finally {
+                showTyping(false);
+            }
+        }
+
+        // Creative generation
+        async function generateCreative() {
+            const requirements = document.getElementById('creativeRequirements').value.trim();
+            const format = document.getElementById('creativeFormat').value;
+            const complexity = document.getElementById('creativeComplexity').value;
+            
+            if (!requirements) {
+                addMessage('ai', '✨ Please describe what you\'d like to create! Your imagination is the only limit!');
+                return;
+            }
+
+            showTyping(true);
+            document.getElementById('generateCreativeBtn').disabled = true;
+            document.getElementById('generateCreativeBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            try {
+                const formData = new FormData();
+                formData.append('requirements', requirements);
+                formData.append('language', format);
+                formData.append('complexity', complexity);
+                
+                const response = await fetch(`${API_BASE}/generate_code`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Store generated creative data
+                generatedCreativeData = data;
+                
+                // Update creative preview
+                document.getElementById('creativeFilename').textContent = data.filename;
+                document.getElementById('creativeOutput').textContent = data.code;
+                document.getElementById('creativeOutput').className = `language-${data.language}`;
+                document.getElementById('creativePreview').style.display = 'block';
+                
+                // Highlight with Prism
+                Prism.highlightAll();
+                
+                // Add to chat
+                addMessage('user', `🎨 Created: ${requirements.substring(0, 50)}...`);
+                addMessage('ai', `✨ Creation complete! I've crafted something special for you.\n\n**Format:** ${data.language}\n**File:** ${data.filename}\n\n**About this creation:** ${data.explanation || 'Crafted with care for your creative journey!'}`);
+                
+                // Scroll to show preview
+                document.querySelector('.sidebar').scrollTop = document.querySelector('.sidebar').scrollHeight;
+                
+            } catch (error) {
+                addMessage('ai', `❌ Creative block: ${error.message}. Let's try a different approach!`);
+            } finally {
+                showTyping(false);
+                document.getElementById('generateCreativeBtn').disabled = false;
+                document.getElementById('generateCreativeBtn').innerHTML = '<i class="fas fa-sparkles"></i> Create Now';
+            }
+        }
+
+        // Load creative example
+        function loadCreativeExample(requirements) {
+            document.getElementById('creativeRequirements').value = requirements;
+            document.getElementById('creativeRequirements').style.height = 'auto';
+            document.getElementById('creativeRequirements').style.height = (document.getElementById('creativeRequirements').scrollHeight) + 'px';
+            document.getElementById('creativeRequirements').focus();
+        }
+
+        // Copy creative content
+        function copyCreative() {
+            if (!generatedCreativeData) return;
+            
+            navigator.clipboard.writeText(generatedCreativeData.code)
+                .then(() => {
+                    // Show success feedback
+                    const copyBtn = document.querySelector('#creativePreview .code-actions button:first-child');
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyBtn.style.background = '#27ae60';
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.style.background = '';
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy:', err);
+                    addMessage('ai', '❌ Oops, couldn\'t copy to clipboard. Let\'s try again!');
+                });
+        }
+
+        // Download creative content
+        function downloadCreative() {
+            if (!generatedCreativeData || !generatedCreativeData.id) return;
+            
+            window.open(`${API_BASE}/download_code/${generatedCreativeData.id}`, '_blank');
+        }
+
+        // Clear chat history
+        async function clearChat() {
+            try {
+                const response = await fetch(`${API_BASE}/clear`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                // Clear local chat
+                document.getElementById('messages').innerHTML = `
+                    <div class="message ai-message">
+                        <h3><i class="fas fa-heart"></i> Fresh Start!</h3>
+                        <p>✨ Ready for a new learning adventure! What would you like to explore today?</p>
+                        <div class="learning-tips">
+                            <h4><i class="fas fa-lightbulb"></i> Quick Ideas:</h4>
+                            <ul>
+                                <li>"Explain quantum physics basics"</li>
+                                <li>"Help me write a short story"</li>
+                                <li>"Create a study schedule for exams"</li>
+                                <li>"Tell me about ancient civilizations"</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                
+                // Reset states
+                hasActiveQuiz = false;
+                document.getElementById('quizStatus').style.display = 'none';
+                updateInputPlaceholder();
+                
+                // Clear file info
+                currentFile = null;
+                document.getElementById('fileInfo').style.display = 'none';
+                document.getElementById('summarizeBtn').disabled = true;
+                document.getElementById('quizBtn').disabled = true;
+                document.getElementById('explainBtn').disabled = true;
+                
+                addMessage('ai', data.result || '✨ Clean slate! Every moment is a chance to learn something new! 🌈');
+                
+            } catch (error) {
+                addMessage('ai', `❌ Error refreshing: ${error.message}`);
+            }
+        }
+
+        // Add message to chat
+        function addMessage(sender, content) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (sender === 'ai') {
+                // Format AI responses
+                let formattedContent = content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    .replace(/\n/g, '<br>')
+                    .replace(/💡 \*\*How to submit answers:\*\*/g, '<div class="quiz-instructions"><strong>💡 How to submit answers:</strong>')
+                    .replace(/Type \'cancel quiz\' to stop this quiz\./g, 'Type "cancel quiz" to stop this quiz.</div>');
+                
+                // Add learning encouragement
+                if (content.includes('hard') || content.includes('difficult') || content.includes('struggle')) {
+                    formattedContent += '<br><div class="learning-tips"><h4><i class="fas fa-heart"></i> Remember:</h4><p>Learning is a journey! Every challenge makes you stronger. You\'ve got this! 💪</p></div>';
+                }
+                
+                messageDiv.innerHTML = `${formattedContent}<div class="message-time">${timeString}</div>`;
+                
+                // Re-run Prism highlighting for code blocks
+                setTimeout(() => Prism.highlightAll(), 100);
+            } else {
+                messageDiv.innerHTML = `${content}<div class="message-time">${timeString}</div>`;
+            }
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Auto-focus input after new message
+            setTimeout(() => {
+                document.getElementById('userInput').focus();
+            }, 100);
+        }
+
+        // Show/hide typing indicator
+        function showTyping(show) {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.style.display = show ? 'flex' : 'none';
+            if (show) {
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            }
+        }
+
+        // Mood-based quick responses
+        function setMood(mood) {
+            const moods = {
+                'excited': 'I\'m feeling excited and ready to learn! 🎉',
+                'curious': 'I\'m curious about... Can you help me explore? 🔍',
+                'stressed': 'I\'m feeling a bit overwhelmed with studying 😔',
+                'motivated': 'I\'m motivated to tackle something challenging! 💪',
+                'creative': 'I want to create something artistic today! 🎨'
+            };
+            
+            if (moods[mood]) {
+                quickChat(moods[mood]);
+            }
+        }
+    </script>
+</body>
+</html>

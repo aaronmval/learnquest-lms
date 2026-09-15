@@ -24,6 +24,51 @@ body.dark #mainContent {
     gap: 24px;
 }
 
+/* CLASS NOT FOUND / ACCESS DENIED STATE */
+.class-not-found {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+    padding: 80px 24px;
+    color: #64748b;
+}
+
+.class-not-found i {
+    font-size: 2.5rem;
+    color: #f59e0b;
+    margin-bottom: 6px;
+}
+
+.class-not-found h1 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+body.dark .class-not-found h1 { color: #f1f5f9; }
+body.dark .class-not-found { color: #94a3b8; }
+
+.class-not-found .hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    background-color: #1e293b;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+}
+
+.class-not-found .hero-btn:hover { background-color: #0f172a; }
+
 /* CLASS HEADER BANNER */
 .class-banner {
     border-radius: 20px;

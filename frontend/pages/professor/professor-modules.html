@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <script src="../../assets/js/common/frame-guard.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | Modules</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/professor/professor-modules.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <h1 class="hero-title">Modules</h1>
+                    <p class="hero-subtitle">
+                        Upload once, use across sections. All your lesson files,
+                        slides, and references — centralized in one place.
+                    </p>
+                </div>
+                <div class="hero-illustration">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+            </section>
+
+            <!-- QUICK STATS -->
+            <section class="mat-stats-section">
+                <div class="mat-stat-card">
+                    <div class="mat-stat-icon mat-stat-icon-blue">
+                        <i class="fas fa-file-lines"></i>
+                    </div>
+                    <div class="mat-stat-text">
+                        <span id="statTotalMaterials" class="mat-stat-value"
+                            >0</span
+                        >
+                        <span class="mat-stat-label">Total Materials</span>
+                    </div>
+                </div>
+
+                <div class="mat-stat-card">
+                    <div class="mat-stat-icon mat-stat-icon-amber">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="mat-stat-text">
+                        <span id="statStorageUsed" class="mat-stat-value"
+                            >0 KB</span
+                        >
+                        <span class="mat-stat-label">Storage Used</span>
+                    </div>
+                </div>
+
+                <div class="mat-stat-card">
+                    <div class="mat-stat-icon mat-stat-icon-green">
+                        <i class="fas fa-display"></i>
+                    </div>
+                    <div class="mat-stat-text">
+                        <span id="statClassesCovered" class="mat-stat-value"
+                            >3</span
+                        >
+                        <span class="mat-stat-label">Classes Covered</span>
+                    </div>
+                </div>
+
+                <div class="mat-stat-card">
+                    <div class="mat-stat-icon mat-stat-icon-purple">
+                        <i class="fas fa-clock-rotate-left"></i>
+                    </div>
+                    <div class="mat-stat-text">
+                        <span id="statLastUpload" class="mat-stat-value">—</span>
+                        <span class="mat-stat-label">Last Upload</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CLASSES COVERED SECTION -->
+            <section class="mat-covered-section">
+                <div class="mat-covered-heading">
+                    <h2 class="mat-covered-title">Classes Covered</h2>
+
+                    <div class="mat-covered-actions">
+                        <div class="mat-search-wrap">
+                            <i class="fas fa-search mat-search-icon"></i>
+                            <input
+                                id="subjectSearchInput"
+                                class="mat-search-input"
+                                type="text"
+                                placeholder="Search subject..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                            <button
+                                id="subjectSearchClearBtn"
+                                class="mat-search-clear hidden"
+                                aria-label="Clear search"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <button id="addSubjectBtn" class="mat-add-subject-btn">
+                            <i class="fas fa-plus"></i> Add New Subject
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mat-subject-grid" id="subjectGrid">
+                    <div class="mat-subject-card" data-subject="chemistry">
+                        <div class="mat-subject-row">
+                            <h3 class="mat-subject-name">CHEMISTRY</h3>
+                            <button
+                                class="mat-subject-arrow"
+                                aria-label="Open Chemistry materials"
+                            >
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="mat-subject-uploader">
+                            <img
+                                src="../../assets/images/teachers/chemistry.jpg"
+                                alt="Mrs. Valiente"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+                            />
+                            <div
+                                class="mat-subject-uploader-initials"
+                                style="display: none"
+                            >
+                                MV
+                            </div>
+                            <span>Uploaded by: Mrs. Valiente</span>
+                        </div>
+                    </div>
+
+                    <div class="mat-subject-card" data-subject="physics">
+                        <div class="mat-subject-row">
+                            <h3 class="mat-subject-name">PHYSICS</h3>
+                            <button
+                                class="mat-subject-arrow"
+                                aria-label="Open Physics materials"
+                            >
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="mat-subject-uploader">
+                            <img
+                                src="../../assets/images/teachers/physics.jpg"
+                                alt="Mrs. Santos"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+                            />
+                            <div
+                                class="mat-subject-uploader-initials"
+                                style="display: none"
+                            >
+                                MS
+                            </div>
+                            <span>Uploaded by: Mrs. Santos</span>
+                        </div>
+                    </div>
+
+                    <div class="mat-subject-card" data-subject="general-science">
+                        <div class="mat-subject-row">
+                            <h3 class="mat-subject-name">General Science</h3>
+                            <button
+                                class="mat-subject-arrow"
+                                aria-label="Open General Science materials"
+                            >
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="mat-subject-uploader">
+                            <img
+                                src="../../assets/images/teachers/chemistry.jpg"
+                                alt="Mrs. Valiente"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+                            />
+                            <div
+                                class="mat-subject-uploader-initials"
+                                style="display: none"
+                            >
+                                MV
+                            </div>
+                            <span>Uploaded by: Mrs. Valiente</span>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="subjectSearchEmpty" class="mat-search-empty hidden">
+                    <i class="fas fa-magnifying-glass"></i> No subjects match
+                    your search.
+                </p>
+            </section>
+
+            <!-- ADD SUBJECT MODAL -->
+            <div id="addSubjectModal" class="modal-overlay">
+                <div id="addSubjectModalCard" class="cc-card">
+                    <div class="cc-modal-header">
+                        <h3 class="modal-title cc-modal-title">
+                            Add New Subject
+                        </h3>
+                        <button
+                            id="addSubjectCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="asTeacherName"
+                            >Teacher Name</label
+                        >
+                        <input
+                            id="asTeacherName"
+                            class="cc-input"
+                            type="text"
+                            placeholder="Enter your Full Name"
+                            maxlength="60"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="asTeacherEmail"
+                            >Teacher Email</label
+                        >
+                        <input
+                            id="asTeacherEmail"
+                            class="cc-input"
+                            type="email"
+                            placeholder="Enter your Email Address"
+                            maxlength="60"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="asSubjectName"
+                            >Subject Title<span class="cc-required-star"
+                                >*</span
+                            ></label
+                        >
+                        <input
+                            id="asSubjectName"
+                            class="cc-input"
+                            type="text"
+                            placeholder="e.g. Chemistry / Physics / EALS"
+                            maxlength="60"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <p id="asNameError" class="cc-error hidden">
+                            *Subject title is required
+                        </p>
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button
+                            id="addSubjectCancelBtn"
+                            class="modal-btn cc-cancel-btn"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="addSubjectConfirmBtn"
+                            class="modal-btn cc-create-btn"
+                        >
+                            Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOAST -->
+            <div id="modulesToast">
+                <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+                <span id="modulesToastMessage"></span>
+            </div>
+        </main>
+
+        <script src="../../assets/js/pages/professor/professor-modules.js"></script>
+    </body>
+</html>

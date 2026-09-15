@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest - Your Learning Companion</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4361ee;
+            --primary-light: #6c8cff;
+            --primary-dark: #2b3cb0;
+            --secondary: #3f37c9;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #e74c3c;
+            --dark: #1a1a2e;
+            --dark-light: #2d2d44;
+            --light: #f5f7fa;
+            --gray: #a0a0b8;
+            --border: #e0e0e8;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--dark);
+            min-height: 100vh;
+            padding: 16px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: var(--light);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            height: calc(100vh - 32px);
+            min-height: 700px;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 360px;
+            min-width: 360px;
+            background: var(--dark);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+            min-width: 60px;
+        }
+
+        .sidebar.collapsed .sidebar-header h2,
+        .sidebar.collapsed .tab-content,
+        .sidebar.collapsed .toggle-tabs span,
+        .sidebar.collapsed .welcome-message,
+        .sidebar.collapsed .file-upload-area p,
+        .sidebar.collapsed .file-upload-area h3,
+        .sidebar.collapsed .file-upload-area small,
+        .sidebar.collapsed .file-info,
+        .sidebar.collapsed .action-btn span,
+        .sidebar.collapsed .subject-btn span,
+        .sidebar.collapsed .detach-section {
+            display: none;
+        }
+
+        .sidebar.collapsed .file-upload-area {
+            padding: 12px;
+        }
+
+        .sidebar.collapsed .file-upload-area i {
+            font-size: 1.8em;
+            margin-bottom: 0;
+        }
+
+        .sidebar.collapsed .action-btn {
+            padding: 12px;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .subject-btn {
+            padding: 8px;
+        }
+
+        .sidebar.collapsed .subject-btn i {
+            font-size: 1.2em;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            min-height: 70px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        .sidebar-header h2 i {
+            color: var(--primary-light);
+        }
+
+        .toggle-sidebar-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: var(--gray);
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .toggle-tabs {
+            display: flex;
+            margin: 12px 16px 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 12px;
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(63, 55, 201, 0.15));
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            border: 1px solid rgba(67, 97, 238, 0.15);
+        }
+
+        .welcome-message h3 {
+            font-size: 1em;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-light);
+        }
+
+        .welcome-message p {
+            font-size: 0.85em;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        .file-upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-sm);
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary-light);
+            background: rgba(67, 97, 238, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .file-upload-area i {
+            font-size: 2.2em;
+            color: var(--primary-light);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .file-upload-area h3 {
+            font-size: 0.95em;
+            margin-bottom: 4px;
+        }
+
+        .file-upload-area p {
+            font-size: 0.8em;
+            opacity: 0.6;
+        }
+
+        .file-upload-area small {
+            font-size: 0.7em;
+            opacity: 0.5;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-top: 12px;
+            border-left: 3px solid var(--primary-light);
+            display: none;
+        }
+
+        .file-info .file-name {
+            font-weight: 600;
+            color: var(--primary-light);
+            font-size: 0.9em;
+        }
+
+        .file-info .file-size {
+            color: var(--gray);
+            font-size: 0.75em;
+        }
+
+        .detach-section {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+            display: none;
+        }
+
+        .detach-section.active {
+            display: block;
+        }
+
+        .detach-btn {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .detach-btn:hover {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+            transform: translateY(-2px);
+        }
+
+        .detach-btn i {
+            font-size: 1em;
+        }
+
+        .pdf-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .pdf-status .active-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            display: inline-block;
+            animation: blink 2s infinite;
+        }
+
+        .pdf-status .inactive-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray);
+            display: inline-block;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background: rgba(67, 97, 238, 0.25);
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .action-btn.primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .action-btn.primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+        .action-btn i {
+            font-size: 1em;
+        }
+
+        .action-btn.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .subject-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .subject-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-sm);
+            padding: 12px 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .subject-btn:hover {
+            background: rgba(67, 97, 238, 0.2);
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .subject-btn i {
+            font-size: 1.3em;
+            color: var(--primary-light);
+        }
+
+        /* ===== CHAT AREA ===== */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--light);
+            min-width: 0;
+        }
+
+        .chat-header {
+            background: white;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 70px;
+        }
+
+        .chat-header h1 {
+            font-size: 1.3em;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-header h1 i {
+            color: var(--primary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8em;
+            color: var(--gray);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f0f2f5;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            line-height: 1.6;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: white;
+            color: #333;
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .ai-message h3 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 1.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-message h3 i {
+            font-size: 0.9em;
+        }
+
+        .ai-message ul,
+        .ai-message ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .ai-message li {
+            margin-bottom: 4px;
+        }
+
+        .ai-message code {
+            background: #f1f1f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+            color: var(--primary-dark);
+        }
+
+        .ai-message pre {
+            background: #1a1a2e;
+            color: #f8f8f2;
+            padding: 12px 14px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+
+        .learning-tips {
+            background: #e8f0fe;
+            border-left: 3px solid var(--primary);
+            padding: 12px 14px;
+            margin: 10px 0;
+            border-radius: 6px;
+        }
+
+        .learning-tips h4 {
+            color: var(--primary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+
+        .learning-tips ul {
+            margin: 4px 0 0;
+            padding-left: 18px;
+        }
+
+        .learning-tips li {
+            font-size: 0.9em;
+            margin-bottom: 2px;
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            color: var(--gray);
+            margin-top: 6px;
+            text-align: right;
+            opacity: 0.7;
+        }
+
+        .user-message .message-time {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            padding: 6px 14px;
+            background: rgba(67, 97, 238, 0.08);
+            border: 1px solid rgba(67, 97, 238, 0.15);
+            border-radius: 20px;
+            color: var(--primary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(67, 97, 238, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .input-area {
+            padding: 14px 24px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            border-radius: 30px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: var(--light);
+        }
+
+        #userInput:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.08);
+        }
+
+        #sendBtn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        #sendBtn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(67, 97, 238, 0.3);
+        }
+
+        #sendBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            color: var(--gray);
+            font-size: 0.9em;
+            margin: 0 24px 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+            align-items: center;
+            gap: 10px;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--gray);
+            border-radius: 50%;
+            animation: typing-bounce 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+                min-height: 95vh;
+            }
+            .sidebar {
+                width: 100%;
+                min-width: unset;
+                max-height: 45vh;
+            }
+            .chat-area {
+                height: 55vh;
+            }
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+            .container {
+                border-radius: 12px;
+            }
+            .sidebar {
+                max-height: 40vh;
+            }
+            .chat-header {
+                flex-direction: column;
+                text-align: center;
+                padding: 12px 16px;
+            }
+            .chat-header h1 {
+                font-size: 1.1em;
+            }
+            .input-area {
+                padding: 10px 12px;
+                flex-wrap: wrap;
+            }
+            #sendBtn span {
+                display: none;
+            }
+            #sendBtn {
+                padding: 12px 16px;
+            }
+            .messages {
+                padding: 12px 14px;
+            }
+            .message {
+                max-width: 95%;
+                padding: 12px 14px;
+                font-size: 0.9em;
+            }
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+            .subject-actions {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                max-height: 35vh;
+            }
+            .chat-area {
+                height: 60vh;
+            }
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ===== SIDEBAR ===== -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-rocket"></i> LearnQuest</h2>
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <div class="toggle-tabs">
+                <button class="tab-btn active" onclick="switchTab('study')">
+                    <i class="fas fa-graduation-cap"></i> <span>Study</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('create')">
+                    <i class="fas fa-wand-magic-sparkles"></i> <span>Create</span>
+                </button>
+            </div>
+
+            <!-- ===== STUDY TAB ===== -->
+            <div class="tab-content active" id="study-tab">
+                <div class="welcome-message">
+                    <h3><i class="fas fa-brain"></i> Your Learning Companion</h3>
+                    <p>Upload materials or ask questions. I'll help you understand, summarize, and guide your learning journey.</p>
+                </div>
+
+                <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Upload Learning Material</h3>
+                    <p>PDF, DOCX, PPTX, or TXT</p>
+                    <small>I'll summarize and create a study guide for you</small>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf,.docx,.pptx,.txt">
+
+                <div class="file-info" id="fileInfo">
+                    <div class="file-name" id="fileName">document.pdf</div>
+                    <div class="file-size" id="fileSize">2.4 MB</div>
+                </div>
+
+                <!-- Detach Section -->
+                <div class="detach-section" id="detachSection">
+                    <div class="pdf-status">
+                        <span class="active-dot" id="pdfStatusDot"></span>
+                        <span id="pdfStatusText">PDF Active</span>
+                    </div>
+                    <button class="detach-btn" onclick="detachPDF()">
+                        <i class="fas fa-unlink"></i> Detach PDF
+                    </button>
+                    <small style="color:var(--gray);font-size:0.7em;display:block;margin-top:6px;">
+                        The AI will stop referencing the uploaded document
+                    </small>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="quickAction('summarize')" id="summarizeBtn" disabled>
+                        <i class="fas fa-file-lines"></i> <span>Summarize</span>
+                    </button>
+                    <button class="action-btn" onclick="quickAction('study-guide')" id="studyGuideBtn" disabled>
+                        <i class="fas fa-book"></i> <span>Study Guide</span>
+                    </button>
+                    <button class="action-btn full-width" onclick="quickAction('explain')" id="explainBtn" disabled>
+                        <i class="fas fa-lightbulb"></i> <span>Ask Questions</span>
+                    </button>
+                    <button class="action-btn full-width" style="background:rgba(255,255,255,0.04);" onclick="clearChat()">
+                        <i class="fas fa-rotate-right"></i> <span>Fresh Start</span>
+                    </button>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <p style="color:var(--gray);font-size:0.75em;margin-bottom:8px;opacity:0.6;">
+                        <i class="fas fa-bolt"></i> Quick Topics
+                    </p>
+                    <div class="subject-actions">
+                        <div class="subject-btn" onclick="quickChat('Explain photosynthesis step by step')">
+                            <i class="fas fa-leaf"></i> <span>Photosynthesis</span>
+                        </div>
+                        <div class="subject-btn" onclick="quickChat('Explain Newton\'s laws of motion')">
+                            <i class="fas fa-cubes"></i> <span>Newton's Laws</span>
+                        </div>
+                        <div class="subject-btn" onclick="quickChat('Explain cellular respiration')">
+                            <i class="fas fa-dna"></i> <span>Cellular Respiration</span>
+                        </div>
+                        <div class="subject-btn" onclick="quickChat('Explain the periodic table groups')">
+                            <i class="fas fa-atom"></i> <span>Periodic Table</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== CREATE TAB ===== -->
+            <div class="tab-content" id="create-tab">
+                <div class="welcome-message" style="background:linear-gradient(135deg,rgba(156,39,176,0.2),rgba(63,55,201,0.15));border-color:rgba(156,39,176,0.15);">
+                    <h3 style="color:#ce93d8;"><i class="fas fa-wand-magic-sparkles"></i> Study Tools</h3>
+                    <p>Upload a document and I'll create a study guide or summary to help you learn.</p>
+                </div>
+
+                <div class="file-upload-area" onclick="document.getElementById('fileInput2').click()" style="border-color:rgba(156,39,176,0.2);">
+                    <i class="fas fa-file-upload" style="color:#ce93d8;"></i>
+                    <h3>Upload for Study Guide</h3>
+                    <p>PDF, DOCX, PPTX, or TXT</p>
+                    <small>Get a comprehensive study guide or summary</small>
+                </div>
+                <input type="file" id="fileInput2" accept=".pdf,.docx,.pptx,.txt">
+
+                <div class="file-info" id="fileInfo2">
+                    <div class="file-name" id="fileName2">document.pdf</div>
+                    <div class="file-size" id="fileSize2">2.4 MB</div>
+                </div>
+
+                <div class="action-buttons" style="margin-top:12px;">
+                    <button class="action-btn primary" onclick="quickAction('summarize')" id="summarizeBtn2" disabled>
+                        <i class="fas fa-file-lines"></i> <span>Summarize</span>
+                    </button>
+                    <button class="action-btn" style="background:rgba(156,39,176,0.3);border-color:rgba(156,39,176,0.2);" onclick="quickAction('study-guide')" id="studyGuideBtn2" disabled>
+                        <i class="fas fa-book-open"></i> <span>Study Guide</span>
+                    </button>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <p style="color:var(--gray);font-size:0.75em;margin-bottom:8px;opacity:0.6;">
+                        <i class="fas fa-bolt"></i> Quick Study Ideas
+                    </p>
+                    <div class="subject-actions">
+                        <div class="subject-btn" onclick="quickChat('Create a study guide for the water cycle')">
+                            <i class="fas fa-water"></i> <span>Water Cycle</span>
+                        </div>
+                        <div class="subject-btn" onclick="quickChat('Create a study guide for chemical bonding')">
+                            <i class="fas fa-flask"></i> <span>Chemical Bonding</span>
+                        </div>
+                        <div class="subject-btn" onclick="quickChat('Create a study guide for calculus derivatives')">
+                            <i class="fas fa-calculator"></i> <span>Calculus</span>
+                        </div>
+                        <div class="subject-btn" onclick="quickChat('Create a study guide for the human digestive system')">
+                            <i class="fas fa-heart"></i> <span>Digestive System</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CHAT AREA ===== -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h1><i class="fas fa-rocket"></i> LearnQuest</h1>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="connectionStatus">Connected</span>
+                </div>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="message ai-message">
+                    <h3><i class="fas fa-rocket"></i> Welcome to LearnQuest!</h3>
+                    <p>Your <strong>AI-powered learning companion</strong> for STEM education.</p>
+
+                    <div class="learning-tips">
+                        <h4><i class="fas fa-bullseye"></i> How I Can Help:</h4>
+                        <ul>
+                            <li><strong>📄 Upload Materials</strong> — PDF, PPTX, DOCX, or TXT</li>
+                            <li><strong>📝 Get Summaries</strong> — Concise, student-friendly explanations</li>
+                            <li><strong>📚 Study Guides</strong> — Comprehensive guides with key concepts</li>
+                            <li><strong>💬 Ask Questions</strong> — I'll explain any topic clearly</li>
+                            <li><strong>🎯 Personalized Advice</strong> — Based on what you're learning</li>
+                            <li><strong>🔗 Detach PDF</strong> — Type "detach" to stop using the document</li>
+                        </ul>
+                    </div>
+
+                    <p><strong>💡 Try:</strong> Upload a document or ask a question!</p>
+
+                    <div class="quick-actions">
+                        <div class="quick-action-btn" onclick="quickChat('I want to learn about physics')">
+                            <i class="fas fa-cubes"></i> Physics
+                        </div>
+                        <div class="quick-action-btn" onclick="quickChat('Help me with chemistry')">
+                            <i class="fas fa-flask"></i> Chemistry
+                        </div>
+                        <div class="quick-action-btn" onclick="quickChat('Teach me biology')">
+                            <i class="fas fa-dna"></i> Biology
+                        </div>
+                        <div class="quick-action-btn" onclick="quickChat('I need help with math')">
+                            <i class="fas fa-calculator"></i> Math
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <i class="fas fa-brain" style="color:var(--primary);"></i> Thinking
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="userInput" placeholder="Ask a question or type a command...">
+                <button id="sendBtn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const API_BASE = 'http://localhost:8000';
+        let currentFile = null;
+        let sidebarVisible = true;
+        let isPDFAttached = false;
+        let currentModuleId = null;
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                handleFileUpload(e, 'fileInfo', 'fileName', 'fileSize', 'summarizeBtn', 'studyGuideBtn', 'explainBtn');
+            });
+
+            document.getElementById('fileInput2').addEventListener('change', function(e) {
+                handleFileUpload(e, 'fileInfo2', 'fileName2', 'fileSize2', 'summarizeBtn2', 'studyGuideBtn2', null);
+            });
+
+            document.getElementById('userInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            document.getElementById('userInput').focus();
+            testConnection();
+            updateDetachUI();
+        });
+
+        function handleFileUpload(e, infoId, nameId, sizeId, btn1, btn2, btn3) {
+            if (e.target.files.length > 0) {
+                currentFile = e.target.files[0];
+                document.getElementById(nameId).textContent = currentFile.name;
+                document.getElementById(sizeId).textContent = formatFileSize(currentFile.size);
+                document.getElementById(infoId).style.display = 'block';
+                
+                document.getElementById(btn1).disabled = false;
+                if (btn2) document.getElementById(btn2).disabled = false;
+                if (btn3) document.getElementById(btn3).disabled = false;
+
+                isPDFAttached = true;
+                updateDetachUI();
+
+                addMessage('user', `📄 Uploaded: ${currentFile.name}`);
+                addMessage('ai', `✅ Great! I've received **${currentFile.name}**. You can summarize it, create a study guide, or ask me questions about it. Type **"detach"** when you want me to stop referencing this document.`);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function updateDetachUI() {
+            const section = document.getElementById('detachSection');
+            const dot = document.getElementById('pdfStatusDot');
+            const text = document.getElementById('pdfStatusText');
+            
+            if (isPDFAttached) {
+                section.classList.add('active');
+                dot.className = 'active-dot';
+                text.textContent = 'PDF Active — I\'ll reference this document';
+                text.style.color = '#4caf50';
+            } else {
+                section.classList.remove('active');
+                dot.className = 'inactive-dot';
+                text.textContent = 'No PDF attached';
+                text.style.color = 'var(--gray)';
+            }
+        }
+
+        // ===== API FUNCTIONS =====
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                document.getElementById('connectionStatus').textContent = '✓ Connected';
+                document.getElementById('connectionStatus').style.color = '#4caf50';
+            } catch (error) {
+                document.getElementById('connectionStatus').textContent = '⟳ Connecting...';
+                document.getElementById('connectionStatus').style.color = '#ff9800';
+                setTimeout(testConnection, 3000);
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebarVisible = !sidebarVisible;
+            sidebar.classList.toggle('collapsed');
+            const btn = document.querySelector('.toggle-sidebar-btn i');
+            btn.className = sidebarVisible ? 'fas fa-chevron-left' : 'fas fa-chevron-right';
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function quickChat(message) {
+            document.getElementById('userInput').value = message;
+            sendMessage();
+        }
+
+        async function detachPDF() {
+            try {
+                const formData = new FormData();
+                formData.append('user_id', 'default');
+                
+                const response = await fetch(`${API_BASE}/detach-pdf`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'detached') {
+                    isPDFAttached = false;
+                    currentFile = null;
+                    currentModuleId = null;
+                    updateDetachUI();
+                    
+                    document.getElementById('fileInfo').style.display = 'none';
+                    document.getElementById('fileInfo2').style.display = 'none';
+                    document.getElementById('summarizeBtn').disabled = true;
+                    document.getElementById('studyGuideBtn').disabled = true;
+                    document.getElementById('explainBtn').disabled = true;
+                    document.getElementById('summarizeBtn2').disabled = true;
+                    document.getElementById('studyGuideBtn2').disabled = true;
+                    
+                    addMessage('ai', '✅ **PDF detached!** I\'ll no longer reference the uploaded document. Feel free to ask me anything else! 🎉');
+                } else {
+                    addMessage('ai', '⚠️ No active PDF found to detach.');
+                }
+            } catch (error) {
+                addMessage('ai', `❌ Error detaching PDF: ${error.message}`);
+            }
+        }
+
+        async function quickAction(action) {
+            if (!currentFile) {
+                addMessage('ai', '📁 Please upload a document first. You can also ask me questions directly!');
+                return;
+            }
+
+            const actionLabels = {
+                'summarize': '📝 Please summarize this document',
+                'study-guide': '📚 Create a study guide from this document',
+                'explain': '💡 Explain the key concepts in this document'
+            };
+
+            addMessage('user', actionLabels[action] || action);
+            await processAction(action);
+        }
+
+        async function processAction(action, question = '') {
+            showTyping(true);
+
+            const formData = new FormData();
+            formData.append('module_file', currentFile);
+            formData.append('action', action);
+            if (question) formData.append('question', question);
+
+            try {
+                const response = await fetch(`${API_BASE}/module`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.result) {
+                    addMessage('ai', data.result);
+                } else if (data.error) {
+                    addMessage('ai', `❌ ${data.error}`);
+                }
+            } catch (error) {
+                addMessage('ai', `❌ Connection error: ${error.message}`);
+            } finally {
+                showTyping(false);
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Check for detach command
+            if (message.toLowerCase().includes('detach') || message.toLowerCase().includes('forget pdf')) {
+                await detachPDF();
+                input.value = '';
+                return;
+            }
+
+            addMessage('user', message);
+            input.value = '';
+            showTyping(true);
+
+            try {
+                const formData = new FormData();
+                let url = `${API_BASE}/chat`;
+                
+                if (currentFile && isPDFAttached) {
+                    url = `${API_BASE}/module`;
+                    formData.append('module_file', currentFile);
+                    formData.append('action', 'explain');
+                    formData.append('question', message);
+                } else {
+                    formData.append('chat_message', message);
+                }
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.response) {
+                    addMessage('ai', data.response);
+                } else if (data.result) {
+                    addMessage('ai', data.result);
+                } else if (data.error) {
+                    addMessage('ai', `❌ ${data.error}`);
+                }
+            } catch (error) {
+                addMessage('ai', `❌ Connection error: ${error.message}`);
+            } finally {
+                showTyping(false);
+            }
+        }
+
+        function addMessage(sender, content) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (sender === 'ai') {
+                let formatted = content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    .replace(/\n/g, '<br>');
+                
+                if (content.includes('hard') || content.includes('difficult')) {
+                    formatted += '<br><div class="learning-tips"><h4><i class="fas fa-heart"></i> Keep Going!</h4><p>Learning is a journey. Every challenge makes you stronger! 💪</p></div>';
+                }
+                
+                messageDiv.innerHTML = `${formatted}<div class="message-time">${time}</div>`;
+            } else {
+                messageDiv.innerHTML = `${content}<div class="message-time">${time}</div>`;
+            }
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            document.getElementById('userInput').focus();
+        }
+
+        function showTyping(show) {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.style.display = show ? 'flex' : 'none';
+            if (show) {
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            }
+        }
+
+        async function clearChat() {
+            try {
+                await fetch(`${API_BASE}/clear-chat`, { method: 'POST' });
+            } catch (e) { /* ignore */ }
+            
+            document.getElementById('messages').innerHTML = `
+                <div class="message ai-message">
+                    <h3><i class="fas fa-rocket"></i> Fresh Start!</h3>
+                    <p>Ready for a new learning adventure! 🚀</p>
+                    <div class="learning-tips">
+                        <h4><i class="fas fa-bullseye"></i> Quick Ideas:</h4>
+                        <ul>
+                            <li>"Upload a PDF and create a study guide"</li>
+                            <li>"Explain quantum mechanics simply"</li>
+                            <li>"Help me understand calculus"</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            isPDFAttached = false;
+            currentFile = null;
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('fileInfo2').style.display = 'none';
+            document.getElementById('summarizeBtn').disabled = true;
+            document.getElementById('studyGuideBtn').disabled = true;
+            document.getElementById('explainBtn').disabled = true;
+            document.getElementById('summarizeBtn2').disabled = true;
+            document.getElementById('studyGuideBtn2').disabled = true;
+            updateDetachUI();
+            
+            addMessage('ai', '✨ Clean slate! Let\'s learn something new today! 🌈');
+        }
+    </script>
+
+</body>
+</html>

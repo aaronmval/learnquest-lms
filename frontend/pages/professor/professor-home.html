@@ -2,6 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
+        <script src="../../assets/js/common/frame-guard.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>LearnQuest | Professor Homepage</title>
         <link
@@ -34,10 +35,14 @@
                         Welcome back, <span id="heroName">Ma'am Mila</span>!
                     </h1>
                     <p class="hero-subtitle">
-                        Manage your Chemistry class, review student submissions,
-                        and post announcements — all in one place.
+                        Manage your classes, review student submissions, and
+                        post announcements — all in one place.
                     </p>
-                    <a href="teaching-chemistry.html" class="hero-btn">
+                    <a
+                        id="heroAnnouncementBtn"
+                        href="professor-class.html"
+                        class="hero-btn hidden"
+                    >
                         <i class="fas fa-bullhorn"></i> Post an Announcement
                     </a>
                 </div>
@@ -110,58 +115,8 @@
                     </p>
                 </div>
 
-                <!-- CLASS CARDS GRID -->
-                <div class="class-grid class-grid-single" id="classGrid">
-                    <!-- Chemistry Card -->
-                    <a
-                        href="teaching-chemistry.html"
-                        class="class-card"
-                        style="--card-color: #22d3ee"
-                    >
-                        <div
-                            class="card-top"
-                            style="
-                                background: linear-gradient(
-                                    135deg,
-                                    #06b6d4,
-                                    #0891b2
-                                );
-                            "
-                        >
-                            <div class="card-subject">CHEMISTRY</div>
-                            <div class="card-section">STEM - AMETHYST</div>
-                            <div class="card-teacher-photo">
-                                <img
-                                    src="../../assets/images/teachers/chemistry.jpg"
-                                    alt="Mila D. Valiente"
-                                    onerror="
-                                        this.style.display = 'none';
-                                        this.nextElementSibling.style.display =
-                                            'flex';
-                                    "
-                                />
-                                <div
-                                    class="card-teacher-initials"
-                                    style="display: none"
-                                >
-                                    MV
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-bottom">
-                            <div class="card-teacher-info">
-                                <p class="card-teacher-name">42 Students</p>
-                                <p class="card-teacher-role">
-                                    8 Pending Submissions
-                                </p>
-                            </div>
-                            <span class="card-enter-btn">
-                                Manage Class
-                                <i class="fas fa-arrow-right"></i>
-                            </span>
-                        </div>
-                    </a>
-                </div>
+                <!-- CLASS CARDS GRID — rendered by professor-home.js from the database -->
+                <div class="class-grid" id="classGrid"></div>
                 <!-- End of class grid -->
             </section>
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FrontendShellController;
+use App\Http\Controllers\ProfessorClassController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -47,4 +48,8 @@ Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')
 // Professor Routes
 Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('professor.')->group(function () {
     Route::get('/dashboard', [FrontendShellController::class, 'showShell'])->name('dashboard');
+
+    Route::get('/classes', [ProfessorClassController::class, 'index'])->name('classes.index');
+    Route::post('/classes', [ProfessorClassController::class, 'store'])->name('classes.store');
+    Route::get('/classes/{class}', [ProfessorClassController::class, 'show'])->name('classes.show');
 });

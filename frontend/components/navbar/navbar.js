@@ -39,6 +39,74 @@ function getHostConfig() {
     return window.LQ_HOST_CONFIG || {};
 }
 
+/* PROFESSOR CLASSES — fetched from the database, not hardcoded */
+let professorClasses = [];
+const CLASS_DOT_COLORS = [
+    "dot-cyan",
+    "dot-blue",
+    "dot-orange",
+    "dot-purple",
+    "dot-green",
+    "dot-amber",
+];
+
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : "";
+}
+
+async function loadProfessorClasses() {
+    if (!professorDropdown) return;
+
+    try {
+        const res = await fetch("/professor/classes", {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error("failed to load classes");
+
+        professorClasses = await res.json();
+        renderMyClassesDropdown();
+        syncActiveLinkFromIframe();
+    } catch (e) {
+        // Leave the dropdown showing its empty state; the professor can retry
+        // by revisiting the page or creating a class.
+    }
+}
+
+function renderMyClassesDropdown() {
+    if (!professorDropdown) return;
+
+    if (!professorClasses.length) {
+        professorDropdown.innerHTML =
+            '<p class="courses-dropdown-empty">No classes yet</p>';
+        return;
+    }
+
+    professorDropdown.innerHTML = professorClasses
+        .map((cls, index) => {
+            const dotClass = CLASS_DOT_COLORS[index % CLASS_DOT_COLORS.length];
+            const name = escapeHtmlForNavbar(cls.name);
+            return `
+                <a href="../../pages/professor/professor-class.html?id=${cls.id}"
+                   id="nav-class-${cls.id}"
+                   class="sidebar-link sub-link"
+                   data-parent="My Classes"
+                   data-child="${name}">
+                    <span class="dot ${dotClass}"></span>
+                    <span class="sidebar-text">${name}</span>
+                </a>
+            `;
+        })
+        .join("");
+}
+
+function escapeHtmlForNavbar(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+}
+
 /* ────────────────────────────────
    SAFE EVENT-BINDING HELPER
    Hindi lahat ng pages (e.g. professor pages) ay may
@@ -367,13 +435,15 @@ function setActiveLinkByHref(pathname) {
     let matchedLink = null;
 
     document.querySelectorAll("a.sidebar-link").forEach((link) => {
-        const linkPath = new URL(
-            link.getAttribute("href"),
-            window.location.href,
-        ).pathname;
-        const isActive =
-            pathname === linkPath ||
-            pathname.startsWith(linkPath.replace("index.html", ""));
+        const linkUrl = new URL(link.getAttribute("href"), window.location.href);
+        const linkPath = linkUrl.pathname;
+        // Links with a query string (e.g. professor-class.html?id=3) share their
+        // pathname across every class, so they need an exact path+search match —
+        // otherwise every class link would light up as active at once.
+        const isActive = linkUrl.search
+            ? pathname === linkPath + linkUrl.search
+            : pathname === linkPath ||
+              pathname.startsWith(linkPath.replace("index.html", ""));
         link.classList.toggle("nav-active", isActive);
 
         if (isActive) {
@@ -407,7 +477,8 @@ function updateBreadcrumb(activeLink) {
 function syncActiveLinkFromIframe() {
     if (!contentFrame || !contentFrame.contentWindow) return;
     try {
-        const currentPath = contentFrame.contentWindow.location.pathname;
+        const frameLocation = contentFrame.contentWindow.location;
+        const currentPath = frameLocation.pathname + frameLocation.search;
         setActiveLinkByHref(currentPath);
     } catch (e) {
         // ignore same-origin framing issues
@@ -533,7 +604,27 @@ function getDefaultRolePage(role) {
 
 function loadDefaultFramePage() {
     const role = getStoredRole() || "student";
-    const target = getDefaultRolePage(role);
+
+    // If the professor/student landed here via the frame-guard (they opened a
+    // content page directly — new tab, bookmark, shared link — instead of
+    // clicking a sidebar link), open the shell straight to that page instead
+    // of always resetting to Home.
+    let pendingPage = null;
+    try {
+        pendingPage = sessionStorage.getItem("LQ_PENDING_PAGE");
+        if (pendingPage) sessionStorage.removeItem("LQ_PENDING_PAGE");
+    } catch (e) {
+        pendingPage = null;
+    }
+
+    const pendingMatchesRole =
+        pendingPage && pendingPage.startsWith(`/pages/${role}/`);
+
+    const target =
+        pendingMatchesRole && getIframePageUrl(pendingPage)
+            ? pendingPage
+            : getDefaultRolePage(role);
+
     loadFramePage(target);
 }
 
@@ -547,6 +638,10 @@ function initHostShell() {
     localStorage.setItem("LQ_USER_ROLE", role);
 
     applyHostRole(role);
+
+    if (role === "professor") {
+        loadProfessorClasses();
+    }
 
     if (roleSelector && getHostConfig().allowRoleSwitch) {
         roleSelector.addEventListener("change", () => {
@@ -1150,7 +1245,7 @@ function closeCreateClassModal() {
     }, 300);
 }
 
-function confirmCreateClass() {
+async function confirmCreateClass() {
     if (!ccClassNameInput) return;
 
     const className = ccClassNameInput.value.trim();
@@ -1164,8 +1259,40 @@ function confirmCreateClass() {
     if (ccNameError) ccNameError.classList.add("hidden");
     ccClassNameInput.classList.remove("error");
 
-    closeCreateClassModal();
-    showToast(`Class "${className}" created!`);
+    const payload = {
+        name: className,
+        section: ccSectionInput ? ccSectionInput.value.trim() || null : null,
+        subject: ccSubjectInput ? ccSubjectInput.value.trim() || null : null,
+        room: ccRoomInput ? ccRoomInput.value.trim() || null : null,
+    };
+
+    if (createClassConfirmBtn) createClassConfirmBtn.disabled = true;
+
+    try {
+        const res = await fetch("/professor/classes", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error("failed to create class");
+
+        const created = await res.json();
+        professorClasses.unshift(created);
+        renderMyClassesDropdown();
+
+        closeCreateClassModal();
+        showToast(`Class "${created.name}" created!`);
+    } catch (e) {
+        showToast("Could not create the class. Please try again.");
+    } finally {
+        if (createClassConfirmBtn) createClassConfirmBtn.disabled = false;
+    }
 }
 
 /* LOGOUT MODAL */

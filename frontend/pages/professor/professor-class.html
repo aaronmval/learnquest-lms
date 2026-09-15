@@ -2,8 +2,9 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
+        <script src="../../assets/js/common/frame-guard.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>LearnQuest | Myclass- Chemistry</title>
+        <title>LearnQuest | My Class</title>
         <link
             rel="icon"
             type="image/svg+xml"
@@ -23,27 +24,34 @@
 
         <link
             rel="stylesheet"
-            href="../../assets/css/pages/professor/teaching-chemistry.css"
+            href="../../assets/css/pages/professor/professor-class.css"
         />
     </head>
     <body>
         <main id="mainContent">
-            <div class="classroom-wrap">
+            <!-- CLASS NOT FOUND / ACCESS DENIED STATE -->
+            <div id="classNotFound" class="class-not-found hidden">
+                <i class="fas fa-circle-exclamation"></i>
+                <h1>Class not found</h1>
+                <p>
+                    This class doesn't exist, or it doesn't belong to your
+                    account.
+                </p>
+                <a href="professor-home.html" class="hero-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+
+            <div id="classroomWrap" class="classroom-wrap">
                 <!-- CLASS HEADER BANNER -->
                 <section id="classBanner" class="class-banner">
                     <div class="class-banner-text">
                         <h1
                             id="classBannerSubject"
                             class="class-banner-subject"
-                        >
-                            CHEMISTRY
-                        </h1>
-                        <p id="classBannerSection" class="class-banner-section">
-                            STEM - AMETHYST
-                        </p>
-                        <p id="classBannerTeacher" class="class-banner-teacher">
-                            Mila D. Valiente
-                        </p>
+                        ></h1>
+                        <p id="classBannerSection" class="class-banner-section"></p>
+                        <p id="classBannerTeacher" class="class-banner-teacher"></p>
                         <p class="class-banner-role">Teacher</p>
                     </div>
                     <i class="fas fa-book-open class-banner-icon"></i>
@@ -53,7 +61,7 @@
                 <div class="classroom-grid">
                     <!-- LEFT: Announcement / Lesson feed -->
                     <div id="feedColumn" class="feed-column">
-                        <!-- Populated dynamically by teachingChemistry.js -->
+                        <!-- Populated dynamically by professor-class.js -->
                     </div>
 
                     <!-- RIGHT: Class info / quick stats panel -->
@@ -317,6 +325,6 @@
             <span id="toastMessage"></span>
         </div>
 
-        <script src="../../assets/js/pages/professor/teaching-chemistry.js"></script>
+        <script src="../../assets/js/pages/professor/professor-class.js"></script>
     </body>
 </html>

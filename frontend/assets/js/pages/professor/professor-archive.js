@@ -1,18 +1,8 @@
 /*  STATE */
-let professorClasses = [];
 
-const CLASS_COLOR_PALETTE = [
-    { color: '#22d3ee', gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
-    { color: '#f97316', gradient: 'linear-gradient(135deg, #fb923c, #ea580c)' },
-    { color: '#a855f7', gradient: 'linear-gradient(135deg, #c084fc, #9333ea)' },
-    { color: '#22c55e', gradient: 'linear-gradient(135deg, #4ade80, #16a34a)' },
-    { color: '#f59e0b', gradient: 'linear-gradient(135deg, #fbbf24, #d97706)' },
-];
-
-let nextPaletteIndex = 0;
-
-// localStorage key — dapat tugma sa key na binabasa
-// ng professorHome.js (checkForRestoredClass)
+// localStorage key used to hand a restored class back to the Home page.
+// NOTE: restoring archived classes isn't wired to the database yet — this
+// write side is currently unread (out of scope for the Create Class feature).
 const RESTORED_CLASS_STORAGE_KEY = 'lq_restoredClass';
 
 
@@ -22,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     hidePageLoader();
     wireMyClassesDropdown();
     wireArchiveFilters();
-    wireCreateClassModal();
     wireRestoreButtons();
 
 });
@@ -209,143 +198,6 @@ function buildRestoredClassData(card) {
         pending: 0,
         href: '../html/teachingChemistry.html'
     };
-}
-
-
-/* CREATE CLASS MODAL*/
-function wireCreateClassModal() {
-    const createBtn  = document.getElementById('createClassBtn');
-    const modal      = document.getElementById('createClassModal');
-    const modalCard  = document.getElementById('createClassModalCard');
-    const closeBtn   = document.getElementById('createClassCloseBtn');
-    const cancelBtn  = document.getElementById('createClassCancelBtn');
-    const confirmBtn = document.getElementById('createClassConfirmBtn');
-
-    const nameInput    = document.getElementById('ccClassName');
-    const sectionInput = document.getElementById('ccSection');
-    const subjectInput = document.getElementById('ccSubject');
-    const roomInput    = document.getElementById('ccRoom');
-    const nameError    = document.getElementById('ccNameError');
-
-    if (!createBtn || !modal) return;
-
-    function resetForm() {
-        nameInput.value    = '';
-        sectionInput.value = '';
-        subjectInput.value = '';
-        roomInput.value    = '';
-        nameError.classList.add('hidden');
-        nameInput.classList.remove('error');
-    }
-
-    function openModal() {
-        resetForm();
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.style.opacity = '1';
-            modalCard.classList.add('scaled');
-            nameInput.focus();
-        }, 10);
-    }
-
-    function closeModal() {
-        modal.style.opacity = '0';
-        modalCard.classList.remove('scaled');
-        setTimeout(() => { modal.style.display = 'none'; }, 300);
-    }
-
-    function confirmCreate() {
-        const className  = nameInput.value.trim();
-        const sectionVal = sectionInput.value.trim();
-        const subjectVal = subjectInput.value.trim();
-        const roomVal    = roomInput.value.trim();
-
-        if (!className) {
-            nameError.textContent = '*Required';
-            nameError.classList.remove('hidden');
-            nameInput.classList.add('error');
-            nameInput.focus();
-            return;
-        }
-
-        nameError.classList.add('hidden');
-        nameInput.classList.remove('error');
-
-        const newClass = createClassRecord(className, sectionVal, subjectVal, roomVal);
-        professorClasses.push(newClass);
-        addClassSidebarLink(newClass);
-
-        closeModal();
-        showToast(`Class "${newClass.name}" created!`);
-    }
-
-    createBtn.addEventListener('click', openModal);
-    if (closeBtn)   closeBtn.addEventListener('click', closeModal);
-    if (cancelBtn)  cancelBtn.addEventListener('click', closeModal);
-    if (confirmBtn) confirmBtn.addEventListener('click', confirmCreate);
-
-    modal.addEventListener('click', e => {
-        if (e.target === modal) closeModal();
-    });
-
-    [nameInput, sectionInput, subjectInput, roomInput].forEach(field => {
-        field.addEventListener('keydown', e => {
-            if (e.key === 'Enter') confirmCreate();
-        });
-    });
-
-    nameInput.addEventListener('input', () => {
-        nameError.classList.add('hidden');
-        nameInput.classList.remove('error');
-    });
-}
-
-function createClassRecord(name, section, subject, room) {
-    const palette = CLASS_COLOR_PALETTE[nextPaletteIndex % CLASS_COLOR_PALETTE.length];
-    nextPaletteIndex++;
-
-    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'class-' + Date.now();
-
-    return {
-        id,
-        name,
-        section: section || '',
-        subject: subject || name,
-        room: room || '',
-        color: palette.color,
-        gradient: palette.gradient,
-        href: '../html/teachingChemistry.html',
-        students: 0,
-        pending: 0
-    };
-}
-
-function addClassSidebarLink(cls) {
-    const container = document.getElementById('myClassesDropdownContainer');
-    if (!container) return;
-
-    const link = document.createElement('a');
-    link.href = cls.href;
-    link.id = 'nav-' + cls.id;
-    link.className = 'sidebar-link sub-link';
-    link.dataset.parent = 'My Classes';
-    link.dataset.child = cls.name;
-    link.innerHTML = `
-        <span class="dot" style="background-color:${cls.color}"></span>
-        <span class="sidebar-text">${escapeHtml(cls.name)}</span>
-    `;
-
-    container.appendChild(link);
-
-    if (typeof window.__refreshMyClassesDropdownHeight === 'function') {
-        window.__refreshMyClassesDropdownHeight();
-    }
-}
-
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
 }
 
 

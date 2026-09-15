@@ -489,6 +489,13 @@ body.dark .courses-dropdown {
     border-radius: 8px;
 }
 
+.courses-dropdown-empty {
+    padding: 8px 20px;
+    margin: 0;
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
 /* Color dots */
 .dot {
     width: 14px;

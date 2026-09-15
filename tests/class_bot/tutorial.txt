@@ -1,0 +1,41 @@
+Here's the list you can copy to Notepad:
+
+## **FastAPI Installation Commands:**
+
+**Essential:**
+```
+pip install fastapi
+pip install uvicorn
+```
+
+**Common additional packages:**
+```
+pip install sqlalchemy
+pip install pydantic
+pip install python-multipart
+pip install python-jose[cryptography]
+pip install passlib[bcrypt]
+```
+
+**Quick copy-paste for all essentials:**
+```
+pip install fastapi uvicorn sqlalchemy pydantic python-multipart
+```
+
+**To run your FastAPI app:**
+```
+uvicorn main:app --reload
+```
+
+**Access in browser:**
+```
+http://localhost:8000/docs
+```
+
+Just copy these commands and run them in your terminal when needed!
+
+cmd
+cd C:\Users\PLPASIG\Downloads\gclass_bot
+
+cmd
+uvicorn main:app --reload

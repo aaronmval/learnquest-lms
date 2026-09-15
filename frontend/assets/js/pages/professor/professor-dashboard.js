@@ -519,7 +519,6 @@ function initDashboard() {
 
     wireStudentStatsModal();
     wireMyClassesDropdown();
-    wireCreateClassModal();
 
     setTimeout(() => {
         const loader = document.getElementById("pageLoader");
@@ -1094,86 +1093,6 @@ function wireMyClassesDropdown() {
     });
 
     requestAnimationFrame(openDropdown);
-}
-
-function wireCreateClassModal() {
-    const createBtn = document.getElementById("createClassBtn");
-    const modal = document.getElementById("createClassModal");
-    const modalCard = document.getElementById("createClassModalCard");
-    const closeBtn = document.getElementById("createClassCloseBtn");
-    const cancelBtn = document.getElementById("createClassCancelBtn");
-    const confirmBtn = document.getElementById("createClassConfirmBtn");
-
-    const nameInput = document.getElementById("ccClassName");
-    const sectionInput = document.getElementById("ccSection");
-    const subjectInput = document.getElementById("ccSubject");
-    const roomInput = document.getElementById("ccRoom");
-    const nameError = document.getElementById("ccNameError");
-
-    if (!createBtn || !modal || !modalCard || !nameInput || !nameError) return;
-
-    function resetForm() {
-        nameInput.value = "";
-        if (sectionInput) sectionInput.value = "";
-        if (subjectInput) subjectInput.value = "";
-        if (roomInput) roomInput.value = "";
-        nameError.classList.add("hidden");
-        nameInput.classList.remove("error");
-    }
-
-    function openModal() {
-        resetForm();
-        modal.style.display = "flex";
-        setTimeout(() => {
-            modal.style.opacity = "1";
-            modalCard.classList.add("scaled");
-            nameInput.focus();
-        }, 10);
-    }
-
-    function closeModal() {
-        modal.style.opacity = "0";
-        modalCard.classList.remove("scaled");
-        setTimeout(() => {
-            modal.style.display = "none";
-        }, 300);
-    }
-
-    function confirmCreate() {
-        const className = nameInput.value.trim();
-        if (!className) {
-            nameError.textContent = "*Required";
-            nameError.classList.remove("hidden");
-            nameInput.classList.add("error");
-            nameInput.focus();
-            return;
-        }
-
-        closeModal();
-        showToast('Class "' + className + '" created!');
-    }
-
-    createBtn.addEventListener("click", openModal);
-    if (closeBtn) closeBtn.addEventListener("click", closeModal);
-    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
-    if (confirmBtn) confirmBtn.addEventListener("click", confirmCreate);
-
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    [nameInput, sectionInput, subjectInput, roomInput]
-        .filter(Boolean)
-        .forEach((field) => {
-            field.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") confirmCreate();
-            });
-        });
-
-    nameInput.addEventListener("input", () => {
-        nameError.classList.add("hidden");
-        nameInput.classList.remove("error");
-    });
 }
 
 function showToast(message) {

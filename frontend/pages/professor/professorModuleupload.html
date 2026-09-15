@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+        <script src="../../assets/js/common/frame-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Upload Module Page</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../css/navigation.css">
+    <link rel="stylesheet" href="../css/professorModuleUpload.css">
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+
+    <!-- HEADER-->
+    <header>
+
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/professorHome.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-parent">Main</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <a href="../html/professorMaterials.html" id="breadcrumb-materials" class="breadcrumb-link">Class Materials</a>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Upload Module Page | <span id="breadcrumbSubject">Chemistry</span></span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button id="createClassBtn" class="join-class-btn" title="Create a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Create Class</span>
+            </button>
+
+            <!-- Notifications  -->
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">M</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Ma'am Mila!</div>
+                    <div id="headerProfileRole" class="profile-role">Chemistry Professor</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!--BODY AREA -->
+    <div class="body-area">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/professorHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/professorDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <a href="../html/professorMaterials.html"
+                   id="nav-materials"
+                   class="sidebar-link active"
+                   data-parent="Main"
+                   data-child="Class Materials">
+                    <i class="fas fa-folder-open icon"></i>
+                    <span class="sidebar-text">Class Materials</span>
+                </a>
+
+                <!-- My Classes -->
+                <button id="myClassesToggleBtn" class="sidebar-link labs-toggle" type="button">
+                    <span class="labs-toggle-inner">
+                        <i class="fas fa-chalkboard-user icon"></i>
+                        <span class="sidebar-text">My Classes</span>
+                    </span>
+                    <i class="fas fa-chevron-down" id="myClassesChevron"></i>
+                </button>
+
+                <div class="courses-dropdown" id="myClassesDropdownContainer">
+                    <a href="../html/teachingChemistry.html"
+                       id="nav-chemistry"
+                       class="sidebar-link sub-link"
+                       data-parent="My Classes"
+                       data-child="Chemistry">
+                        <span class="dot dot-cyan"></span>
+                        <span class="sidebar-text">Chemistry</span>
+                    </a>
+                </div>
+
+                <a href="../html/professorArchive.html"
+                   id="nav-archive"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Archived Classes">
+                    <i class="fas fa-box-archive icon"></i>
+                    <span class="sidebar-text">Archived Classes</span>
+                </a>
+
+                <a href="../html/professorQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/professorSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!-- MAIN CONTENT  -->
+        <main id="mainContent">
+
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <p class="hero-eyebrow"><i class="fas fa-cloud-arrow-up"></i> Upload Module Page</p>
+                    <h1 id="heroSubjectName" class="hero-title">CHEMISTRY</h1>
+                    <p class="hero-subtitle">
+                        <strong>Lead Teacher:</strong> <span id="heroTeacherName">Mrs. Mila Valiente</span> | Centralized Class Materials
+                    </p>
+                </div>
+                <div class="hero-illustration">
+                    <i class="fas fa-display"></i>
+                    <i class="fas fa-magnifying-glass hero-illustration-accent"></i>
+                </div>
+            </section>
+
+
+            <!-- MODULE CONTROLS -->
+            <section class="mod-section">
+                <div class="mod-heading">
+                    <h2 class="mod-heading-title">
+                        <i class="fas fa-folder"></i> Uploaded Modules &amp; Section Controls
+                    </h2>
+                    <div class="mod-heading-actions">
+                        <button id="backBtn" class="mod-back-btn">
+                            <i class="fas fa-rotate-left"></i> Back
+                        </button>
+                        <span id="moduleCountBadge" class="mod-count-badge">0 Modules Available</span>
+                    </div>
+                </div>
+
+                <!-- COLLAB / INSTRUCTORS BAR -->
+                <div class="mod-toolbar">
+                    <div class="mod-collab-group">
+                        <button id="collabBtn" class="mod-collab-btn">
+                            <i class="fas fa-user-plus"></i> Collab
+                        </button>
+
+                        <div class="mod-instructors">
+                            <span class="mod-instructors-label">Instructors:</span>
+                            <div id="instructorsStack" class="mod-instructors-stack"></div>
+                        </div>
+                    </div>
+
+                    <button id="uploadModulesBtn" class="mod-upload-btn">
+                        <i class="fas fa-cloud-arrow-up"></i> Upload Modules
+                    </button>
+                </div>
+
+                <!-- MODULE LIST -->
+                <div id="moduleList" class="mod-list"></div>
+
+                <div id="moduleEmptyState" class="mod-empty hidden">
+                    <i class="fas fa-folder-open"></i>
+                    <span>No modules uploaded yet. Click "Upload Modules" to add one.</span>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> Recent Activity</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- UPLOAD / EDIT MODULE MODAL -->
+    <div id="uploadModuleModal" class="modal-overlay">
+        <div id="uploadModuleModalCard" class="cc-card">
+
+            <div class="cc-modal-header">
+                <h3 id="umModalTitle" class="modal-title cc-modal-title">Upload Module</h3>
+                <button id="uploadModuleCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="umModuleTitle">Module title<span class="cc-required-star">*</span></label>
+                <input id="umModuleTitle" class="cc-input" type="text"
+                       placeholder="e.g. Module 3 - Stoichiometry" maxlength="100"
+                       autocomplete="off" spellcheck="false" />
+                <p id="umTitleError" class="cc-error hidden">*Required</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="umModuleDescription">Description <span class="cc-optional-label">(optional)</span></label>
+                <textarea id="umModuleDescription" class="cc-input cc-textarea" rows="3"
+                          placeholder="Briefly describe what this module covers — topics, objectives, or notes for students..."
+                          maxlength="500" spellcheck="false"></textarea>
+                <p id="umDescriptionCounter" class="cc-char-counter">0 / 500</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label">File</label>
+                <label id="umDropzone" for="umFileName" class="um-dropzone">
+                    <div class="um-dropzone-icon"><i class="fas fa-file-pdf"></i></div>
+                    <span class="um-dropzone-title">Click or drag learning material here</span>
+                    <span class="um-dropzone-sub">Supports PDF, DOC, PPTX (Max 50MB)</span>
+                    <span id="umFileNameLabel" class="um-dropzone-filename"></span>
+                </label>
+                <input id="umFileName" class="um-file-input" type="file" accept=".pdf,.ppt,.pptx,.doc,.docx" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label">Target access sections</label>
+                <div id="umSectionChecks" class="um-section-checks"></div>
+
+                <div class="um-add-section-row">
+                    <input id="umNewSectionInput" class="cc-input um-add-section-input" type="text"
+                           placeholder="Add new section e.g. STEM 6" maxlength="30"
+                           autocomplete="off" spellcheck="false" />
+                    <button id="umAddSectionBtn" type="button" class="um-add-section-btn" aria-label="Add section">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <p id="umAddSectionError" class="cc-error hidden">*That section already exists</p>
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="uploadModuleCancelBtn" class="modal-btn cc-cancel-btn">Cancel</button>
+                <button id="uploadModuleConfirmBtn" class="modal-btn cc-create-btn">Upload</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- UPLOAD/EDIT CONFIRMATION MODAL -->
+    <div id="uploadConfirmModal" class="modal-overlay">
+        <div id="uploadConfirmModalCard" class="cc-card uc-confirm-card">
+
+            <div class="cc-modal-header">
+                <h3 id="ucConfirmTitle" class="modal-title cc-modal-title">Confirm Upload</h3>
+                <button id="uploadConfirmCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="uc-confirm-body">
+                <div class="uc-confirm-icon"><i class="fas fa-circle-question"></i></div>
+                <p class="uc-confirm-text">
+                    Are you sure you want to upload
+                    <strong id="ucConfirmModuleTitle">this module</strong>
+                    for section(s):
+                    <strong id="ucConfirmSections">&mdash;</strong>?
+                </p>
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="uploadConfirmCancelBtn" class="modal-btn cc-cancel-btn">Go Back</button>
+                <button id="uploadConfirmYesBtn" class="modal-btn cc-create-btn">Yes, Upload</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- CREATE CLASS MODAL -->
+    <div id="createClassModal" class="modal-overlay">
+        <div id="createClassModalCard" class="cc-card">
+
+            <div class="cc-modal-header">
+                <h3 class="modal-title cc-modal-title">Create class</h3>
+                <button id="createClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccClassName">Class name<span class="cc-required-star">*</span></label>
+                <input id="ccClassName" class="cc-input" type="text"
+                       placeholder="Class name" maxlength="80"
+                       autocomplete="off" spellcheck="false" />
+                <p id="ccNameError" class="cc-error hidden">*Required</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSection">Section</label>
+                <input id="ccSection" class="cc-input" type="text"
+                       placeholder="Section" maxlength="60"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSubject">Subject</label>
+                <input id="ccSubject" class="cc-input" type="text"
+                       placeholder="Subject" maxlength="60"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccRoom">Room</label>
+                <input id="ccRoom" class="cc-input" type="text"
+                       placeholder="Room" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="createClassCancelBtn" class="modal-btn cc-cancel-btn">Cancel</button>
+                <button id="createClassConfirmBtn" class="modal-btn cc-create-btn">Create</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- INVITE COLLABORATOR MODAL -->
+    <div id="inviteCollabModal" class="modal-overlay">
+        <div id="inviteCollabModalCard" class="cc-card">
+
+            <div class="cc-modal-header">
+                <h3 class="modal-title cc-modal-title">Invite collaborator</h3>
+                <button id="inviteCollabCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <p class="cc-modal-desc">Add co-instructors to share module management</p>
+
+            <div class="cc-field">
+                <label class="cc-label" for="icName">Collaborator name<span class="cc-required-star">*</span></label>
+                <input id="icName" class="cc-input" type="text"
+                       placeholder="Enter your Full Name" maxlength="80"
+                       autocomplete="off" spellcheck="false" />
+                <p id="icNameError" class="cc-error hidden">*Required</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="icEmail">Email address<span class="cc-required-star">*</span></label>
+                <input id="icEmail" class="cc-input" type="email"
+                       placeholder="Enter your Email Address" maxlength="120"
+                       autocomplete="off" spellcheck="false" />
+                <p id="icEmailError" class="cc-error hidden">*Enter a valid email</p>
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="inviteCollabCancelBtn" class="modal-btn cc-cancel-btn">Cancel</button>
+                <button id="inviteCollabConfirmBtn" class="modal-btn cc-create-btn">Send Invite</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- MODULE PREVIEW MODAL -->
+    <div id="modulePreviewModal" class="modal-overlay">
+        <div id="modulePreviewCard" class="preview-card">
+
+            <div class="preview-header">
+                <div class="preview-header-left">
+                    <span id="previewTypeBadge" class="preview-type-badge">PDF</span>
+                    <div class="preview-header-text">
+                        <h3 id="previewModuleTitle" class="preview-title">Module Title</h3>
+                        <p id="previewModuleMeta" class="preview-meta">Reading time: 15 mins &bull; Accessible by: STEM 1</p>
+                    </div>
+                </div>
+                <div class="preview-header-actions">
+                    <button id="previewDownloadBtn" class="preview-download-btn"><i class="fas fa-download"></i> Download</button>
+                    <button id="previewCloseBtn" class="jc-close-btn" aria-label="Close"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="preview-body">
+                <div id="previewPdfWrap" class="preview-pdf-wrap hidden">
+                    <iframe id="previewPdfFrame"
+                            class="preview-pdf-frame"
+                            title="Module PDF preview"
+                            scrolling="auto"></iframe>
+                </div>
+
+                <div id="previewNoFileNote" class="preview-no-file hidden">
+                    <i class="fas fa-circle-info"></i>
+                    <span id="previewNoFileText">No uploaded file yet for this module — showing a sample preview layout instead.</span>
+                </div>
+
+                <div id="previewSampleContent" class="preview-sample-content">
+                    <span class="preview-eyebrow">Educational Lesson Material</span>
+                    <h4 id="previewHeading" class="preview-heading">Module Title</h4>
+
+                    <p id="previewIntroText" class="preview-intro">Welcome to this subject module! This document contains essential reading materials, core theoretical foundations, worked examples, and review problems curated specifically for your STEM coursework.</p>
+
+                    <div class="preview-objectives">
+                        <p class="preview-objectives-title"><i class="fas fa-bullseye"></i> Key Learning Objectives</p>
+                        <ul>
+                            <li>Understand the main concepts covered in this subject unit.</li>
+                            <li>Apply standard equations and chemical/physical formulas accurately.</li>
+                            <li>Complete the embedded practice set before the next laboratory meeting.</li>
+                        </ul>
+                    </div>
+
+                    <p class="preview-body-text">This is a preview placeholder — once the actual file is opened, its real content will render here so students can read through the lesson directly in LearnQuest.</p>
+
+                    <div class="preview-stats">
+                        <div class="preview-stat-card">
+                            <span class="preview-stat-value">100%</span>
+                            <span class="preview-stat-label">Curriculum Aligned</span>
+                        </div>
+                        <div class="preview-stat-card">
+                            <span id="previewStatSections" class="preview-stat-value">1 STEM</span>
+                            <span class="preview-stat-label">Synchronized Sections</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <script src="../../js/navigation.js"></script>
+    <script src="../js/professorModuleUpload.js"></script>
+
+</body>
+</html>

@@ -1,50 +1,58 @@
-const CLASS_INFO = window.CLASS_INFO || {
-    subject: "CHEMISTRY",
-    section: "STEM - AMETHYST",
-    teacher: "Mila D. Valiente",
-    teacherPhoto: "../../assets/images/teachers/chemistry.jpg",
-    teacherInitials: "MV",
-    gradient: "linear-gradient(135deg, #06b6d4, #0891b2)",
-};
+/* CLASS_INFO is no longer hardcoded — it's populated from the database by
+   loadClassInfo() below, based on the ?id= query param. */
+let CLASS_INFO = null;
 
-/* Seed data — same starting posts as the student view, now editable */
-let classPosts = [
-    {
-        id: 1,
-        type: "announcement",
-        quarter: "1st Quarter",
-        author: CLASS_INFO.teacher,
-        date: "Jan 5, 2026",
-        title: "Announcement: June 11, 2026",
-        body: "Please be informed that we will have the following:",
-        checklist: ["Quiz 1 – Module 6 (30 Items)"],
-        edited: false,
-    },
-    {
-        id: 2,
-        type: "lesson",
-        quarter: "1st Quarter",
-        author: CLASS_INFO.teacher,
-        date: "Jan 5, 2026",
-        title: "Material for this Week 2",
-        body: "",
-        attachment: { name: "Lesson 1.pdf", url: "#" },
-        edited: false,
-    },
-    {
-        id: 3,
-        type: "lesson",
-        quarter: "1st Quarter",
-        author: CLASS_INFO.teacher,
-        date: "Jan 12, 2026",
-        title: "Material for Week 3",
-        body: "",
-        attachment: { name: "Lesson 2.pdf", url: "#" },
-        edited: false,
-    },
+const CLASS_GRADIENT_PALETTE = [
+    "linear-gradient(135deg, #06b6d4, #0891b2)",
+    "linear-gradient(135deg, #fb923c, #ea580c)",
+    "linear-gradient(135deg, #c084fc, #9333ea)",
+    "linear-gradient(135deg, #4ade80, #16a34a)",
+    "linear-gradient(135deg, #fbbf24, #d97706)",
 ];
 
+/* Seed data — same starting mock posts as before, editable but not persisted.
+   Populated once CLASS_INFO is available (see buildInitialPosts()). */
+let classPosts = [];
+
 let nextPostId = 4;
+
+function buildInitialPosts(teacher) {
+    return [
+        {
+            id: 1,
+            type: "announcement",
+            quarter: "1st Quarter",
+            author: teacher,
+            date: "Jan 5, 2026",
+            title: "Announcement: June 11, 2026",
+            body: "Please be informed that we will have the following:",
+            checklist: ["Quiz 1 – Module 6 (30 Items)"],
+            edited: false,
+        },
+        {
+            id: 2,
+            type: "lesson",
+            quarter: "1st Quarter",
+            author: teacher,
+            date: "Jan 5, 2026",
+            title: "Material for this Week 2",
+            body: "",
+            attachment: { name: "Lesson 1.pdf", url: "#" },
+            edited: false,
+        },
+        {
+            id: 3,
+            type: "lesson",
+            quarter: "1st Quarter",
+            author: teacher,
+            date: "Jan 12, 2026",
+            title: "Material for Week 3",
+            body: "",
+            attachment: { name: "Lesson 2.pdf", url: "#" },
+            edited: false,
+        },
+    ];
+}
 
 /* Composer state — tracks whether we're creating or editing, and which post */
 let composerMode = "create"; // 'create' | 'edit'
@@ -58,10 +66,64 @@ let openKebabPostId = null;
 /* Pending delete target */
 let pendingDeleteId = null;
 
+/* LOAD — fetch the real class from the database, keyed by ?id= */
+async function loadClassInfo() {
+    const classId = new URLSearchParams(window.location.search).get("id");
+
+    if (!classId) {
+        showClassNotFound();
+        return;
+    }
+
+    try {
+        const res = await fetch(`/professor/classes/${encodeURIComponent(classId)}`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+
+        if (!res.ok) {
+            showClassNotFound();
+            return;
+        }
+
+        const data = await res.json();
+        const teacher = data.professor?.name || "Your class";
+
+        CLASS_INFO = {
+            subject: (data.subject || data.name || "").toUpperCase(),
+            section: data.section || "",
+            teacher,
+            teacherInitials: initialsFor(teacher),
+            gradient: CLASS_GRADIENT_PALETTE[data.id % CLASS_GRADIENT_PALETTE.length],
+        };
+
+        classPosts = buildInitialPosts(teacher);
+
+        renderClassBanner();
+        renderFeed();
+        renderClassSnapshot();
+    } catch (e) {
+        showClassNotFound();
+    }
+}
+
+function initialsFor(name) {
+    const parts = String(name).trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "CL";
+    return parts.slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+}
+
+function showClassNotFound() {
+    const notFound = document.getElementById("classNotFound");
+    const wrap = document.getElementById("classroomWrap");
+    if (notFound) notFound.classList.remove("hidden");
+    if (wrap) wrap.classList.add("hidden");
+}
+
 /* RENDER — class banner */
 function renderClassBanner() {
     const banner = document.getElementById("classBanner");
-    if (!banner) return;
+    if (!banner || !CLASS_INFO) return;
 
     banner.style.background = CLASS_INFO.gradient;
 
@@ -515,89 +577,6 @@ function confirmDeletePost() {
     renderFeed();
 }
 
-/* CREATE CLASS MODAL */
-function wireCreateClassModal() {
-    const createBtn = document.getElementById("createClassBtn");
-    const modal = document.getElementById("createClassModal");
-    const modalCard = document.getElementById("createClassModalCard");
-    const closeBtn = document.getElementById("createClassCloseBtn");
-    const cancelBtn = document.getElementById("createClassCancelBtn");
-    const confirmBtn = document.getElementById("createClassConfirmBtn");
-
-    const nameInput = document.getElementById("ccClassName");
-    const sectionInput = document.getElementById("ccSection");
-    const subjectInput = document.getElementById("ccSubject");
-    const roomInput = document.getElementById("ccRoom");
-    const nameError = document.getElementById("ccNameError");
-
-    if (!createBtn || !modal) return;
-
-    function resetForm() {
-        nameInput.value = "";
-        sectionInput.value = "";
-        subjectInput.value = "";
-        roomInput.value = "";
-        nameError.classList.add("hidden");
-        nameInput.classList.remove("error");
-    }
-
-    function openModal() {
-        resetForm();
-        modal.style.display = "flex";
-        setTimeout(() => {
-            modal.style.opacity = "1";
-            modalCard.classList.add("scaled");
-            nameInput.focus();
-        }, 10);
-    }
-
-    function closeModal() {
-        modal.style.opacity = "0";
-        modalCard.classList.remove("scaled");
-        setTimeout(() => {
-            modal.style.display = "none";
-        }, 300);
-    }
-
-    function confirmCreate() {
-        const className = nameInput.value.trim();
-
-        if (!className) {
-            nameError.textContent = "*Required";
-            nameError.classList.remove("hidden");
-            nameInput.classList.add("error");
-            nameInput.focus();
-            return;
-        }
-
-        nameError.classList.add("hidden");
-        nameInput.classList.remove("error");
-
-        closeModal();
-        showToast(`Class "${className}" created!`);
-    }
-
-    createBtn.addEventListener("click", openModal);
-    if (closeBtn) closeBtn.addEventListener("click", closeModal);
-    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
-    if (confirmBtn) confirmBtn.addEventListener("click", confirmCreate);
-
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    [nameInput, sectionInput, subjectInput, roomInput].forEach((field) => {
-        field.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") confirmCreate();
-        });
-    });
-
-    nameInput.addEventListener("input", () => {
-        nameError.classList.add("hidden");
-        nameInput.classList.remove("error");
-    });
-}
-
 /* TOAST helper (mirrors navigation.js showToast if present, with a safe fallback) */
 function showToast(message) {
     if (
@@ -621,13 +600,12 @@ function showToast(message) {
 
 /* INIT */
 document.addEventListener("DOMContentLoaded", () => {
-    renderClassBanner();
-    renderFeed();
-    wireCreateClassModal();
+    loadClassInfo();
 
-    /* Header "Create Class" button now opens the Create Class modal
-       (wired above via wireCreateClassModal). The side-panel quick
-       post button still opens the announcement/lesson composer. */
+    /* The header's "Create Class" button belongs to the shared shell, not
+       this page. The side-panel quick post button opens the announcement/
+       lesson composer below (still page-local mock data, unrelated to the
+       class record itself). */
     const quickPostBtn = document.getElementById("quickPostBtn");
     if (quickPostBtn)
         quickPostBtn.addEventListener("click", openComposerForCreate);

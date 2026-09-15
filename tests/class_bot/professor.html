@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest - Professor Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #8b5cf6;
+            --primary-light: #a78bfa;
+            --primary-dark: #7c3aed;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #e74c3c;
+            --dark: #1a1a2e;
+            --light: #f5f7fa;
+            --gray: #a0a0b8;
+            --border: #e0e0e8;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--dark);
+            min-height: 100vh;
+            padding: 16px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: var(--light);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            height: calc(100vh - 32px);
+            min-height: 700px;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 380px;
+            min-width: 380px;
+            background: var(--dark);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h2 i {
+            color: var(--primary-light);
+        }
+
+        .back-link {
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.15));
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            border: 1px solid rgba(139, 92, 246, 0.15);
+        }
+
+        .welcome-message h3 {
+            font-size: 1em;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-light);
+        }
+
+        .welcome-message p {
+            font-size: 0.85em;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        .file-upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary-light);
+            background: rgba(139, 92, 246, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .file-upload-area i {
+            font-size: 2em;
+            color: var(--primary-light);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .file-upload-area h3 {
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+
+        .file-upload-area p {
+            font-size: 0.8em;
+            opacity: 0.6;
+        }
+
+        .file-upload-area small {
+            font-size: 0.7em;
+            opacity: 0.5;
+        }
+
+        #profFileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid var(--primary-light);
+            display: none;
+        }
+
+        .file-info .file-name {
+            font-weight: 600;
+            color: var(--primary-light);
+            font-size: 0.9em;
+        }
+
+        .file-info .file-size {
+            color: var(--gray);
+            font-size: 0.75em;
+        }
+
+        /* Detach Section */
+        .detach-section {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+            display: none;
+        }
+
+        .detach-section.active {
+            display: block;
+        }
+
+        .detach-btn {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .detach-btn:hover {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+            transform: translateY(-2px);
+        }
+
+        .detach-btn i {
+            font-size: 1em;
+        }
+
+        .pdf-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .pdf-status .active-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            display: inline-block;
+            animation: blink 2s infinite;
+        }
+
+        .pdf-status .inactive-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray);
+            display: inline-block;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .section-title {
+            color: var(--gray);
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 16px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            color: var(--gray);
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-group select option {
+            background: var(--dark);
+        }
+
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .action-btn.secondary {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .action-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ===== CHAT AREA ===== */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--light);
+            min-width: 0;
+        }
+
+        .chat-header {
+            background: white;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 70px;
+        }
+
+        .chat-header h1 {
+            font-size: 1.2em;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-header h1 i {
+            color: var(--primary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8em;
+            color: var(--gray);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: blink 2s infinite;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f0f2f5;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            line-height: 1.6;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: white;
+            color: #333;
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .ai-message h3 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 1.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-message ul,
+        .ai-message ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .ai-message li {
+            margin-bottom: 4px;
+        }
+
+        .ai-message code {
+            background: #f1f1f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+            color: var(--primary-dark);
+        }
+
+        .ai-message pre {
+            background: #1a1a2e;
+            color: #f8f8f2;
+            padding: 12px 14px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            color: var(--gray);
+            margin-top: 6px;
+            text-align: right;
+            opacity: 0.7;
+        }
+
+        .user-message .message-time {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .quick-action-btn {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--primary);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .input-area {
+            padding: 14px 24px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #profInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            border-radius: 30px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: var(--light);
+        }
+
+        #profInput:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.08);
+        }
+
+        #profSendBtn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        #profSendBtn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            color: var(--gray);
+            font-size: 0.9em;
+            margin: 0 24px 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+            align-items: center;
+            gap: 10px;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--gray);
+            border-radius: 50%;
+            animation: typing-bounce 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+                min-height: 95vh;
+            }
+            .sidebar {
+                width: 100%;
+                min-width: unset;
+                max-height: 45vh;
+            }
+            .chat-area {
+                height: 55vh;
+            }
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+            .container {
+                border-radius: 12px;
+            }
+            .sidebar {
+                max-height: 40vh;
+            }
+            .chat-header {
+                flex-direction: column;
+                text-align: center;
+                padding: 12px 16px;
+            }
+            .input-area {
+                padding: 10px 12px;
+                flex-wrap: wrap;
+            }
+            #profSendBtn span {
+                display: none;
+            }
+            #profSendBtn {
+                padding: 12px 16px;
+            }
+            .messages {
+                padding: 12px 14px;
+            }
+            .message {
+                max-width: 95%;
+                padding: 12px 14px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ===== SIDEBAR ===== -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-chalkboard-teacher"></i> Professor LearnQuest</h2>
+            </div>
+
+            <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Student View
+            </a>
+
+            <div class="welcome-message">
+                <h3><i class="fas fa-lightbulb"></i> Professor Tools</h3>
+                <p>Upload lessons, get improvement suggestions, and generate quizzes for your students.</p>
+            </div>
+
+            <!-- File Upload -->
+            <div class="file-upload-area" onclick="document.getElementById('profFileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Upload Lesson Material</h3>
+                <p>PDF, DOCX, PPTX, or TXT</p>
+                <small>I'll help you improve and create quizzes</small>
+            </div>
+            <input type="file" id="profFileInput" accept=".pdf,.docx,.pptx,.txt">
+
+            <div class="file-info" id="profFileInfo">
+                <div class="file-name" id="profFileName">document.pdf</div>
+                <div class="file-size" id="profFileSize">2.4 MB</div>
+            </div>
+
+            <!-- Detach Section -->
+            <div class="detach-section" id="detachSection">
+                <div class="pdf-status">
+                    <span class="active-dot" id="pdfStatusDot"></span>
+                    <span id="pdfStatusText">Document Active</span>
+                </div>
+                <button class="detach-btn" onclick="detachDocument()">
+                    <i class="fas fa-unlink"></i> Detach Document
+                </button>
+                <small style="color:var(--gray);font-size:0.7em;display:block;margin-top:6px;">
+                    The AI will stop referencing the uploaded document
+                </small>
+            </div>
+
+            <!-- Quiz Settings -->
+            <div class="section-title"><i class="fas fa-cog"></i> Quiz Settings</div>
+
+            <div class="form-group">
+                <label><i class="fas fa-hashtag"></i> Number of Questions</label>
+                <input type="number" id="quizCount" value="10" min="1" max="40">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-list"></i> Question Type</label>
+                <select id="quizType">
+                    <option value="multiple_choice">Multiple Choice (A, B, C, D)</option>
+                    <option value="true_false">True / False</option>
+                    <option value="identification">Identification</option>
+                    <option value="fill_in_the_blank">Fill in the Blank</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-signal"></i> Difficulty Level</label>
+                <select id="difficultyLevel">
+                    <option value="mixed">Mixed (Recommended)</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <button class="action-btn" onclick="generateQuiz()" id="generateQuizBtn" disabled>
+                <i class="fas fa-file-alt"></i> Generate Quiz
+            </button>
+
+            <button class="action-btn secondary" onclick="getSuggestions()" id="suggestBtn" disabled style="margin-top:8px;">
+                <i class="fas fa-lightbulb"></i> Get Improvement Suggestions
+            </button>
+
+            <div style="margin-top:16px;">
+                <p style="color:var(--gray);font-size:0.7em;opacity:0.6;text-align:center;">
+                    <i class="fas fa-info-circle"></i> Upload a lesson first, then generate quizzes or get suggestions
+                </p>
+            </div>
+        </div>
+
+        <!-- ===== CHAT AREA ===== -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h1><i class="fas fa-chalkboard-teacher"></i> Professor Assistant</h1>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="connectionStatus">Connected</span>
+                </div>
+            </div>
+
+            <div class="messages" id="profMessages">
+                <div class="message ai-message">
+                    <h3><i class="fas fa-chalkboard-teacher"></i> Welcome, Professor!</h3>
+                    <p>I'm here to help you create better lessons and assessments.</p>
+
+                    <div style="margin-top:12px;">
+                        <p><strong>📚 What I can do:</strong></p>
+                        <ul>
+                            <li><strong>📝 Lesson Suggestions</strong> — Upload a lesson and get improvement ideas</li>
+                            <li><strong>📄 Generate Quizzes</strong> — Create quizzes with your preferred type and count</li>
+                            <li><strong>💬 Teaching Advice</strong> — Ask any question about teaching strategies</li>
+                            <li><strong>🔗 Document Focus</strong> — I'll focus on your uploaded document until you type "detach"</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-top:12px; padding:12px; background:#e8f0fe; border-radius:8px;">
+                        <p><strong>💡 Try these:</strong></p>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+                            <span class="quick-action-btn" onclick="quickProfChat('How can I make this lesson more engaging?')">Make it engaging</span>
+                            <span class="quick-action-btn" onclick="quickProfChat('What activities work best for this topic?')">Activities</span>
+                            <span class="quick-action-btn" onclick="quickProfChat('How do I assess student understanding?')">Assessment ideas</span>
+                            <span class="quick-action-btn" onclick="quickProfChat('What are common misconceptions students have?')">Misconceptions</span>
+                            <span class="quick-action-btn" onclick="quickProfChat('detach')" style="border-color:#e74c3c;color:#e74c3c;">🔗 Detach</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="profTypingIndicator">
+                <i class="fas fa-brain" style="color:var(--primary);"></i> Thinking
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="profInput" placeholder="Ask for teaching advice or type 'detach' to stop using the document...">
+                <button id="profSendBtn" onclick="sendProfMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const API_BASE = 'http://localhost:8001';
+        let currentFile = null;
+        let isDocumentAttached = false;
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('profFileInput').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    currentFile = e.target.files[0];
+                    document.getElementById('profFileName').textContent = currentFile.name;
+                    document.getElementById('profFileSize').textContent = formatFileSize(currentFile.size);
+                    document.getElementById('profFileInfo').style.display = 'block';
+                    document.getElementById('generateQuizBtn').disabled = false;
+                    document.getElementById('suggestBtn').disabled = false;
+                    
+                    isDocumentAttached = true;
+                    updateDetachUI();
+                    
+                    addProfMessage('user', `📄 Uploaded: ${currentFile.name}`);
+                    addProfMessage('ai', `✅ I've received **${currentFile.name}**. I'll focus on this document for all my answers. Type **"detach"** when you want me to stop referencing it.`);
+                }
+            });
+
+            document.getElementById('profInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendProfMessage();
+                }
+            });
+
+            document.getElementById('profInput').focus();
+            testConnection();
+            updateDetachUI();
+        });
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function updateDetachUI() {
+            const section = document.getElementById('detachSection');
+            const dot = document.getElementById('pdfStatusDot');
+            const text = document.getElementById('pdfStatusText');
+            
+            if (isDocumentAttached) {
+                section.classList.add('active');
+                dot.className = 'active-dot';
+                text.textContent = 'Document Active — I\'ll reference this document';
+                text.style.color = '#4caf50';
+            } else {
+                section.classList.remove('active');
+                dot.className = 'inactive-dot';
+                text.textContent = 'No Document Attached';
+                text.style.color = 'var(--gray)';
+            }
+        }
+
+        // ===== API FUNCTIONS =====
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                document.getElementById('connectionStatus').textContent = '✓ Connected';
+                document.getElementById('connectionStatus').style.color = '#4caf50';
+            } catch (error) {
+                document.getElementById('connectionStatus').textContent = '⟳ Connecting...';
+                document.getElementById('connectionStatus').style.color = '#ff9800';
+                setTimeout(testConnection, 3000);
+            }
+        }
+
+        function quickProfChat(message) {
+            document.getElementById('profInput').value = message;
+            sendProfMessage();
+        }
+
+        async function detachDocument() {
+            try {
+                const formData = new FormData();
+                formData.append('user_id', 'professor_default');
+                
+                const response = await fetch(`${API_BASE}/professor/detach`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'detached') {
+                    isDocumentAttached = false;
+                    currentFile = null;
+                    updateDetachUI();
+                    
+                    document.getElementById('profFileInfo').style.display = 'none';
+                    document.getElementById('generateQuizBtn').disabled = true;
+                    document.getElementById('suggestBtn').disabled = true;
+                    
+                    addProfMessage('ai', '✅ **Document detached!** I\'ll no longer reference the uploaded document. Feel free to ask me anything else! 🎉');
+                } else {
+                    addProfMessage('ai', '⚠️ No active document found to detach.');
+                }
+            } catch (error) {
+                addProfMessage('ai', `❌ Error detaching document: ${error.message}`);
+            }
+        }
+
+        async function sendProfMessage() {
+            const input = document.getElementById('profInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Check for detach command
+            if (message.toLowerCase().includes('detach') || message.toLowerCase().includes('forget document')) {
+                await detachDocument();
+                input.value = '';
+                return;
+            }
+
+            addProfMessage('user', message);
+            input.value = '';
+            showProfTyping(true);
+
+            try {
+                const formData = new FormData();
+                formData.append('message', message);
+                
+                if (currentFile && isDocumentAttached) {
+                    formData.append('module_file', currentFile);
+                }
+                
+                const response = await fetch(`${API_BASE}/professor/chat`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.response) {
+                    addProfMessage('ai', data.response);
+                } else if (data.error) {
+                    addProfMessage('ai', `❌ ${data.error}`);
+                }
+            } catch (error) {
+                addProfMessage('ai', `❌ Connection error: ${error.message}`);
+            } finally {
+                showProfTyping(false);
+            }
+        }
+
+        async function generateQuiz() {
+            if (!currentFile) {
+                addProfMessage('ai', '📁 Please upload a lesson first!');
+                return;
+            }
+
+            const numQuestions = document.getElementById('quizCount').value;
+            const questionType = document.getElementById('quizType').value;
+            const difficulty = document.getElementById('difficultyLevel').value;
+
+            addProfMessage('user', `📝 Generate a ${numQuestions}-question ${questionType.replace('_', ' ')} quiz (${difficulty} difficulty)`);
+            showProfTyping(true);
+
+            const formData = new FormData();
+            formData.append('module_file', currentFile);
+            formData.append('num_questions', numQuestions);
+            formData.append('question_type', questionType);
+            formData.append('difficulty', difficulty);
+
+            try {
+                const response = await fetch(`${API_BASE}/professor/generate-quiz`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.quiz) {
+                    addProfMessage('ai', `📄 **Quiz Generated!**\n\n${data.quiz}`);
+                } else if (data.error) {
+                    addProfMessage('ai', `❌ ${data.error}`);
+                }
+            } catch (error) {
+                addProfMessage('ai', `❌ Connection error: ${error.message}`);
+            } finally {
+                showProfTyping(false);
+            }
+        }
+
+        async function getSuggestions() {
+            if (!currentFile) {
+                addProfMessage('ai', '📁 Please upload a lesson first!');
+                return;
+            }
+
+            addProfMessage('user', '💡 Get improvement suggestions for this lesson');
+            showProfTyping(true);
+
+            const formData = new FormData();
+            formData.append('module_file', currentFile);
+
+            try {
+                const response = await fetch(`${API_BASE}/professor/suggest`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.suggestions) {
+                    addProfMessage('ai', `💡 **Lesson Improvement Suggestions**\n\n${data.suggestions}`);
+                } else if (data.error) {
+                    addProfMessage('ai', `❌ ${data.error}`);
+                }
+            } catch (error) {
+                addProfMessage('ai', `❌ Connection error: ${error.message}`);
+            } finally {
+                showProfTyping(false);
+            }
+        }
+
+        function addProfMessage(sender, content) {
+            const messagesDiv = document.getElementById('profMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (sender === 'ai') {
+                let formatted = content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    .replace(/\n/g, '<br>');
+                
+                messageDiv.innerHTML = `${formatted}<div class="message-time">${time}</div>`;
+            } else {
+                messageDiv.innerHTML = `${content}<div class="message-time">${time}</div>`;
+            }
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            document.getElementById('profInput').focus();
+        }
+
+        function showProfTyping(show) {
+            const indicator = document.getElementById('profTypingIndicator');
+            indicator.style.display = show ? 'flex' : 'none';
+            if (show) {
+                document.getElementById('profMessages').scrollTop = document.getElementById('profMessages').scrollHeight;
+            }
+        }
+    </script>
+
+</body>
+</html>
