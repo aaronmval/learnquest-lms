@@ -45,6 +45,19 @@ class ClassRoom extends Model
         return $this->belongsTo(User::class, 'professor_id');
     }
 
+    /**
+     * The subject this section belongs to, if it was created from the
+     * Modules page rather than the standalone Classes flow. Named
+     * parentSubject() rather than subject() because "subject" is already a
+     * plain string column on this table (the free-text subject label used
+     * by the standalone Classes flow) — a same-named relation method would
+     * be shadowed by that column on magic property access ($class->subject).
+     */
+    public function parentSubject(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class, 'subject_id');
+    }
+
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'class_enrollments', 'class_id', 'student_id')
@@ -54,6 +67,20 @@ class ClassRoom extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(ClassPost::class, 'class_id');
+    }
+
+    /**
+     * Whether the given user manages this section — either directly (the
+     * professor who created it) or through the subject it belongs to (a
+     * subject collaborator manages every section under that subject).
+     */
+    public function isManagedBy(User $user): bool
+    {
+        if ($this->professor_id === $user->id) {
+            return true;
+        }
+
+        return $this->subject_id !== null && $this->parentSubject && $this->parentSubject->isManagedBy($user);
     }
 
     /**

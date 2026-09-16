@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <script src="../../assets/js/common/frame-guard.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | Subject Materials</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/professor/professor-modules.css"
+        />
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/professor/professor-module-view.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+            <!-- SUBJECT NOT FOUND / ACCESS DENIED -->
+            <div id="subjectNotFound" class="class-not-found hidden">
+                <i class="fas fa-circle-exclamation"></i>
+                <h1>Subject not found</h1>
+                <p>
+                    This subject doesn't exist, or you don't have access to
+                    it.
+                </p>
+                <a href="professor-modules.html" class="hero-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Modules
+                </a>
+            </div>
+
+            <div id="subjectWrap" class="mv-wrap hidden">
+                <!-- HEADER -->
+                <section class="mv-header">
+                    <div class="mv-header-text">
+                        <a href="professor-modules.html" class="mv-back-link">
+                            <i class="fas fa-arrow-left"></i> All subjects
+                        </a>
+                        <h1 id="mvSubjectName" class="mv-subject-name"></h1>
+                        <div id="mvOwnerRow" class="mv-owner-row"></div>
+                    </div>
+                    <div class="mv-header-actions">
+                        <button id="inviteCollabBtn" class="mv-action-btn">
+                            <i class="fas fa-user-plus"></i> Invite
+                            Collaborator
+                        </button>
+                        <button id="addSectionBtn" class="mv-action-btn">
+                            <i class="fas fa-plus"></i> Add Section
+                        </button>
+                        <button
+                            id="uploadModuleBtn"
+                            class="mv-action-btn mv-action-primary"
+                        >
+                            <i class="fas fa-cloud-arrow-up"></i> Upload
+                            Module
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SECTIONS -->
+                <section class="mv-sections-section">
+                    <h2 class="mv-section-title">Sections</h2>
+                    <div id="sectionsStrip" class="mv-sections-strip"></div>
+                    <p id="sectionsEmpty" class="mat-search-empty hidden">
+                        <i class="fas fa-chalkboard"></i> No sections yet —
+                        click "Add Section" to create one.
+                    </p>
+                </section>
+
+                <!-- MODULES -->
+                <section class="mv-modules-section">
+                    <div class="mv-modules-heading">
+                        <h2 class="mv-section-title">Materials</h2>
+                        <select id="sectionFilter" class="mv-filter-select">
+                            <option value="">All sections</option>
+                        </select>
+                    </div>
+
+                    <div id="moduleGrid" class="mv-module-grid"></div>
+                    <p id="modulesEmpty" class="mat-search-empty hidden">
+                        <i class="fas fa-file-circle-plus"></i> No materials
+                        uploaded yet.
+                    </p>
+                </section>
+            </div>
+
+            <!-- UPLOAD / EDIT MODULE MODAL -->
+            <div id="uploadModuleModal" class="modal-overlay">
+                <div id="uploadModuleModalCard" class="cc-card mv-wide-card">
+                    <div class="cc-modal-header">
+                        <h3 id="umModalTitle" class="modal-title cc-modal-title">
+                            Upload Module
+                        </h3>
+                        <button
+                            id="umCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="umTitle"
+                            >Title<span class="cc-required-star">*</span></label
+                        >
+                        <input
+                            id="umTitle"
+                            class="cc-input"
+                            type="text"
+                            placeholder="e.g. Module 3: Chemical Bonding"
+                            maxlength="150"
+                            autocomplete="off"
+                        />
+                        <p id="umTitleError" class="cc-error hidden">
+                            *Title is required
+                        </p>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="umDescription"
+                            >Description</label
+                        >
+                        <textarea
+                            id="umDescription"
+                            class="cc-input mv-textarea"
+                            rows="3"
+                            maxlength="2000"
+                            placeholder="What is this material about?"
+                        ></textarea>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label">PDF file<span id="umFileRequiredStar" class="cc-required-star">*</span></label>
+                        <div id="umDropzone" class="mv-dropzone">
+                            <i class="fas fa-file-pdf mv-dropzone-icon"></i>
+                            <p id="umFileName" class="mv-dropzone-text">
+                                Drag &amp; drop a PDF here, or click to browse
+                            </p>
+                            <input
+                                id="umFileInput"
+                                type="file"
+                                accept=".pdf,application/pdf"
+                                class="mv-hidden-input"
+                            />
+                        </div>
+                        <p id="umFileError" class="cc-error hidden">
+                            *A PDF file is required
+                        </p>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label">Available to</label>
+                        <div id="umSectionChecks" class="mv-section-checks"></div>
+                        <p class="mat-field-hint">
+                            Leave everything unchecked to make it available to
+                            all sections under this subject.
+                        </p>
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button id="umCancelBtn" class="modal-btn cc-cancel-btn">
+                            Cancel
+                        </button>
+                        <button id="umSubmitBtn" class="modal-btn cc-create-btn">
+                            <span id="umSubmitLabel">Upload</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INVITE COLLABORATOR MODAL -->
+            <div id="inviteCollabModal" class="modal-overlay">
+                <div id="inviteCollabModalCard" class="cc-card">
+                    <div class="cc-modal-header">
+                        <h3 class="modal-title cc-modal-title">
+                            Invite collaborator
+                        </h3>
+                        <button
+                            id="inviteCollabCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="mat-field-hint">
+                        Add a co-teacher to share management of this subject's
+                        sections and materials.
+                    </p>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="icEmail"
+                            >Email address<span class="cc-required-star"
+                                >*</span
+                            ></label
+                        >
+                        <input
+                            id="icEmail"
+                            class="cc-input"
+                            type="email"
+                            placeholder="Their LearnQuest email address"
+                            maxlength="120"
+                            autocomplete="off"
+                        />
+                        <p id="icEmailError" class="cc-error hidden">
+                            *Enter a valid email
+                        </p>
+                    </div>
+
+                    <div class="mv-collab-list-wrap">
+                        <p class="cc-label">Current collaborators</p>
+                        <div id="collabList" class="mv-collab-list"></div>
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button
+                            id="inviteCollabCancelBtn"
+                            class="modal-btn cc-cancel-btn"
+                        >
+                            Close
+                        </button>
+                        <button
+                            id="inviteCollabConfirmBtn"
+                            class="modal-btn cc-create-btn"
+                        >
+                            Send Invite
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADD SECTION MODAL -->
+            <div id="addSectionModal" class="modal-overlay">
+                <div id="addSectionModalCard" class="cc-card">
+                    <div class="cc-modal-header">
+                        <h3 class="modal-title cc-modal-title">Add Section</h3>
+                        <button
+                            id="addSectionCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="asecSection"
+                            >Section<span class="cc-required-star"
+                                >*</span
+                            ></label
+                        >
+                        <input
+                            id="asecSection"
+                            class="cc-input"
+                            type="text"
+                            placeholder="e.g. STEM 4"
+                            maxlength="60"
+                            autocomplete="off"
+                        />
+                        <p id="asecSectionError" class="cc-error hidden">
+                            *Section is required
+                        </p>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="asecRoom">Room</label>
+                        <input
+                            id="asecRoom"
+                            class="cc-input"
+                            type="text"
+                            placeholder="e.g. Room 204 (optional)"
+                            maxlength="40"
+                            autocomplete="off"
+                        />
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button
+                            id="addSectionCancelBtn"
+                            class="modal-btn cc-cancel-btn"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="addSectionConfirmBtn"
+                            class="modal-btn cc-create-btn"
+                        >
+                            Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GENERIC CONFIRM MODAL (delete module / remove collaborator) -->
+            <div id="confirmActionModal" class="modal-overlay">
+                <div class="cc-card">
+                    <h3 id="confirmActionTitle" class="modal-title cc-modal-title">
+                        Are you sure?
+                    </h3>
+                    <p id="confirmActionDesc" class="mat-field-hint"></p>
+                    <div class="modal-actions cc-modal-actions">
+                        <button
+                            id="confirmActionCancelBtn"
+                            class="modal-btn cc-cancel-btn"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="confirmActionConfirmBtn"
+                            class="modal-btn mv-danger-btn"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF PREVIEW MODAL -->
+            <div
+                id="pdfModal"
+                aria-modal="true"
+                role="dialog"
+                aria-labelledby="pdfModalTitle"
+            >
+                <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
+                <div class="pdf-modal-card">
+                    <div class="pdf-modal-header">
+                        <div class="pdf-modal-header-left">
+                            <span class="pdf-modal-file-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </span>
+                            <span id="pdfModalTitle" class="pdf-modal-title"
+                                >Module.pdf</span
+                            >
+                        </div>
+                        <div class="pdf-modal-header-right">
+                            <a
+                                id="pdfModalDownload"
+                                class="pdf-modal-action-btn pdf-modal-download"
+                                href="#"
+                                title="Download PDF"
+                                aria-label="Download PDF"
+                            >
+                                <i class="fas fa-download"></i>
+                                <span>Download</span>
+                            </a>
+                            <button
+                                id="pdfModalClose"
+                                class="pdf-modal-action-btn pdf-modal-close"
+                                aria-label="Close PDF viewer"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="pdf-modal-body">
+                        <iframe
+                            id="pdfModalViewer"
+                            class="pdf-modal-iframe pdf-viewer-initial-hidden"
+                            title="PDF viewer"
+                            frameborder="0"
+                        ></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOAST -->
+            <div id="modulesToast">
+                <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+                <span id="modulesToastMessage"></span>
+            </div>
+        </main>
+
+        <script src="../../assets/js/pages/professor/professor-module-view.js"></script>
+    </body>
+</html>

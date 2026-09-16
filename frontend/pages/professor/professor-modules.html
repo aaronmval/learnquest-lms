@@ -74,9 +74,9 @@
                     </div>
                     <div class="mat-stat-text">
                         <span id="statClassesCovered" class="mat-stat-value"
-                            >3</span
+                            >0</span
                         >
-                        <span class="mat-stat-label">Classes Covered</span>
+                        <span class="mat-stat-label">Sections Covered</span>
                     </div>
                 </div>
 
@@ -94,7 +94,7 @@
             <!-- CLASSES COVERED SECTION -->
             <section class="mat-covered-section">
                 <div class="mat-covered-heading">
-                    <h2 class="mat-covered-title">Classes Covered</h2>
+                    <h2 class="mat-covered-title">Your Subjects</h2>
 
                     <div class="mat-covered-actions">
                         <div class="mat-search-wrap">
@@ -122,85 +122,17 @@
                     </div>
                 </div>
 
-                <div class="mat-subject-grid" id="subjectGrid">
-                    <div class="mat-subject-card" data-subject="chemistry">
-                        <div class="mat-subject-row">
-                            <h3 class="mat-subject-name">CHEMISTRY</h3>
-                            <button
-                                class="mat-subject-arrow"
-                                aria-label="Open Chemistry materials"
-                            >
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                        <div class="mat-subject-uploader">
-                            <img
-                                src="../../assets/images/teachers/chemistry.jpg"
-                                alt="Mrs. Valiente"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
-                            />
-                            <div
-                                class="mat-subject-uploader-initials"
-                                style="display: none"
-                            >
-                                MV
-                            </div>
-                            <span>Uploaded by: Mrs. Valiente</span>
-                        </div>
-                    </div>
+                <div class="mat-subject-grid" id="subjectGrid"></div>
 
-                    <div class="mat-subject-card" data-subject="physics">
-                        <div class="mat-subject-row">
-                            <h3 class="mat-subject-name">PHYSICS</h3>
-                            <button
-                                class="mat-subject-arrow"
-                                aria-label="Open Physics materials"
-                            >
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                        <div class="mat-subject-uploader">
-                            <img
-                                src="../../assets/images/teachers/physics.jpg"
-                                alt="Mrs. Santos"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
-                            />
-                            <div
-                                class="mat-subject-uploader-initials"
-                                style="display: none"
-                            >
-                                MS
-                            </div>
-                            <span>Uploaded by: Mrs. Santos</span>
-                        </div>
-                    </div>
+                <p id="subjectLoading" class="mat-search-empty hidden">
+                    <i class="fas fa-spinner fa-spin"></i> Loading your
+                    subjects...
+                </p>
 
-                    <div class="mat-subject-card" data-subject="general-science">
-                        <div class="mat-subject-row">
-                            <h3 class="mat-subject-name">General Science</h3>
-                            <button
-                                class="mat-subject-arrow"
-                                aria-label="Open General Science materials"
-                            >
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </div>
-                        <div class="mat-subject-uploader">
-                            <img
-                                src="../../assets/images/teachers/chemistry.jpg"
-                                alt="Mrs. Valiente"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
-                            />
-                            <div
-                                class="mat-subject-uploader-initials"
-                                style="display: none"
-                            >
-                                MV
-                            </div>
-                            <span>Uploaded by: Mrs. Valiente</span>
-                        </div>
-                    </div>
-                </div>
+                <p id="subjectEmpty" class="mat-search-empty hidden">
+                    <i class="fas fa-folder-open"></i> You haven't created any
+                    subjects yet. Click "Add New Subject" to get started.
+                </p>
 
                 <p id="subjectSearchEmpty" class="mat-search-empty hidden">
                     <i class="fas fa-magnifying-glass"></i> No subjects match
@@ -225,36 +157,6 @@
                     </div>
 
                     <div class="cc-field">
-                        <label class="cc-label" for="asTeacherName"
-                            >Teacher Name</label
-                        >
-                        <input
-                            id="asTeacherName"
-                            class="cc-input"
-                            type="text"
-                            placeholder="Enter your Full Name"
-                            maxlength="60"
-                            autocomplete="off"
-                            spellcheck="false"
-                        />
-                    </div>
-
-                    <div class="cc-field">
-                        <label class="cc-label" for="asTeacherEmail"
-                            >Teacher Email</label
-                        >
-                        <input
-                            id="asTeacherEmail"
-                            class="cc-input"
-                            type="email"
-                            placeholder="Enter your Email Address"
-                            maxlength="60"
-                            autocomplete="off"
-                            spellcheck="false"
-                        />
-                    </div>
-
-                    <div class="cc-field">
                         <label class="cc-label" for="asSubjectName"
                             >Subject Title<span class="cc-required-star"
                                 >*</span
@@ -271,6 +173,25 @@
                         />
                         <p id="asNameError" class="cc-error hidden">
                             *Subject title is required
+                        </p>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="asTeacherEmail"
+                            >Invite a co-teacher (optional)</label
+                        >
+                        <input
+                            id="asTeacherEmail"
+                            class="cc-input"
+                            type="email"
+                            placeholder="Their LearnQuest email address"
+                            maxlength="120"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <p class="mat-field-hint">
+                            Must be an existing professor account. You can also
+                            invite collaborators later from the subject page.
                         </p>
                     </div>
 

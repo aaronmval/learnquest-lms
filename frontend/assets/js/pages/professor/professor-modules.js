@@ -1,9 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
     const subjectGrid = document.getElementById("subjectGrid");
+    const subjectLoading = document.getElementById("subjectLoading");
+    const subjectEmpty = document.getElementById("subjectEmpty");
     const searchInput = document.getElementById("subjectSearchInput");
     const searchClearBtn = document.getElementById("subjectSearchClearBtn");
     const searchEmpty = document.getElementById("subjectSearchEmpty");
+
+    const statTotalMaterials = document.getElementById("statTotalMaterials");
+    const statStorageUsed = document.getElementById("statStorageUsed");
     const statClassesCovered = document.getElementById("statClassesCovered");
+    const statLastUpload = document.getElementById("statLastUpload");
 
     const addSubjectBtn = document.getElementById("addSubjectBtn");
     const addSubjectModal = document.getElementById("addSubjectModal");
@@ -13,7 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const addSubjectConfirmBtn = document.getElementById(
         "addSubjectConfirmBtn",
     );
-    const asTeacherName = document.getElementById("asTeacherName");
     const asTeacherEmail = document.getElementById("asTeacherEmail");
     const asSubjectName = document.getElementById("asSubjectName");
     const asNameError = document.getElementById("asNameError");
@@ -22,6 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const toastMessage = document.getElementById("modulesToastMessage");
 
     let toastTimer = null;
+    let subjects = [];
+
+    function getCsrfToken() {
+        const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+        return match ? decodeURIComponent(match[1]) : "";
+    }
 
     /* TOAST */
     function showToast(message) {
@@ -34,12 +45,60 @@ document.addEventListener("DOMContentLoaded", () => {
         toastTimer = setTimeout(() => toast.classList.remove("visible"), 2600);
     }
 
+    function initialsFor(name) {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return "LQ";
+
+        return parts
+            .slice(0, 2)
+            .map((part) => part[0].toUpperCase())
+            .join("");
+    }
+
+    function formatBytes(bytes) {
+        const value = Number(bytes) || 0;
+        if (value === 0) return "0 KB";
+        if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+        return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatDate(isoString) {
+        if (!isoString) return "—";
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) return "—";
+        return date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
+    }
+
     /* STATS */
     function refreshStats() {
-        if (!subjectGrid || !statClassesCovered) return;
-        statClassesCovered.textContent = String(
-            subjectGrid.querySelectorAll(".mat-subject-card").length,
+        const totalMaterials = subjects.reduce(
+            (sum, s) => sum + (s.modules_count || 0),
+            0,
         );
+        const storageUsed = subjects.reduce(
+            (sum, s) => sum + (Number(s.modules_sum_file_size) || 0),
+            0,
+        );
+        const sectionsCovered = subjects.reduce(
+            (sum, s) => sum + (s.sections_count || 0),
+            0,
+        );
+        const lastUploads = subjects
+            .map((s) => s.modules_max_created_at)
+            .filter(Boolean)
+            .sort();
+
+        if (statTotalMaterials) statTotalMaterials.textContent = String(totalMaterials);
+        if (statStorageUsed) statStorageUsed.textContent = formatBytes(storageUsed);
+        if (statClassesCovered) statClassesCovered.textContent = String(sectionsCovered);
+        if (statLastUpload)
+            statLastUpload.textContent = lastUploads.length
+                ? formatDate(lastUploads[lastUploads.length - 1])
+                : "—";
     }
 
     /* SEARCH */
@@ -63,7 +122,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         searchClearBtn?.classList.toggle("hidden", query === "");
-        searchEmpty?.classList.toggle("hidden", visibleCount > 0);
+        searchEmpty?.classList.toggle(
+            "hidden",
+            visibleCount > 0 || subjects.length === 0,
+        );
     }
 
     searchInput?.addEventListener("input", applySearch);
@@ -74,6 +136,108 @@ document.addEventListener("DOMContentLoaded", () => {
         applySearch();
         searchInput.focus();
     });
+
+    /* SUBJECT CARDS */
+    function buildSubjectCard(subject) {
+        const card = document.createElement("div");
+        card.className = "mat-subject-card";
+        card.dataset.id = subject.id;
+
+        const row = document.createElement("div");
+        row.className = "mat-subject-row";
+
+        const title = document.createElement("h3");
+        title.className = "mat-subject-name";
+        title.textContent = subject.name;
+
+        const arrow = document.createElement("button");
+        arrow.className = "mat-subject-arrow";
+        arrow.setAttribute("aria-label", `Open ${subject.name} materials`);
+        arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
+
+        row.append(title, arrow);
+
+        const meta = document.createElement("div");
+        meta.className = "mat-subject-meta";
+        const sectionsLabel = subject.sections_count === 1 ? "section" : "sections";
+        const modulesLabel = subject.modules_count === 1 ? "material" : "materials";
+        meta.textContent = `${subject.sections_count || 0} ${sectionsLabel} · ${subject.modules_count || 0} ${modulesLabel}`;
+
+        const uploader = document.createElement("div");
+        uploader.className = "mat-subject-uploader";
+
+        const avatar = document.createElement("div");
+        avatar.className = "mat-subject-uploader-initials";
+        avatar.style.display = "flex";
+        avatar.textContent = initialsFor(subject.owner?.name);
+
+        const label = document.createElement("span");
+        label.textContent = `Owned by: ${subject.owner?.name || "Unknown"}`;
+
+        uploader.append(avatar, label);
+
+        if (subject.collaborators && subject.collaborators.length) {
+            const collabStack = document.createElement("div");
+            collabStack.className = "mat-collab-stack";
+            collabStack.title = subject.collaborators
+                .map((c) => c.name)
+                .join(", ");
+
+            subject.collaborators.slice(0, 3).forEach((collab) => {
+                const bubble = document.createElement("div");
+                bubble.className = "mat-collab-bubble";
+                bubble.textContent = initialsFor(collab.name);
+                collabStack.appendChild(bubble);
+            });
+
+            if (subject.collaborators.length > 3) {
+                const more = document.createElement("div");
+                more.className = "mat-collab-bubble mat-collab-more";
+                more.textContent = `+${subject.collaborators.length - 3}`;
+                collabStack.appendChild(more);
+            }
+
+            uploader.appendChild(collabStack);
+        }
+
+        card.append(row, meta, uploader);
+
+        return card;
+    }
+
+    function renderSubjects() {
+        if (!subjectGrid) return;
+
+        subjectGrid.innerHTML = "";
+        subjects.forEach((subject) => {
+            subjectGrid.appendChild(buildSubjectCard(subject));
+        });
+
+        subjectEmpty?.classList.toggle("hidden", subjects.length > 0);
+        refreshStats();
+        applySearch();
+    }
+
+    async function loadSubjects() {
+        subjectLoading?.classList.remove("hidden");
+
+        try {
+            const res = await fetch("/professor/subjects", {
+                credentials: "same-origin",
+                headers: { Accept: "application/json" },
+            });
+            if (!res.ok) throw new Error("failed to load subjects");
+
+            subjects = await res.json();
+        } catch (e) {
+            subjects = [];
+            showToast("Could not load your subjects. Please refresh the page.");
+        } finally {
+            subjectLoading?.classList.add("hidden");
+        }
+
+        renderSubjects();
+    }
 
     /* ADD SUBJECT MODAL */
     function openAddSubjectModal() {
@@ -95,58 +259,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function resetAddSubjectForm() {
-        [asTeacherName, asTeacherEmail, asSubjectName].forEach((input) => {
+        [asTeacherEmail, asSubjectName].forEach((input) => {
             if (!input) return;
             input.value = "";
             input.classList.remove("error");
         });
         asNameError?.classList.add("hidden");
-    }
-
-    function initialsFor(name) {
-        const parts = name.trim().split(/\s+/).filter(Boolean);
-        if (parts.length === 0) return "LQ";
-
-        return parts
-            .slice(0, 2)
-            .map((part) => part[0].toUpperCase())
-            .join("");
-    }
-
-    function buildSubjectCard(subject, teacher) {
-        const card = document.createElement("div");
-        card.className = "mat-subject-card";
-        card.dataset.subject = subject.toLowerCase().replace(/\s+/g, "-");
-
-        const row = document.createElement("div");
-        row.className = "mat-subject-row";
-
-        const title = document.createElement("h3");
-        title.className = "mat-subject-name";
-        title.textContent = subject;
-
-        const arrow = document.createElement("button");
-        arrow.className = "mat-subject-arrow";
-        arrow.setAttribute("aria-label", `Open ${subject} materials`);
-        arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
-
-        row.append(title, arrow);
-
-        const uploader = document.createElement("div");
-        uploader.className = "mat-subject-uploader";
-
-        const avatar = document.createElement("div");
-        avatar.className = "mat-subject-uploader-initials";
-        avatar.style.display = "flex";
-        avatar.textContent = initialsFor(teacher);
-
-        const label = document.createElement("span");
-        label.textContent = `Uploaded by: ${teacher}`;
-
-        uploader.append(avatar, label);
-        card.append(row, uploader);
-
-        return card;
     }
 
     addSubjectBtn?.addEventListener("click", openAddSubjectModal);
@@ -168,39 +286,102 @@ document.addEventListener("DOMContentLoaded", () => {
         asNameError?.classList.add("hidden");
     });
 
-    addSubjectConfirmBtn?.addEventListener("click", () => {
-        const subject = asSubjectName?.value.trim() || "";
+    async function extractErrorMessage(res, fallback) {
+        try {
+            const data = await res.json();
+            const firstFieldError = data?.errors
+                ? Object.values(data.errors)[0]?.[0]
+                : null;
+            return firstFieldError || data?.message || fallback;
+        } catch (e) {
+            return fallback;
+        }
+    }
 
-        if (subject === "") {
+    addSubjectConfirmBtn?.addEventListener("click", async () => {
+        const name = asSubjectName?.value.trim() || "";
+
+        if (name === "") {
             asSubjectName?.classList.add("error");
             asNameError?.classList.remove("hidden");
             asSubjectName?.focus();
             return;
         }
 
-        const teacher = asTeacherName?.value.trim() || "You";
+        const email = asTeacherEmail?.value.trim() || "";
 
-        subjectGrid?.appendChild(buildSubjectCard(subject, teacher));
-        closeAddSubjectModal();
-        refreshStats();
-        applySearch();
-        showToast(`"${subject}" added to your classes.`);
+        addSubjectConfirmBtn.disabled = true;
+
+        try {
+            const res = await fetch("/professor/subjects", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-XSRF-TOKEN": getCsrfToken(),
+                },
+                body: JSON.stringify({ name }),
+            });
+
+            if (!res.ok) throw new Error("failed to create subject");
+
+            const created = await res.json();
+            closeAddSubjectModal();
+
+            if (email !== "") {
+                try {
+                    const inviteRes = await fetch(
+                        `/professor/subjects/${created.id}/collaborators`,
+                        {
+                            method: "POST",
+                            credentials: "same-origin",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Accept: "application/json",
+                                "X-XSRF-TOKEN": getCsrfToken(),
+                            },
+                            body: JSON.stringify({ email }),
+                        },
+                    );
+
+                    if (!inviteRes.ok) {
+                        const message = await extractErrorMessage(
+                            inviteRes,
+                            "Could not invite that collaborator.",
+                        );
+                        showToast(`"${name}" created, but ${message.toLowerCase()}`);
+                    } else {
+                        showToast(`"${name}" created and collaborator invited.`);
+                    }
+                } catch (e) {
+                    showToast(
+                        `"${name}" created, but the collaborator invite failed.`,
+                    );
+                }
+            } else {
+                showToast(`"${name}" added to your subjects.`);
+            }
+
+            await loadSubjects();
+        } catch (e) {
+            showToast("Could not create the subject. Please try again.");
+        } finally {
+            addSubjectConfirmBtn.disabled = false;
+        }
     });
 
-    /* SUBJECT CARD ARROWS — no module contents page in the shell yet */
+    /* SUBJECT CARD ARROWS — open the subject's module-view page */
     subjectGrid?.addEventListener("click", (e) => {
         const arrow = e.target.closest(".mat-subject-arrow");
-        if (!arrow) return;
+        const card = e.target.closest(".mat-subject-card");
+        if (!arrow && !card) return;
 
-        const name =
-            arrow
-                .closest(".mat-subject-card")
-                ?.querySelector(".mat-subject-name")?.textContent.trim() ||
-            "This subject";
+        const id = (arrow || card)?.closest(".mat-subject-card")?.dataset.id;
+        if (!id) return;
 
-        showToast(`${name} module contents are coming soon.`);
+        window.location.href = `professor-module-view.html?subject=${encodeURIComponent(id)}`;
     });
 
-    refreshStats();
-    applySearch();
+    loadSubjects();
 });

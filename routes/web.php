@@ -3,8 +3,12 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassPostController;
 use App\Http\Controllers\FrontendShellController;
+use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ProfessorClassController;
 use App\Http\Controllers\StudentClassController;
+use App\Http\Controllers\SubjectCollaboratorController;
+use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\SubjectSectionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -72,4 +76,27 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
         ->name('classes.posts.destroy');
     Route::get('/classes/{class}/posts/{post}/attachment', [ClassPostController::class, 'attachment'])
         ->name('classes.posts.attachment');
+
+    Route::prefix('subjects')->name('subjects.')->group(function () {
+        Route::get('/', [SubjectController::class, 'index'])->name('index');
+        Route::post('/', [SubjectController::class, 'store'])->name('store');
+        Route::get('/{subject}', [SubjectController::class, 'show'])->name('show');
+
+        Route::post('/{subject}/sections', [SubjectSectionController::class, 'store'])
+            ->name('sections.store');
+
+        Route::post('/{subject}/collaborators', [SubjectCollaboratorController::class, 'store'])
+            ->name('collaborators.store');
+        Route::delete('/{subject}/collaborators/{user}', [SubjectCollaboratorController::class, 'destroy'])
+            ->name('collaborators.destroy');
+
+        Route::get('/{subject}/modules', [ModuleController::class, 'index'])->name('modules.index');
+        Route::post('/{subject}/modules', [ModuleController::class, 'store'])->name('modules.store');
+        Route::put('/{subject}/modules/{module}', [ModuleController::class, 'update'])
+            ->name('modules.update'); // sent as POST with _method=PUT (multipart), spoofed to a real PUT for routing
+        Route::delete('/{subject}/modules/{module}', [ModuleController::class, 'destroy'])
+            ->name('modules.destroy');
+        Route::get('/{subject}/modules/{module}/attachment', [ModuleController::class, 'attachment'])
+            ->name('modules.attachment');
+    });
 });

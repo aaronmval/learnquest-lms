@@ -66,4 +66,21 @@ class User extends Authenticatable
         return $this->belongsToMany(ClassRoom::class, 'class_enrollments', 'student_id', 'class_id')
             ->withTimestamps();
     }
+
+    /**
+     * The subjects this user owns (professor role).
+     */
+    public function ownedSubjects(): HasMany
+    {
+        return $this->hasMany(Subject::class, 'owner_id');
+    }
+
+    /**
+     * The subjects this user collaborates on (invited by another professor).
+     */
+    public function collaboratingSubjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'subject_collaborators', 'user_id', 'subject_id')
+            ->withTimestamps();
+    }
 }
