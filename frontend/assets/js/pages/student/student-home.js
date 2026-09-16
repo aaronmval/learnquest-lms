@@ -73,11 +73,11 @@ function renderClassGrid(classes) {
         return;
     }
 
-    grid.innerHTML = classes.map((cls, index) => buildClassCardHtml(cls, index)).join('');
+    grid.innerHTML = classes.map((cls) => buildClassCardHtml(cls)).join('');
 }
 
-function buildClassCardHtml(cls, index) {
-    const palette = CLASS_CARD_PALETTE[index % CLASS_CARD_PALETTE.length];
+function buildClassCardHtml(cls) {
+    const palette = CLASS_CARD_PALETTE[cls.id % CLASS_CARD_PALETTE.length];
     const href = `enrolled-class.html?id=${cls.id}`;
     const teacherName = cls.professor?.name || 'Your teacher';
 

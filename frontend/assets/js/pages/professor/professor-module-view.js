@@ -1,5 +1,6 @@
 let SUBJECT_ID = null;
 let subjectData = null;
+let professorClasses = [];
 let currentSectionFilter = "";
 
 let umMode = "create"; // 'create' | 'edit'
@@ -118,6 +119,23 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    async function loadProfessorClasses() {
+        try {
+            const res = await fetch("/professor/classes", {
+                credentials: "same-origin",
+                headers: { Accept: "application/json" },
+            });
+            professorClasses = res.ok ? await res.json() : [];
+        } catch (e) {
+            professorClasses = [];
+        }
+
+        // loadSubject() may already have rendered before this resolved (both
+        // fetches fire in parallel) — re-render the sections strip so it
+        // picks up the professor's classes whichever finishes last.
+        if (subjectData) renderSections();
+    }
+
     function showNotFound() {
         subjectNotFound?.classList.remove("hidden");
         subjectWrap?.classList.add("hidden");
@@ -148,7 +166,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderSections() {
         if (!sectionsStrip || !subjectData) return;
 
-        const sections = subjectData.sections || [];
+        const seen = new Set();
+        const sections = [...(subjectData.sections || []), ...professorClasses].filter((c) => {
+            if (seen.has(c.id)) return false;
+            seen.add(c.id);
+            return true;
+        });
         sectionsStrip.innerHTML = sections
             .map((section) => {
                 const studentsCount = section.students_count || 0;
@@ -197,10 +220,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* MODULES */
     function sectionLabelById(id) {
-        const section = (subjectData?.sections || []).find(
-            (s) => String(s.id) === String(id),
-        );
-        return section ? section.section || section.name : "Unknown section";
+        const all = [...(subjectData?.sections || []), ...professorClasses];
+        const match = all.find((s) => String(s.id) === String(id));
+        return match ? match.section || match.name : "Unknown section";
     }
 
     function renderModules() {
@@ -338,6 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const umFileName = document.getElementById("umFileName");
     const umFileError = document.getElementById("umFileError");
     const umSectionChecks = document.getElementById("umSectionChecks");
+    const umQuarter = document.getElementById("umQuarter");
     const umSubmitBtn = document.getElementById("umSubmitBtn");
     const umSubmitLabel = document.getElementById("umSubmitLabel");
 
@@ -354,16 +377,23 @@ document.addEventListener("DOMContentLoaded", () => {
             ? `Current file: ${module.file_name} (choose a new PDF to replace it)`
             : "Drag & drop a PDF here, or click to browse";
         umFileInput.value = "";
+        if (umQuarter) umQuarter.value = "1st Quarter";
         hideFieldError(umTitleError, umTitle);
         hideFieldError(umFileError, umDropzone);
 
         const checkedIds = (module?.target_sections || []).map((t) => String(t.id));
-        umSectionChecks.innerHTML = (subjectData?.sections || [])
+        const seen = new Set();
+        const options = [...(subjectData?.sections || []), ...professorClasses].filter((c) => {
+            if (seen.has(c.id)) return false;
+            seen.add(c.id);
+            return true;
+        });
+        umSectionChecks.innerHTML = options
             .map(
-                (s) => `
+                (c) => `
                 <label class="mv-section-check-item">
-                    <input type="checkbox" value="${s.id}" ${checkedIds.includes(String(s.id)) ? "checked" : ""} />
-                    ${escapeHtml(s.section || s.name)}
+                    <input type="checkbox" value="${c.id}" ${checkedIds.includes(String(c.id)) ? "checked" : ""} />
+                    ${escapeHtml(c.section || c.name)}
                 </label>`,
             )
             .join("");
@@ -438,6 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData();
         formData.append("title", title);
         formData.append("description", umDescription.value.trim());
+        formData.append("quarter", umQuarter?.value || "1st Quarter");
         sectionIds.forEach((id) => formData.append("section_ids[]", id));
         if (umPickedFile) formData.append("attachment", umPickedFile);
 
@@ -737,5 +768,6 @@ document.addEventListener("DOMContentLoaded", () => {
         closeConfirm();
     });
 
+    loadProfessorClasses();
     loadSubject();
 });

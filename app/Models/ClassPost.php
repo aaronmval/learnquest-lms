@@ -13,6 +13,7 @@ class ClassPost extends Model
     protected $fillable = [
         'class_id',
         'author_id',
+        'module_id',
         'type',
         'quarter',
         'title',
@@ -39,5 +40,10 @@ class ClassPost extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(Module::class, 'module_id');
     }
 }

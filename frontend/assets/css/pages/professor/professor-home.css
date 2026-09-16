@@ -248,8 +248,78 @@ body.dark .class-grid-error { color: #f87171; }
     border: 1.5px solid #e2e8f0;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    text-decoration: none;
     display: block;
+    position: relative;
+}
+
+.class-card-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    text-decoration: none;
+}
+
+.class-card-archive-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.class-card-archive-btn i {
+    font-size: 0.95rem;
+    pointer-events: none;
+}
+
+.class-card-archive-btn:hover {
+    opacity: 0.75;
+}
+
+/* TOAST — id must not be "toast": the host shell hides #toast inside the content iframe */
+#homeToast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #1e293b;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(24px);
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 100;
+    max-width: min(360px, calc(100vw - 56px));
+}
+
+#homeToast.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.toast-icon {
+    color: #60a5fa;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .class-card:hover {

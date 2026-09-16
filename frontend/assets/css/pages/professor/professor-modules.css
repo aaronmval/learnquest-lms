@@ -393,6 +393,109 @@ body.dark .mat-subject-name { color: #f1f5f9; }
     transform: translateX(2px);
 }
 
+.mat-subject-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Kebab menu — same pattern as the class-feed post cards (professor-class.css) */
+.post-kebab-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.post-kebab-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    background: transparent;
+    transition: background-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+
+.post-kebab-btn:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+body.dark .post-kebab-btn {
+    color: #94a3b8;
+}
+
+body.dark .post-kebab-btn:hover {
+    background-color: #334155;
+    color: #f1f5f9;
+}
+
+.post-kebab-btn i {
+    font-size: 0.95rem;
+    pointer-events: none;
+}
+
+.post-kebab-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 140px;
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    padding: 6px;
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.post-kebab-menu.open {
+    display: flex;
+}
+
+body.dark .post-kebab-menu {
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.post-kebab-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: transparent;
+    transition: background-color 0.15s;
+}
+
+body.dark .post-kebab-item {
+    color: #e2e8f0;
+}
+
+.post-kebab-item:hover {
+    background-color: #f1f5f9;
+}
+body.dark .post-kebab-item:hover {
+    background-color: #334155;
+}
+
+.post-kebab-item i {
+    width: 16px;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
 .mat-subject-uploader {
     display: flex;
     align-items: center;

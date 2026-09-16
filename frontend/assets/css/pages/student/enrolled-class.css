@@ -144,54 +144,236 @@ body.dark .class-not-found {
     z-index: 1;
 }
 
-/* ENROLLED STATUS CARD */
-.enrolled-status-card {
+/* FEED */
+.feed-column {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
     gap: 16px;
+    min-width: 0;
+}
+
+.post-card {
     background-color: #fff;
     border: 1.5px solid #e2e8f0;
     border-radius: 16px;
-    padding: 24px;
+    padding: 22px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    transition:
+        background-color 0.3s,
+        border-color 0.3s,
+        box-shadow 0.2s,
+        transform 0.2s;
+    position: relative;
 }
 
-body.dark .enrolled-status-card {
+body.dark .post-card {
     background-color: #1e293b;
     border-color: #334155;
 }
 
-.enrolled-status-card > i {
-    font-size: 1.5rem;
-    color: #16a34a;
+.post-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.post-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.post-author-initials {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #0891b2;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
     flex-shrink: 0;
-    margin-top: 2px;
 }
 
-body.dark .enrolled-status-card > i {
-    color: #4ade80;
+.post-author-info {
+    min-width: 0;
 }
 
-.enrolled-status-text h2 {
-    font-size: 1rem;
-    font-weight: 800;
+.post-author-name {
+    font-size: 0.875rem;
+    font-weight: 700;
     color: #0f172a;
-    margin: 0 0 6px;
+    overflow-wrap: break-word;
 }
 
-body.dark .enrolled-status-text h2 {
+body.dark .post-author-name {
     color: #f1f5f9;
 }
 
-.enrolled-status-text p {
-    font-size: 0.85rem;
-    color: #64748b;
-    margin: 0;
-    line-height: 1.6;
+.post-author-date {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-top: 1px;
 }
 
-body.dark .enrolled-status-text p {
+.post-badges {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.post-badge-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.post-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 4px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.badge-announcement {
+    background-color: #4ade80;
+    color: #052e16;
+}
+.badge-lesson {
+    background-color: #fb923c;
+    color: #431407;
+}
+.badge-quarter-green {
+    background-color: #bbf7d0;
+    color: #166534;
+}
+.badge-quarter-orange {
+    background-color: #fed7aa;
+    color: #9a3412;
+}
+
+.post-title {
+    font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    overflow-wrap: break-word;
+}
+
+body.dark .post-title {
+    color: #f1f5f9;
+}
+
+.post-body {
+    font-size: 0.875rem;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    overflow-wrap: break-word;
+}
+
+body.dark .post-body {
     color: #94a3b8;
+}
+
+.post-checklist {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.875rem;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+body.dark .post-checklist {
+    color: #cbd5e1;
+}
+
+.post-checklist i {
+    color: #22c55e;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.post-attachment {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.875rem;
+    color: #1e293b;
+    font-weight: 600;
+    padding: 10px 14px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    width: fit-content;
+    max-width: 100%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    overflow-wrap: break-word;
+}
+
+.post-attachment:hover {
+    background-color: #f1f5f9;
+}
+
+body.dark .post-attachment {
+    background-color: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark .post-attachment:hover {
+    background-color: #0d1624;
+}
+
+.post-attachment .pdf-icon {
+    background-color: #dc2626;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 3px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+.feed-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+
+body.dark .feed-empty {
+    color: #64748b;
+}
+
+.feed-empty i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.post-edited-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #94a3b8;
+    font-style: italic;
+    margin-left: 6px;
 }
 
 /* RESPONSIVE */
@@ -214,10 +396,5 @@ body.dark .enrolled-status-text p {
 
     .class-banner-icon {
         display: none;
-    }
-
-    .enrolled-status-card {
-        flex-direction: column;
-        gap: 10px;
     }
 }

@@ -51,7 +51,7 @@
                 </div>
             </section>
 
-            <!-- QUICK STATS — scoped to Chemistry only -->
+            <!-- QUICK STATS -->
             <section class="prof-stats-section">
                 <div class="prof-stat-card">
                     <div class="prof-stat-icon prof-stat-icon-blue">
@@ -59,25 +59,23 @@
                     </div>
                     <div class="prof-stat-text">
                         <span id="statTotalStudents" class="prof-stat-value"
-                            >42</span
+                            >0</span
                         >
-                        <span class="prof-stat-label"
-                            >Students in Chemistry</span
-                        >
+                        <span class="prof-stat-label">Total Students</span>
                     </div>
                 </div>
 
                 <div class="prof-stat-card">
                     <div class="prof-stat-icon prof-stat-icon-amber">
-                        <i class="fas fa-file-circle-exclamation"></i>
+                        <i class="fas fa-file-lines"></i>
                     </div>
                     <div class="prof-stat-text">
                         <span
-                            id="statPendingSubmissions"
+                            id="statTotalMaterials"
                             class="prof-stat-value"
-                            >8</span
+                            >0</span
                         >
-                        <span class="prof-stat-label">Pending Submissions</span>
+                        <span class="prof-stat-label">Total Materials</span>
                     </div>
                 </div>
 
@@ -87,21 +85,21 @@
                     </div>
                     <div class="prof-stat-text">
                         <span id="statActiveSections" class="prof-stat-value"
-                            >1</span
+                            >0</span
                         >
-                        <span class="prof-stat-label">Active Section</span>
+                        <span class="prof-stat-label">Active Sections</span>
                     </div>
                 </div>
 
                 <div class="prof-stat-card">
                     <div class="prof-stat-icon prof-stat-icon-purple">
-                        <i class="fas fa-chart-line"></i>
+                        <i class="fas fa-book"></i>
                     </div>
                     <div class="prof-stat-text">
-                        <span id="statAvgScore" class="prof-stat-value"
-                            >88%</span
+                        <span id="statSubjects" class="prof-stat-value"
+                            >0</span
                         >
-                        <span class="prof-stat-label">Average Class Score</span>
+                        <span class="prof-stat-label">Subjects</span>
                     </div>
                 </div>
             </section>
@@ -125,61 +123,20 @@
                 <div class="enrolled-heading">
                     <h2 class="enrolled-title">Archived Classes</h2>
                     <p class="enrolled-subtitle">
-                        Past Chemistry sections from previous school years
+                        Past sections from previous school years
                     </p>
                 </div>
 
-                <div class="prof-archive-list" id="archiveList">
-                    <div class="prof-archive-row">
-                        <div class="prof-archive-icon">
-                            <i class="fas fa-flask"></i>
-                        </div>
-                        <div class="prof-archive-text">
-                            <p class="prof-archive-title">
-                                Chemistry &middot; STEM - Sapphire
-                            </p>
-                            <p class="prof-archive-meta">
-                                S.Y. 2024 - 2025 &middot; 39 Students &middot;
-                                Archived May 2025
-                            </p>
-                        </div>
-                        <a
-                            href="professor-archive.html"
-                            class="prof-archive-action"
-                        >
-                            <i class="fas fa-box-open"></i> View
-                        </a>
-                    </div>
-
-                    <div class="prof-archive-row">
-                        <div class="prof-archive-icon">
-                            <i class="fas fa-flask"></i>
-                        </div>
-                        <div class="prof-archive-text">
-                            <p class="prof-archive-title">
-                                Chemistry &middot; STEM - Topaz
-                            </p>
-                            <p class="prof-archive-meta">
-                                S.Y. 2023 - 2024 &middot; 41 Students &middot;
-                                Archived May 2024
-                            </p>
-                        </div>
-                        <a
-                            href="professor-archive.html"
-                            class="prof-archive-action"
-                        >
-                            <i class="fas fa-box-open"></i> View
-                        </a>
-                    </div>
-
-                    <div class="prof-archive-empty-link">
-                        <a href="professor-archive.html">
-                            View all archived classes
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
+                <div class="prof-archive-list" id="archiveList"></div>
             </section>
+
+            <!-- TOAST -->
+            <div id="homeToast">
+                <div class="toast-icon">
+                    <i class="fas fa-circle-info"></i>
+                </div>
+                <span id="homeToastMessage"></span>
+            </div>
         </main>
         <script src="../../assets/js/pages/professor/professor-home.js"></script>
     </body>

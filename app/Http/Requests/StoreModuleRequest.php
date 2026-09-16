@@ -29,6 +29,7 @@ class StoreModuleRequest extends FormRequest
             'attachment' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
             'section_ids' => ['nullable', 'array'],
             'section_ids.*' => ['integer'],
+            'quarter' => ['nullable', 'string', 'max:40'],
         ];
     }
 }

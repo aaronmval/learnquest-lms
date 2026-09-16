@@ -212,6 +212,59 @@
                 </div>
             </div>
 
+            <!-- RENAME SUBJECT MODAL -->
+            <div id="renameSubjectModal" class="modal-overlay">
+                <div id="renameSubjectModalCard" class="cc-card">
+                    <div class="cc-modal-header">
+                        <h3 class="modal-title cc-modal-title">
+                            Rename Subject
+                        </h3>
+                        <button
+                            id="renameSubjectCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="rsSubjectName"
+                            >Subject Title<span class="cc-required-star"
+                                >*</span
+                            ></label
+                        >
+                        <input
+                            id="rsSubjectName"
+                            class="cc-input"
+                            type="text"
+                            placeholder="e.g. Chemistry / Physics / EALS"
+                            maxlength="60"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <p id="rsNameError" class="cc-error hidden">
+                            *Subject title is required
+                        </p>
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button
+                            id="renameSubjectCancelBtn"
+                            class="modal-btn cc-cancel-btn"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="renameSubjectConfirmBtn"
+                            class="modal-btn cc-create-btn"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- TOAST -->
             <div id="modulesToast">
                 <div class="toast-icon"><i class="fas fa-info-circle"></i></div>

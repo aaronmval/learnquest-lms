@@ -55,19 +55,70 @@
                     <i class="fas fa-book-open class-banner-icon"></i>
                 </section>
 
-                <!-- ENROLLED STATUS -->
-                <div class="enrolled-status-card">
-                    <i class="fas fa-circle-check"></i>
-                    <div class="enrolled-status-text">
-                        <h2>You're enrolled in this class</h2>
-                        <p>
-                            Your professor's announcements and lesson
-                            materials will show up here soon.
-                        </p>
+                <!-- FEED -->
+                <div id="feedColumn" class="feed-column"></div>
+            </div>
+        </main>
+
+        <!-- PDF MODAL -->
+        <div
+            id="pdfModal"
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="pdfModalTitle"
+        >
+            <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
+            <div class="pdf-modal-card">
+                <div class="pdf-modal-header">
+                    <div class="pdf-modal-header-left">
+                        <span class="pdf-modal-file-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </span>
+                        <span id="pdfModalTitle" class="pdf-modal-title"
+                            >Lesson.pdf</span
+                        >
+                    </div>
+                    <div class="pdf-modal-header-right">
+                        <a
+                            id="pdfModalDownload"
+                            class="pdf-modal-action-btn pdf-modal-download"
+                            href="#"
+                            title="Download PDF"
+                            aria-label="Download PDF"
+                        >
+                            <i class="fas fa-download"></i>
+                            <span>Download</span>
+                        </a>
+                        <button
+                            id="pdfModalClose"
+                            class="pdf-modal-action-btn pdf-modal-close"
+                            aria-label="Close PDF viewer"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="pdf-modal-body">
+                    <iframe
+                        id="pdfModalViewer"
+                        class="pdf-modal-iframe pdf-viewer-initial-hidden"
+                        title="PDF viewer"
+                        frameborder="0"
+                    ></iframe>
+                    <div id="pdfModalPlaceholder" class="pdf-modal-placeholder">
+                        <div class="pdf-placeholder-inner">
+                            <i class="fas fa-file-pdf pdf-placeholder-icon"></i>
+                            <p class="pdf-placeholder-title">
+                                PDF preview not available
+                            </p>
+                            <p class="pdf-placeholder-sub">
+                                This file requires a direct download.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
 
         <script src="../../assets/js/pages/student/enrolled-class.js"></script>
     </body>

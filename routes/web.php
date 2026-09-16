@@ -6,6 +6,7 @@ use App\Http\Controllers\FrontendShellController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ProfessorClassController;
 use App\Http\Controllers\StudentClassController;
+use App\Http\Controllers\StudentClassPostController;
 use App\Http\Controllers\SubjectCollaboratorController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\SubjectSectionController;
@@ -56,6 +57,11 @@ Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')
     Route::post('/classes/join', [StudentClassController::class, 'join'])
         ->middleware('throttle:20,1')->name('classes.join');
     Route::get('/classes/{class}', [StudentClassController::class, 'show'])->name('classes.show');
+
+    Route::get('/classes/{class}/posts', [StudentClassPostController::class, 'index'])
+        ->name('classes.posts.index');
+    Route::get('/classes/{class}/posts/{post}/attachment', [StudentClassPostController::class, 'attachment'])
+        ->name('classes.posts.attachment');
 });
 
 // Professor Routes
@@ -64,9 +70,13 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
 
     Route::get('/classes', [ProfessorClassController::class, 'index'])->name('classes.index');
     Route::post('/classes', [ProfessorClassController::class, 'store'])->name('classes.store');
+    Route::get('/classes/archived', [ProfessorClassController::class, 'archived'])->name('classes.archived');
     Route::get('/classes/{class}', [ProfessorClassController::class, 'show'])->name('classes.show');
     Route::post('/classes/{class}/regenerate-code', [ProfessorClassController::class, 'regenerateCode'])
         ->name('classes.regenerate-code');
+    Route::post('/classes/{class}/archive', [ProfessorClassController::class, 'archive'])->name('classes.archive');
+    Route::post('/classes/{class}/restore', [ProfessorClassController::class, 'restore'])->name('classes.restore');
+    Route::delete('/classes/{class}', [ProfessorClassController::class, 'destroy'])->name('classes.destroy');
 
     Route::get('/classes/{class}/posts', [ClassPostController::class, 'index'])->name('classes.posts.index');
     Route::post('/classes/{class}/posts', [ClassPostController::class, 'store'])->name('classes.posts.store');
@@ -81,6 +91,7 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
         Route::get('/', [SubjectController::class, 'index'])->name('index');
         Route::post('/', [SubjectController::class, 'store'])->name('store');
         Route::get('/{subject}', [SubjectController::class, 'show'])->name('show');
+        Route::put('/{subject}', [SubjectController::class, 'update'])->name('update');
 
         Route::post('/{subject}/sections', [SubjectSectionController::class, 'store'])
             ->name('sections.store');

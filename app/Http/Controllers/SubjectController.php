@@ -55,4 +55,17 @@ class SubjectController extends Controller
 
         return response()->json($subject);
     }
+
+    /**
+     * Rename a subject.
+     */
+    public function update(StoreSubjectRequest $request, Subject $subject): JsonResponse
+    {
+        abort_unless($subject->isManagedBy($request->user()), 404);
+
+        $subject->update($request->validated());
+        $subject->load(['owner:id,name,email', 'collaborators:id,name,email']);
+
+        return response()->json($subject);
+    }
 }

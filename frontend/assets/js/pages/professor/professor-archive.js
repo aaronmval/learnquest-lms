@@ -1,9 +1,37 @@
-/*  STATE */
+/* CARD COLOR PALETTE — keyed by class id, matching the same convention used
+   on the Home page/navbar/banner so a class's color stays consistent. */
+const CLASS_COLOR_PALETTE = [
+    { color: '#22d3ee', gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
+    { color: '#f97316', gradient: 'linear-gradient(135deg, #fb923c, #ea580c)' },
+    { color: '#a855f7', gradient: 'linear-gradient(135deg, #c084fc, #9333ea)' },
+    { color: '#22c55e', gradient: 'linear-gradient(135deg, #4ade80, #16a34a)' },
+    { color: '#f59e0b', gradient: 'linear-gradient(135deg, #fbbf24, #d97706)' },
+];
 
-// localStorage key used to hand a restored class back to the Home page.
-// NOTE: restoring archived classes isn't wired to the database yet — this
-// write side is currently unread (out of scope for the Create Class feature).
-const RESTORED_CLASS_STORAGE_KEY = 'lq_restoredClass';
+let archivedClasses = [];
+let pendingConfirmAction = null;
+
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : "";
+}
+
+function escapeHtml(str) {
+    if (str === undefined || str === null) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function formatDate(isoString) {
+    if (!isoString) return '—';
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
 
 
 /* INIT */
@@ -11,8 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     hidePageLoader();
     wireMyClassesDropdown();
+    loadArchivedClasses();
     wireArchiveFilters();
-    wireRestoreButtons();
+    wireConfirmModal();
 
 });
 
@@ -69,145 +98,308 @@ function wireMyClassesDropdown() {
 }
 
 
+/* LOAD — fetch the professor's archived classes from the database */
+async function loadArchivedClasses() {
+    try {
+        const res = await fetch('/professor/classes/archived', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) throw new Error('failed to load archived classes');
+
+        archivedClasses = await res.json();
+    } catch (e) {
+        archivedClasses = [];
+        showToast('Could not load your archived classes. Please refresh the page.');
+    }
+
+    renderStats();
+    populateFilterOptions();
+    renderArchiveList();
+}
+
+function renderStats() {
+    const statTotalArchived = document.getElementById('statTotalArchived');
+    const statTotalStudents = document.getElementById('statTotalStudents');
+    const statSubjectsRepresented = document.getElementById('statSubjectsRepresented');
+    const statSectionsRepresented = document.getElementById('statSectionsRepresented');
+
+    const totalStudents = archivedClasses.reduce((sum, c) => sum + (c.students_count || 0), 0);
+    const subjects = new Set(archivedClasses.map((c) => c.subject).filter(Boolean));
+    const sections = new Set(archivedClasses.map((c) => c.section).filter(Boolean));
+
+    if (statTotalArchived) statTotalArchived.textContent = String(archivedClasses.length);
+    if (statTotalStudents) statTotalStudents.textContent = String(totalStudents);
+    if (statSubjectsRepresented) statSubjectsRepresented.textContent = String(subjects.size);
+    if (statSectionsRepresented) statSectionsRepresented.textContent = String(sections.size);
+}
+
+function populateFilterOptions() {
+    const filterSubject = document.getElementById('filterSubject');
+    const filterSection = document.getElementById('filterSection');
+    if (!filterSubject || !filterSection) return;
+
+    const subjects = [...new Set(archivedClasses.map((c) => c.subject).filter(Boolean))].sort();
+    const sections = [...new Set(archivedClasses.map((c) => c.section).filter(Boolean))].sort();
+
+    const previousSubject = filterSubject.value;
+    const previousSection = filterSection.value;
+
+    filterSubject.innerHTML = '<option value="">All Subjects</option>' +
+        subjects.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    filterSection.innerHTML = '<option value="">All Sections</option>' +
+        sections.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
+    if (subjects.includes(previousSubject)) filterSubject.value = previousSubject;
+    if (sections.includes(previousSection)) filterSection.value = previousSection;
+}
+
+function renderArchiveList() {
+    const list = document.getElementById('archiveList');
+    if (!list) return;
+
+    list.innerHTML = archivedClasses.map((cls) => buildArchiveCardHtml(cls)).join('');
+
+    applyFilters();
+}
+
+function buildArchiveCardHtml(cls) {
+    const palette = CLASS_COLOR_PALETTE[cls.id % CLASS_COLOR_PALETTE.length];
+    const studentsCount = cls.students_count || 0;
+    const studentsLabel = studentsCount === 1 ? 'Student' : 'Students';
+    const title = cls.name || 'Class';
+    const section = cls.section || '';
+    const displayName = [title, section].filter(Boolean).join(' · ');
+
+    return `
+        <div
+            class="archive-card"
+            data-id="${cls.id}"
+            data-subject="${escapeHtml(cls.subject || '')}"
+            data-section="${escapeHtml(section)}"
+            data-name="${escapeHtml(displayName)}"
+        >
+            <div class="archive-card-color-bar" style="background: ${palette.gradient};"></div>
+            <div class="archive-card-icon">
+                <i class="fas fa-flask"></i>
+            </div>
+            <div class="archive-card-body">
+                <div class="archive-card-top-row">
+                    <div>
+                        <p class="archive-card-title">${escapeHtml(title)}</p>
+                        <p class="archive-card-section">${escapeHtml(section)}</p>
+                    </div>
+                </div>
+                <div class="archive-card-meta-row">
+                    <span class="archive-card-meta-item">
+                        <i class="fas fa-users"></i> ${studentsCount} ${studentsLabel}
+                    </span>
+                    <span class="archive-card-meta-item">
+                        <i class="fas fa-calendar-xmark"></i>
+                        Archived ${escapeHtml(formatDate(cls.archived_at))}
+                    </span>
+                </div>
+            </div>
+            <div class="archive-card-actions">
+                <button type="button" class="archive-view-btn" data-action="restore" data-id="${cls.id}">
+                    <i class="fas fa-arrow-rotate-left"></i>
+                    Restore
+                </button>
+                <button type="button" class="archive-delete-btn" data-action="delete" data-id="${cls.id}">
+                    <i class="fas fa-trash-alt"></i>
+                    Delete
+                </button>
+            </div>
+        </div>`;
+}
+
+document.getElementById('archiveList')?.addEventListener('click', async (e) => {
+    const restoreBtn = e.target.closest('[data-action="restore"]');
+    if (restoreBtn) {
+        await restoreClass(restoreBtn.dataset.id);
+        return;
+    }
+
+    const deleteBtn = e.target.closest('[data-action="delete"]');
+    if (deleteBtn) {
+        const card = deleteBtn.closest('.archive-card');
+        const name = card?.dataset.name || 'this class';
+        openConfirm(
+            'Delete class permanently?',
+            `This will permanently delete "${name}" and all of its posts, enrollments, and materials. This cannot be undone.`,
+            () => deleteClass(deleteBtn.dataset.id),
+        );
+    }
+});
+
+async function restoreClass(id) {
+    try {
+        const res = await fetch(`/professor/classes/${id}/restore`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': getCsrfToken(),
+            },
+        });
+        if (!res.ok) throw new Error('failed to restore class');
+
+        showToast('Class restored — find it back on your Home page.');
+        archivedClasses = archivedClasses.filter((c) => String(c.id) !== String(id));
+        renderStats();
+        populateFilterOptions();
+        renderArchiveList();
+    } catch (e) {
+        showToast('Could not restore the class. Please try again.');
+    }
+}
+
+async function deleteClass(id) {
+    try {
+        const res = await fetch(`/professor/classes/${id}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-XSRF-TOKEN': getCsrfToken(),
+            },
+        });
+        if (!res.ok) throw new Error('failed to delete class');
+
+        showToast('Class deleted permanently.');
+        archivedClasses = archivedClasses.filter((c) => String(c.id) !== String(id));
+        renderStats();
+        populateFilterOptions();
+        renderArchiveList();
+    } catch (e) {
+        showToast('Could not delete the class. Please try again.');
+    }
+}
+
+
 /* ARCHIVE FILTER BAR */
 function wireArchiveFilters() {
     const searchInput   = document.getElementById('archiveSearch');
     const searchClear   = document.getElementById('archiveSearchClear');
     const filterSubject = document.getElementById('filterSubject');
     const filterSection = document.getElementById('filterSection');
-    const filterYear    = document.getElementById('filterYear');
     const resetBtn      = document.getElementById('archiveResetFilters');
     const resetEmptyBtn = document.getElementById('archiveEmptyReset');
-    const resultCount   = document.getElementById('archiveResultCount');
-    const emptyState    = document.getElementById('archiveEmpty');
-    const cards         = document.querySelectorAll('#archiveList .archive-card');
 
     if (!searchInput) return;
-
-    function applyFilters() {
-        const query   = searchInput.value.trim().toLowerCase();
-        const subject = filterSubject.value;
-        const section = filterSection.value;
-        const year    = filterYear.value;
-
-        // Toggle clear button
-        searchClear.classList.toggle('hidden', query === '');
-
-        let visibleCount = 0;
-
-        cards.forEach(card => {
-            const nameMatch    = !query   || card.dataset.name.toLowerCase().includes(query);
-            const subjectMatch = !subject || card.dataset.subject === subject;
-            const sectionMatch = !section || card.dataset.section === section;
-            const yearMatch    = !year    || card.dataset.year === year;
-
-            const visible = nameMatch && subjectMatch && sectionMatch && yearMatch;
-            card.classList.toggle('hidden', !visible);
-            if (visible) visibleCount++;
-        });
-
-        // Update result count label
-        if (resultCount) {
-            resultCount.textContent = visibleCount === 1
-                ? 'Showing 1 class'
-                : `Showing ${visibleCount} class${visibleCount === 0 ? 'es' : 'es'}`;
-        }
-
-        if (emptyState) {
-            emptyState.classList.toggle('hidden', visibleCount > 0);
-        }
-    }
-
-    function resetFilters() {
-        searchInput.value    = '';
-        filterSubject.value  = '';
-        filterSection.value  = '';
-        filterYear.value     = '';
-        applyFilters();
-    }
 
     searchInput.addEventListener('input', applyFilters);
     searchClear.addEventListener('click', () => { searchInput.value = ''; applyFilters(); searchInput.focus(); });
     filterSubject.addEventListener('change', applyFilters);
     filterSection.addEventListener('change', applyFilters);
-    filterYear.addEventListener('change', applyFilters);
     if (resetBtn)      resetBtn.addEventListener('click', resetFilters);
     if (resetEmptyBtn) resetEmptyBtn.addEventListener('click', resetFilters);
+}
 
+function resetFilters() {
+    const searchInput   = document.getElementById('archiveSearch');
+    const filterSubject = document.getElementById('filterSubject');
+    const filterSection = document.getElementById('filterSection');
+
+    if (searchInput) searchInput.value = '';
+    if (filterSubject) filterSubject.value = '';
+    if (filterSection) filterSection.value = '';
     applyFilters();
 }
 
+function applyFilters() {
+    const searchInput   = document.getElementById('archiveSearch');
+    const searchClear   = document.getElementById('archiveSearchClear');
+    const filterSubject = document.getElementById('filterSubject');
+    const filterSection = document.getElementById('filterSection');
+    const resultCount   = document.getElementById('archiveResultCount');
+    const emptyState    = document.getElementById('archiveEmpty');
+    const emptyTitle    = document.getElementById('archiveEmptyTitle');
+    const cards         = document.querySelectorAll('#archiveList .archive-card');
 
-/* RESTORE BUTTONS */
-function wireRestoreButtons() {
-    const restoreButtons = document.querySelectorAll('#archiveList .archive-view-btn');
+    if (!searchInput) return;
 
-    restoreButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
+    const query   = searchInput.value.trim().toLowerCase();
+    const subject = filterSubject.value;
+    const section = filterSection.value;
 
-            const card = btn.closest('.archive-card');
-            if (!card) return;
+    searchClear.classList.toggle('hidden', query === '');
 
-            const restoredData = buildRestoredClassData(card);
+    let visibleCount = 0;
 
-            try {
-                localStorage.setItem(RESTORED_CLASS_STORAGE_KEY, JSON.stringify(restoredData));
-            } catch (err) {
-                // localStorage unavailable — magpatuloy pa rin ang redirect,
-                // pero hindi na ma-a-auto-restore sa My Classes
-            }
+    cards.forEach(card => {
+        const nameMatch    = !query   || card.dataset.name.toLowerCase().includes(query);
+        const subjectMatch = !subject || card.dataset.subject === subject;
+        const sectionMatch = !section || card.dataset.section === section;
 
-            // Alisin agad sa view bilang visual feedback
-            card.classList.add('hidden');
+        const visible = nameMatch && subjectMatch && sectionMatch;
+        card.classList.toggle('hidden', !visible);
+        if (visible) visibleCount++;
+    });
 
-            showToast(`"${restoredData.name}" restored! Redirecting to Home…`);
+    if (resultCount) {
+        resultCount.textContent = visibleCount === 1
+            ? 'Showing 1 class'
+            : `Showing ${visibleCount} classes`;
+    }
 
-            setTimeout(() => {
-                window.location.href = '../html/professorHome.html';
-            }, 1200);
-        });
+    if (emptyState) {
+        emptyState.classList.toggle('hidden', visibleCount > 0);
+    }
+    if (emptyTitle) {
+        emptyTitle.textContent = archivedClasses.length
+            ? 'No classes found'
+            : 'No archived classes yet';
+    }
+}
+
+
+/* CONFIRM MODAL (delete class) */
+function wireConfirmModal() {
+    const modal = document.getElementById('confirmActionModal');
+    const cancelBtn = document.getElementById('confirmActionCancelBtn');
+    const confirmBtn = document.getElementById('confirmActionConfirmBtn');
+
+    cancelBtn?.addEventListener('click', closeConfirm);
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) closeConfirm();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal?.classList.contains('visible')) closeConfirm();
+    });
+    confirmBtn?.addEventListener('click', () => {
+        const action = pendingConfirmAction;
+        closeConfirm();
+        action?.();
     });
 }
 
-/* Kunin ang class info mula sa data attributes ng
-   archive card, at i-shape into the same object format
-   na ginagamit ng professorHome.js (createRestoredClassRecord) */
-function buildRestoredClassData(card) {
-    const subject = card.dataset.subject || 'Class';
-    const section = card.dataset.section || '';
-    const year    = card.dataset.year || '';
+function openConfirm(title, desc, onConfirm) {
+    const modal = document.getElementById('confirmActionModal');
+    const titleEl = document.getElementById('confirmActionTitle');
+    const descEl = document.getElementById('confirmActionDesc');
 
-    // Galingan kunin ang students count mula sa meta row,
-    // kung available — optional lang, may fallback naman
-    const studentsText = card.querySelector('.archive-card-meta-item')?.textContent || '';
-    const studentsMatch = studentsText.match(/(\d+)\s*Students?/i);
-    const students = studentsMatch ? parseInt(studentsMatch[1], 10) : 0;
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = desc;
+    pendingConfirmAction = onConfirm;
+    modal?.classList.add('visible');
+}
 
-    const id = subject.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-        || 'class-' + Date.now();
-
-    return {
-        id,
-        name: subject,
-        section,
-        subject,
-        room: '',
-        schoolYear: year,
-        students,
-        pending: 0,
-        href: '../html/teachingChemistry.html'
-    };
+function closeConfirm() {
+    document.getElementById('confirmActionModal')?.classList.remove('visible');
+    pendingConfirmAction = null;
 }
 
 
-/* TOAST */
+/* TOAST — id must not be "toast": the host shell hides #toast inside the content iframe */
+let archiveToastTimer = null;
 function showToast(text) {
-    const toast        = document.getElementById('toast');
-    const toastMessage = document.getElementById('toastMessage');
+    const toast        = document.getElementById('archiveToast');
+    const toastMessage = document.getElementById('archiveToastMessage');
     if (!toast || !toastMessage) return;
 
     toastMessage.textContent = text;
     toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2500);
+    clearTimeout(archiveToastTimer);
+    archiveToastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
 }

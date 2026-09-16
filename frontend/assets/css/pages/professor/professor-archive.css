@@ -482,9 +482,12 @@ body.dark .archive-card-year-badge {
 .archive-card-actions {
     padding: 0 20px;
     flex-shrink: 0;
+    display: flex;
+    gap: 8px;
 }
 
-.archive-view-btn {
+.archive-view-btn,
+.archive-delete-btn {
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -494,6 +497,9 @@ body.dark .archive-card-year-badge {
     background-color: #f1f5f9;
     padding: 9px 16px;
     border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
     text-decoration: none;
     white-space: nowrap;
     transition: background-color 0.2s, color 0.2s, transform 0.15s;
@@ -513,6 +519,22 @@ body.dark .archive-view-btn {
 body.dark .archive-view-btn:hover {
     background-color: rgba(22, 163, 74, 0.2);
     color: #4ade80;
+}
+
+.archive-delete-btn:hover {
+    background-color: #fee2e2;
+    color: #dc2626;
+    transform: translateY(-1px);
+}
+
+body.dark .archive-delete-btn {
+    background-color: #334155;
+    color: #cbd5e1;
+}
+
+body.dark .archive-delete-btn:hover {
+    background-color: rgba(220, 38, 38, 0.2);
+    color: #f87171;
 }
 
 
@@ -551,8 +573,8 @@ body.dark .archive-empty-title { color: #94a3b8; }
 }
 
 
-/* CREATE CLASS MODAL */
-#createClassModal {
+/* MODAL PRIMITIVES (confirm-delete modal) */
+.modal-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -566,7 +588,12 @@ body.dark .archive-empty-title { color: #94a3b8; }
     transition: opacity 0.3s;
 }
 
-#createClassModalCard {
+.modal-overlay.visible {
+    display: flex;
+    opacity: 1;
+}
+
+.cc-card {
     background-color: #fff;
     border-radius: 16px;
     max-width: 420px;
@@ -581,12 +608,107 @@ body.dark .archive-empty-title { color: #94a3b8; }
     gap: 18px;
 }
 
-body.dark #createClassModalCard {
+body.dark .cc-card {
     background-color: #1e293b;
     border-color: #334155;
 }
 
-#createClassModalCard.scaled { transform: scale(1); }
+.cc-card.scaled { transform: scale(1); }
+
+.jc-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background-color: transparent;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.jc-close-btn:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+body.dark .jc-close-btn:hover {
+    background-color: #334155;
+    color: #f1f5f9;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+
+.mv-danger-btn {
+    flex: 0 0 auto;
+    background-color: #dc2626 !important;
+    color: #fff !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    padding: 10px 22px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.2s;
+}
+
+.mv-danger-btn:hover { background-color: #b91c1c !important; }
+
+.mat-field-hint {
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+body.dark .mat-field-hint { color: #94a3b8; }
+
+/* TOAST — id must not be "toast": the host shell hides #toast inside the content iframe */
+#archiveToast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #1e293b;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(24px);
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 100;
+    max-width: min(360px, calc(100vw - 56px));
+}
+
+#archiveToast.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.toast-icon {
+    color: #60a5fa;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
 
 .cc-modal-header {
     display: flex;

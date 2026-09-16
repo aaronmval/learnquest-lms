@@ -25,7 +25,15 @@ class ClassRoom extends Model
         'section',
         'subject',
         'room',
+        'archived_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
+    }
 
     /**
      * Note: "code" is intentionally NOT fillable — it's always generated

@@ -41,9 +41,14 @@ function getHostConfig() {
 
 /* PROFESSOR CLASSES — fetched from the database, not hardcoded */
 let professorClasses = [];
+
+/* Shared dot-color palette, keyed by class id (not list position) so a
+   class's color stays the same everywhere — this sidebar, the home page
+   grid, and the class banner — regardless of list/creation order. Order
+   matches CLASS_COLOR_PALETTE/CLASS_GRADIENT_PALETTE in professor-home.js/
+   professor-class.js. */
 const CLASS_DOT_COLORS = [
     "dot-cyan",
-    "dot-blue",
     "dot-orange",
     "dot-purple",
     "dot-green",
@@ -84,8 +89,8 @@ function renderMyClassesDropdown() {
     }
 
     professorDropdown.innerHTML = professorClasses
-        .map((cls, index) => {
-            const dotClass = CLASS_DOT_COLORS[index % CLASS_DOT_COLORS.length];
+        .map((cls) => {
+            const dotClass = CLASS_DOT_COLORS[cls.id % CLASS_DOT_COLORS.length];
             const name = escapeHtmlForNavbar(cls.name);
             return `
                 <a href="../../pages/professor/professor-class.html?id=${cls.id}"
@@ -837,22 +842,14 @@ function toggleDarkMode() {
    loadEnrolledClasses() below) — replaces the old hardcoded CLASS_REGISTRY
    mock and its matching enrolledClasses Set. */
 let enrolledClassesCache = [];
-const STUDENT_CLASS_DOT_COLORS = [
-    "dot-blue",
-    "dot-orange",
-    "dot-purple",
-    "dot-green",
-    "dot-cyan",
-    "dot-amber",
-];
-// Hex equivalents of the CSS dot-* classes above, for the modal's live
-// preview dot (which sets an inline background-color, not a CSS class).
+// Hex equivalents of the shared CLASS_DOT_COLORS classes above, for the
+// modal's live preview dot (which sets an inline background-color, not a
+// CSS class).
 const CLASS_DOT_HEX = {
-    "dot-blue": "#3b82f6",
+    "dot-cyan": "#22d3ee",
     "dot-orange": "#f97316",
     "dot-purple": "#a855f7",
     "dot-green": "#22c55e",
-    "dot-cyan": "#22d3ee",
     "dot-amber": "#f59e0b",
 };
 
@@ -1087,8 +1084,7 @@ async function lookupClassCode(code, seq) {
         }
 
         resolvedClass = { code, ...data };
-        const dotClass =
-            STUDENT_CLASS_DOT_COLORS[data.id % STUDENT_CLASS_DOT_COLORS.length];
+        const dotClass = CLASS_DOT_COLORS[data.id % CLASS_DOT_COLORS.length];
         if (jcPreviewDot)
             jcPreviewDot.style.backgroundColor = CLASS_DOT_HEX[dotClass];
         if (jcPreviewName) jcPreviewName.textContent = data.name;
@@ -1203,9 +1199,8 @@ function renderEnrolledDropdown() {
     }
 
     dropdown.innerHTML = enrolledClassesCache
-        .map((cls, index) => {
-            const dotClass =
-                STUDENT_CLASS_DOT_COLORS[index % STUDENT_CLASS_DOT_COLORS.length];
+        .map((cls) => {
+            const dotClass = CLASS_DOT_COLORS[cls.id % CLASS_DOT_COLORS.length];
             const name = escapeHtmlForNavbar(cls.name);
             return `
                 <a href="../../pages/student/enrolled-class.html?id=${cls.id}"

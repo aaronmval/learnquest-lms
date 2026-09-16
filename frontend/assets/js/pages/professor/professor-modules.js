@@ -150,12 +150,38 @@ document.addEventListener("DOMContentLoaded", () => {
         title.className = "mat-subject-name";
         title.textContent = subject.name;
 
+        const kebabWrap = document.createElement("div");
+        kebabWrap.className = "post-kebab-wrap";
+
+        const kebabBtn = document.createElement("button");
+        kebabBtn.className = "post-kebab-btn mat-subject-kebab-btn";
+        kebabBtn.type = "button";
+        kebabBtn.setAttribute("aria-label", `${subject.name} options`);
+        kebabBtn.setAttribute("aria-haspopup", "true");
+        kebabBtn.innerHTML = '<i class="fas fa-ellipsis-vertical"></i>';
+
+        const kebabMenu = document.createElement("div");
+        kebabMenu.className = "post-kebab-menu";
+
+        const renameItem = document.createElement("button");
+        renameItem.type = "button";
+        renameItem.className = "post-kebab-item";
+        renameItem.dataset.action = "rename";
+        renameItem.innerHTML = '<i class="fas fa-pen"></i> Rename';
+
+        kebabMenu.appendChild(renameItem);
+        kebabWrap.append(kebabBtn, kebabMenu);
+
         const arrow = document.createElement("button");
         arrow.className = "mat-subject-arrow";
         arrow.setAttribute("aria-label", `Open ${subject.name} materials`);
         arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
 
-        row.append(title, arrow);
+        const actions = document.createElement("div");
+        actions.className = "mat-subject-actions";
+        actions.append(kebabWrap, arrow);
+
+        row.append(title, actions);
 
         const meta = document.createElement("div");
         meta.className = "mat-subject-meta";
@@ -371,8 +397,147 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /* SUBJECT CARD ARROWS — open the subject's module-view page */
+    /* SUBJECT CARD KEBAB MENU (rename) */
+    function closeAllSubjectKebabMenus() {
+        subjectGrid
+            ?.querySelectorAll(".post-kebab-menu.open")
+            .forEach((m) => m.classList.remove("open"));
+    }
+
+    document.addEventListener("click", closeAllSubjectKebabMenus);
+
+    /* RENAME SUBJECT MODAL */
+    const renameSubjectModal = document.getElementById("renameSubjectModal");
+    const renameSubjectModalCard = document.getElementById(
+        "renameSubjectModalCard",
+    );
+    const renameSubjectCloseBtn = document.getElementById(
+        "renameSubjectCloseBtn",
+    );
+    const renameSubjectCancelBtn = document.getElementById(
+        "renameSubjectCancelBtn",
+    );
+    const renameSubjectConfirmBtn = document.getElementById(
+        "renameSubjectConfirmBtn",
+    );
+    const rsSubjectName = document.getElementById("rsSubjectName");
+    const rsNameError = document.getElementById("rsNameError");
+    let renamingSubjectId = null;
+
+    function openRenameModal(subject) {
+        if (!renameSubjectModal) return;
+
+        renamingSubjectId = subject.id;
+        rsSubjectName.value = subject.name;
+        rsSubjectName.classList.remove("error");
+        rsNameError?.classList.add("hidden");
+
+        renameSubjectModal.classList.add("visible");
+        requestAnimationFrame(() =>
+            renameSubjectModalCard?.classList.add("scaled"),
+        );
+        rsSubjectName?.focus();
+    }
+
+    function closeRenameModal() {
+        if (!renameSubjectModal) return;
+
+        renameSubjectModalCard?.classList.remove("scaled");
+        renameSubjectModal.classList.remove("visible");
+        renamingSubjectId = null;
+    }
+
+    renameSubjectCloseBtn?.addEventListener("click", closeRenameModal);
+    renameSubjectCancelBtn?.addEventListener("click", closeRenameModal);
+
+    renameSubjectModal?.addEventListener("click", (e) => {
+        if (e.target === renameSubjectModal) closeRenameModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (
+            e.key === "Escape" &&
+            renameSubjectModal?.classList.contains("visible")
+        )
+            closeRenameModal();
+    });
+
+    rsSubjectName?.addEventListener("input", () => {
+        if (rsSubjectName.value.trim() === "") return;
+        rsSubjectName.classList.remove("error");
+        rsNameError?.classList.add("hidden");
+    });
+
+    renameSubjectConfirmBtn?.addEventListener("click", async () => {
+        const name = rsSubjectName?.value.trim() || "";
+
+        if (name === "") {
+            rsSubjectName?.classList.add("error");
+            rsNameError?.classList.remove("hidden");
+            rsSubjectName?.focus();
+            return;
+        }
+
+        if (!renamingSubjectId) return;
+
+        renameSubjectConfirmBtn.disabled = true;
+
+        try {
+            const res = await fetch(
+                `/professor/subjects/${renamingSubjectId}`,
+                {
+                    method: "PUT",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-XSRF-TOKEN": getCsrfToken(),
+                    },
+                    body: JSON.stringify({ name }),
+                },
+            );
+
+            if (!res.ok) {
+                const message = await extractErrorMessage(
+                    res,
+                    "Could not rename the subject.",
+                );
+                showToast(message);
+                return;
+            }
+
+            closeRenameModal();
+            showToast("Subject renamed.");
+            await loadSubjects();
+        } catch (e) {
+            showToast("Could not rename the subject. Please try again.");
+        } finally {
+            renameSubjectConfirmBtn.disabled = false;
+        }
+    });
+
+    /* SUBJECT CARD CLICKS — kebab/rename, or open the subject's module-view page */
     subjectGrid?.addEventListener("click", (e) => {
+        const kebabBtn = e.target.closest(".mat-subject-kebab-btn");
+        if (kebabBtn) {
+            e.stopPropagation();
+            const menu = kebabBtn.nextElementSibling;
+            const isOpen = menu?.classList.contains("open");
+            closeAllSubjectKebabMenus();
+            if (!isOpen) menu?.classList.add("open");
+            return;
+        }
+
+        const renameItem = e.target.closest('.post-kebab-item[data-action="rename"]');
+        if (renameItem) {
+            e.stopPropagation();
+            closeAllSubjectKebabMenus();
+            const id = renameItem.closest(".mat-subject-card")?.dataset.id;
+            const subject = subjects.find((s) => String(s.id) === String(id));
+            if (subject) openRenameModal(subject);
+            return;
+        }
+
         const arrow = e.target.closest(".mat-subject-arrow");
         const card = e.target.closest(".mat-subject-card");
         if (!arrow && !card) return;
