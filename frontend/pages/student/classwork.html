@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <script src="../../assets/js/common/frame-guard.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>LearnQuest | My Class</title>
+        <title>LearnQuest | Classwork</title>
         <link
             rel="icon"
             type="image/svg+xml"
@@ -23,19 +23,19 @@
         <link rel="stylesheet" href="../../assets/css/base/components.css" />
         <link
             rel="stylesheet"
-            href="../../assets/css/pages/student/enrolled-class.css"
+            href="../../assets/css/pages/student/classwork.css"
         />
     </head>
     <body>
         <main id="mainContent">
-            <!-- CLASS NOT FOUND / NOT ENROLLED STATE -->
+            <!-- CLASS / LESSON NOT FOUND STATE -->
             <div id="classNotFound" class="class-not-found hidden">
                 <i class="fas fa-circle-exclamation"></i>
-                <h1>Class not found</h1>
-                <p>
+                <h1 id="classNotFoundTitle">Class not found</h1>
+                <p id="classNotFoundMessage">
                     This class doesn't exist, or you're not enrolled in it.
                 </p>
-                <a href="student-home.html" class="hero-btn">
+                <a id="classNotFoundLink" href="student-home.html" class="hero-btn">
                     <i class="fas fa-arrow-left"></i> Back to Home
                 </a>
             </div>
@@ -55,29 +55,55 @@
                     <i class="fas fa-book-open class-banner-icon"></i>
                 </section>
 
-                <!-- TWO COLUMN: FEED + SIDE PANEL -->
+                <!-- BACK BUTTON -->
+                <button
+                    id="backToClassBtn"
+                    class="back-to-class-btn"
+                    type="button"
+                >
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Class</span>
+                </button>
+
+                <!-- TWO COLUMN: LESSON DETAIL + SIDE PANEL -->
                 <div class="classroom-grid">
-                    <!-- LEFT: Announcement / Lesson feed -->
-                    <div id="feedColumn" class="feed-column"></div>
+                    <!-- LEFT: Single lesson card + Summary of Lesson -->
+                    <div class="lesson-detail-column">
+                        <div id="feedColumn" class="feed-column"></div>
 
-                    <!-- RIGHT: AI tools panel -->
-                    <div class="side-column">
-                        <div class="ai-panel">
-                            <button id="summarizeBtn" class="summarize-btn">
-                                <span class="bot-icon"><i class="fas fa-robot"></i></span>
-                                Summarize class note
-                            </button>
-                            <div id="summaryResult" class="hidden"></div>
-                        </div>
-
-                        <div class="ai-insights-card">
-                            <div class="ai-insights-header">
-                                <span class="ai-insights-icon"><i class="fas fa-cloud"></i></span>
-                                <span class="ai-insights-title">AI Insights for You</span>
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <span class="summary-card-title"
+                                    >Summary of Lesson</span
+                                >
+                                <span
+                                    id="summaryLessonMastery"
+                                    class="summary-mastery-chip"
+                                ></span>
+                                <span class="summary-card-icon"
+                                    ><i class="fas fa-robot"></i
+                                ></span>
                             </div>
-                            <div id="insightsList"></div>
-                            <button id="insightsRefreshBtn" class="insight-refresh">
-                                <i class="fas fa-rotate"></i> Refresh insights
+                            <div
+                                id="summaryResult"
+                                class="summary-result"
+                            ></div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Quiz card -->
+                    <div class="side-column">
+                        <div class="quiz-card">
+                            <div class="quiz-card-header">
+                                <span id="quizCardTitle" class="quiz-card-title"
+                                    >Quiz</span
+                                >
+                                <span class="quiz-card-icon"
+                                    ><i class="fas fa-brain"></i
+                                ></span>
+                            </div>
+                            <button id="takeQuizBtn" class="take-quiz-btn">
+                                Take Quiz
                             </button>
                         </div>
                     </div>
@@ -146,6 +172,6 @@
         </div>
 
         <script src="../../assets/js/common/class-post-card.js"></script>
-        <script src="../../assets/js/pages/student/enrolled-class.js"></script>
+        <script src="../../assets/js/pages/student/classwork.js"></script>
     </body>
 </html>

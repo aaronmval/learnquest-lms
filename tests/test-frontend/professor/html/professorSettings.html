@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Settings</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../css/navigation.css">
+    <link rel="stylesheet" href="../css/professorHome.css">
+    <link rel="stylesheet" href="../css/professorSettings.css">
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+
+    <!--HEADER -->
+    <header>
+
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/professorHome.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-parent">Main</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Settings</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Professors create classes instead of joining them -->
+            <button id="createClassBtn" class="join-class-btn" title="Create a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Create Class</span>
+            </button>
+
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">M</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Ma'am Mila!</div>
+                    <div id="headerProfileRole" class="profile-role">Chemistry Professor</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!-- BODY AREA -->
+    <div class="body-area">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/professorHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/professorDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- My Classes — dropdown of all classes the professor teaches. -->
+                <button id="myClassesToggleBtn" class="sidebar-link labs-toggle" type="button">
+                    <span class="labs-toggle-inner">
+                        <i class="fas fa-chalkboard-user icon"></i>
+                        <span class="sidebar-text">My Classes</span>
+                    </span>
+                    <i class="fas fa-chevron-down" id="myClassesChevron"></i>
+                </button>
+
+                <div class="courses-dropdown" id="myClassesDropdownContainer">
+                    <a href="../html/teachingChemistry.html"
+                       id="nav-chemistry"
+                       class="sidebar-link sub-link"
+                       data-parent="My Classes"
+                       data-child="Chemistry">
+                        <span class="dot dot-cyan"></span>
+                        <span class="sidebar-text">Chemistry</span>
+                    </a>
+                </div>
+
+                <a href="../html/professorArchive.html"
+                   id="nav-archive"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Archived Classes">
+                    <i class="fas fa-box-archive icon"></i>
+                    <span class="sidebar-text">Archived Classes</span>
+                </a>
+
+                <a href="../html/professorQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/professorSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!-- MAIN CONTENT -->
+        <main id="mainContent">
+
+            <div class="settings-wrap">
+
+                <!-- HERO BANNER -->
+                <section class="hero-banner">
+                    <div class="hero-text">
+                        <h1 class="hero-title">Profile Settings</h1>
+                        <p class="hero-subtitle">Manage your personal information, teaching details, and account preferences.</p>
+                    </div>
+                    <div class="hero-illustration">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </section>
+
+                <!-- SETTINGS BODY: left profile card + right tabs/panels -->
+                <div class="settings-body">
+
+                    <!-- LEFT: PROFILE CARD -->
+                    <aside class="profile-side-card">
+                        <div class="profile-side-photo-wrap">
+                            <img id="profilePhotoPreview" class="profile-side-photo" src="" alt="Profile photo" style="display:none;">
+                            <div id="profilePhotoInitials" class="profile-side-initials">M</div>
+                            <button id="profilePhotoEditBtn" class="profile-photo-edit-btn" type="button" aria-label="Change profile photo">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <input id="profilePhotoInput" type="file" accept="image/*" hidden>
+                        </div>
+
+                        <span class="profile-side-role-badge"><i class="fas fa-chalkboard-user"></i> Professor</span>
+
+                        <h2 id="profileHeroName" class="profile-side-name">Mila D. Valiente</h2>
+                        <p id="profileHeroMeta" class="profile-side-meta">Chemistry Professor &middot; STEM Department &middot; Kapitolyo High School</p>
+
+                        <button id="profilePhotoRemoveBtn" class="profile-side-btn" type="button">
+                            <i class="fas fa-trash-can"></i> Remove Photo
+                        </button>
+                    </aside>
+
+                    <!-- RIGHT: TABS + PANELS -->
+                    <div class="settings-main-col">
+
+                        <!-- SETTINGS TABS -->
+                        <div class="settings-tabs" role="tablist">
+                            <button class="settings-tab active" data-tab="profile-info" role="tab" aria-selected="true">
+                                <i class="fas fa-id-card"></i> Profile Info
+                            </button>
+                            <button class="settings-tab" data-tab="academic-info" role="tab" aria-selected="false">
+                                <i class="fas fa-chalkboard-user"></i> Academic Info
+                            </button>
+                            <button class="settings-tab" data-tab="notifications" role="tab" aria-selected="false">
+                                <i class="fas fa-bell"></i> Notifications
+                            </button>
+                            <button class="settings-tab" data-tab="security" role="tab" aria-selected="false">
+                                <i class="fas fa-shield-halved"></i> Security
+                            </button>
+                        </div>
+
+                        <!-- TAB PANELS -->
+                        <div class="settings-panels">
+
+                            <!-- PROFILE INFO -->
+                            <section id="panel-profile-info" class="settings-panel active" role="tabpanel">
+                                <form id="profileInfoForm" class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Profile Information</h3>
+                                        <p class="settings-card-desc">This information may be visible to your students and fellow faculty.</p>
+                                    </div>
+
+                                    <div class="settings-form-grid">
+                                        <div class="settings-field">
+                                            <label for="fieldFirstName">First Name</label>
+                                            <input id="fieldFirstName" type="text" value="Mila" required>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldLastName">Last Name</label>
+                                            <input id="fieldLastName" type="text" value="Valiente" required>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldMiddleName">Middle Name</label>
+                                            <input id="fieldMiddleName" type="text" value="Domingo">
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldNickname">Preferred Title &amp; Nickname</label>
+                                            <input id="fieldNickname" type="text" value="Ma'am Mila">
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldEmail">Email Address</label>
+                                            <input id="fieldEmail" type="email" value="mila.valiente@kapitolyohs.edu.ph" required>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldPhone">Phone Number</label>
+                                            <input id="fieldPhone" type="tel" value="+63 917 654 3210">
+                                        </div>
+                                        <div class="settings-field settings-field-full">
+                                            <label for="fieldBio">Short Bio</label>
+                                            <textarea id="fieldBio" rows="3" placeholder="Tell your students a bit about yourself...">Chemistry professor passionate about hands-on lab work and making stoichiometry less scary.</textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-card-footer">
+                                        <span id="profileInfoSaveStatus" class="settings-save-status"></span>
+                                        <button type="submit" class="settings-save-btn">
+                                            <i class="fas fa-floppy-disk"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </section>
+
+                            <!-- ACADEMIC INFO -->
+                            <section id="panel-academic-info" class="settings-panel" role="tabpanel">
+                                <div class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Teaching Information</h3>
+                                        <p class="settings-card-desc">These details are managed by the HR &amp; Academic Affairs office and cannot be edited directly.</p>
+                                    </div>
+
+                                    <div class="settings-form-grid">
+                                        <div class="settings-field">
+                                            <label>Employee ID</label>
+                                            <input type="text" value="EMP-2014-0083" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Department</label>
+                                            <input type="text" value="STEM Department" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Position</label>
+                                            <input type="text" value="Chemistry Professor" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Date Hired</label>
+                                            <input type="text" value="June 16, 2014" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Subject Handled</label>
+                                            <input type="text" value="Chemistry" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Section Handled</label>
+                                            <input type="text" value="STEM - Amethyst" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>School</label>
+                                            <input type="text" value="Kapitolyo High School" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>School Year</label>
+                                            <input type="text" value="2025 - 2026" disabled>
+                                        </div>
+                                    </div>
+
+                                    <div class="academic-notice">
+                                        <i class="fas fa-circle-info"></i>
+                                        <span>Spotted an error in your employment record? Please report it to the HR &amp; Academic Affairs office.</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- NOTIFICATIONS -->
+                            <section id="panel-notifications" class="settings-panel" role="tabpanel">
+                                <div class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Notification Preferences</h3>
+                                        <p class="settings-card-desc">Choose what you want to be notified about and how.</p>
+                                    </div>
+
+                                    <div class="notif-group">
+                                        <p class="notif-group-title">General</p>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">New Student Submissions</span>
+                                                <span class="notif-row-desc">Get notified when a student submits an assignment.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifSubmissions" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Class Enrollment Requests</span>
+                                                <span class="notif-row-desc">Get notified when a student joins your class.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifEnrollment" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Grading Reminders</span>
+                                                <span class="notif-row-desc">Reminders for submissions still pending review.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifGrading" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="notif-group">
+                                        <p class="notif-group-title">QuestAI Coach</p>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Class Insights</span>
+                                                <span class="notif-row-desc">Weekly performance summary for your class.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifInsights" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">At-Risk Student Alerts</span>
+                                                <span class="notif-row-desc">Alerts when QuestAI flags a struggling student.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifAdaptive" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="notif-group">
+                                        <p class="notif-group-title">Delivery</p>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Email Notifications</span>
+                                                <span class="notif-row-desc">Receive a copy of important alerts via email.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifEmail">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">In-App Sound</span>
+                                                <span class="notif-row-desc">Play a sound when a new notification arrives.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifSound">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-card-footer">
+                                        <span id="notifSaveStatus" class="settings-save-status"></span>
+                                        <button id="notifSaveBtn" type="button" class="settings-save-btn">
+                                            <i class="fas fa-floppy-disk"></i> Save Preferences
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- SECURITY  -->
+                            <section id="panel-security" class="settings-panel" role="tabpanel">
+                                <form id="passwordForm" class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Change Password</h3>
+                                        <p class="settings-card-desc">Use a strong password you don't use anywhere else.</p>
+                                    </div>
+
+                                    <div class="settings-form-grid settings-form-grid-single">
+                                        <div class="settings-field">
+                                            <label for="currentPassword">Current Password</label>
+                                            <div class="password-input-wrap">
+                                                <input id="currentPassword" type="password" autocomplete="current-password" required>
+                                                <button type="button" class="password-toggle-btn" data-target="currentPassword" aria-label="Show password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="newPassword">New Password</label>
+                                            <div class="password-input-wrap">
+                                                <input id="newPassword" type="password" autocomplete="new-password" required>
+                                                <button type="button" class="password-toggle-btn" data-target="newPassword" aria-label="Show password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            <div id="passwordStrengthBar" class="password-strength-bar">
+                                                <span class="password-strength-fill"></span>
+                                            </div>
+                                            <span id="passwordStrengthLabel" class="password-strength-label"></span>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="confirmPassword">Confirm New Password</label>
+                                            <div class="password-input-wrap">
+                                                <input id="confirmPassword" type="password" autocomplete="new-password" required>
+                                                <button type="button" class="password-toggle-btn" data-target="confirmPassword" aria-label="Show password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            <span id="passwordMatchHint" class="password-match-hint"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-card-footer">
+                                        <span id="passwordSaveStatus" class="settings-save-status"></span>
+                                        <button type="submit" class="settings-save-btn">
+                                            <i class="fas fa-key"></i> Update Password
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div class="settings-card danger-zone-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Active Sessions</h3>
+                                        <p class="settings-card-desc">Devices currently signed in to your LearnQuest account.</p>
+                                    </div>
+
+                                    <div class="session-row">
+                                        <div class="session-row-icon"><i class="fas fa-desktop"></i></div>
+                                        <div class="session-row-text">
+                                            <span class="session-row-label">This Device &middot; Chrome on Windows</span>
+                                            <span class="session-row-desc">Quezon City, Philippines &middot; Active now</span>
+                                        </div>
+                                        <span class="session-current-badge">Current</span>
+                                    </div>
+
+                                    <div class="session-row">
+                                        <div class="session-row-icon"><i class="fas fa-mobile-screen"></i></div>
+                                        <div class="session-row-text">
+                                            <span class="session-row-label">LearnQuest Mobile &middot; Android</span>
+                                            <span class="session-row-desc">Quezon City, Philippines &middot; 2 days ago</span>
+                                        </div>
+                                        <button class="session-revoke-btn" type="button">Sign Out</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                        </div>
+                        <!-- end .settings-panels -->
+
+                    </div>
+                    <!-- end .settings-main-col -->
+
+                </div>
+                <!-- end .settings-body -->
+
+            </div>
+
+        </main>
+        <!-- End of main content -->
+
+    </div>
+    <!-- End of body area -->
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> Recent Activity</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CREATE CLASS MODAL -->
+    <div id="createClassModal">
+        <div id="createClassModalCard">
+
+            <div class="cc-modal-header">
+                <h3 class="modal-title cc-modal-title">Create class</h3>
+                <button id="createClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccClassName">Class name<span class="cc-required-star">*</span></label>
+                <input id="ccClassName" class="cc-input" type="text"
+                       placeholder="Class name" maxlength="60"
+                       autocomplete="off" spellcheck="false" />
+                <p id="ccNameError" class="cc-error hidden">*Required</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSection">Section</label>
+                <input id="ccSection" class="cc-input" type="text"
+                       placeholder="Section" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSubject">Subject</label>
+                <input id="ccSubject" class="cc-input" type="text"
+                       placeholder="Subject" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccRoom">Room</label>
+                <input id="ccRoom" class="cc-input" type="text"
+                       placeholder="Room" maxlength="20"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="createClassCancelBtn" class="modal-btn cc-cancel-btn">Cancel</button>
+                <button id="createClassConfirmBtn" class="modal-btn cc-create-btn">Create</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <script src="../../js/navigation.js"></script>
+    <script src="../js/professorHome.js"></script>
+    <script src="../js/professorSettings.js"></script>
+
+</body>
+</html>

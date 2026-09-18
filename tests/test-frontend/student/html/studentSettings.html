@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Settings</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <!-- Icons & Font -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Shared navigation styles -->
+    <link rel="stylesheet" href="../../css/navigation.css">
+
+    <!-- This page's own styles -->
+    <link rel="stylesheet" href="../css/studentHome.css">
+    <link rel="stylesheet" href="../css/studentSettings.css">
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+
+    <!-- ── HEADER (shared navigation) ── -->
+    <header>
+
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/studentHome.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-parent">Main</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Settings</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button id="joinClassBtn" class="join-class-btn" title="Join a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Join Class</span>
+            </button>
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">A</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Aaron!</div>
+                    <div id="headerProfileRole" class="profile-role">Student</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!-- ── BODY AREA ── -->
+    <div class="body-area">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/studentHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/studentDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- Enrolled dropdown -->
+                <div class="labs-group">
+                    <button id="labsToggleBtn" class="sidebar-link labs-toggle" aria-expanded="false">
+                        <div class="labs-toggle-inner">
+                            <i class="fas fa-graduation-cap icon"></i>
+                            <span class="sidebar-text">Enrolled</span>
+                        </div>
+                        <i id="chevron-icon" class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="courses-dropdown-container" class="courses-dropdown">
+                        <a href="../html/enrolledChemistry.html"
+                           id="nav-chemistry"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Chemistry">
+                            <span class="dot dot-cyan"></span>
+                            <span class="sidebar-text">Chemistry</span>
+                        </a>
+                        <a href="../html/enrolledGeneralbiology.html"
+                           id="nav-general-biology"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="General Biology">
+                            <span class="dot dot-orange"></span>
+                            <span class="sidebar-text">General Biology</span>
+                        </a>
+                        <a href="../html/enrolledPhysics.html"
+                           id="nav-physics"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Physics">
+                            <span class="dot dot-purple"></span>
+                            <span class="sidebar-text">Physics</span>
+                        </a>
+                         <a href="../html/enrolledEarthscience.html"
+                           id="nav-earth-science"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Earth Science">
+                            <span class="dot dot-green"></span>
+                            <span class="sidebar-text">Earth Science</span>
+                        </a>
+                    </div>
+                </div>
+
+
+                <a href="../html/studentQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/studentSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!-- ── MAIN CONTENT ── -->
+        <main id="mainContent">
+
+            <div class="settings-wrap">
+
+                <!-- HERO BANNER (same pattern as studentHome.html) -->
+                <section class="hero-banner">
+                    <div class="hero-text">
+                        <h1 class="hero-title">Profile Settings</h1>
+                        <p class="hero-subtitle">Manage your personal information, academic details, and account preferences.</p>
+                    </div>
+                    <div class="hero-illustration">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </section>
+
+                <!-- SETTINGS BODY: left profile card + right tabs/panels -->
+                <div class="settings-body">
+
+                    <!-- LEFT: PROFILE CARD -->
+                    <aside class="profile-side-card">
+                        <div class="profile-side-photo-wrap">
+                            <img id="profilePhotoPreview" class="profile-side-photo" src="" alt="Profile photo" style="display:none;">
+                            <div id="profilePhotoInitials" class="profile-side-initials">A</div>
+                            <button id="profilePhotoEditBtn" class="profile-photo-edit-btn" type="button" aria-label="Change profile photo">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <input id="profilePhotoInput" type="file" accept="image/*" hidden>
+                        </div>
+
+                        <span class="profile-side-role-badge"><i class="fas fa-user-graduate"></i> Student</span>
+
+                        <h2 id="profileHeroName" class="profile-side-name">Aaron D. Santos</h2>
+                        <p id="profileHeroMeta" class="profile-side-meta">Grade 12 &middot; STEM - Amethyst &middot; Kapitolyo High School</p>
+
+                        <button id="profilePhotoRemoveBtn" class="profile-side-btn" type="button">
+                            <i class="fas fa-trash-can"></i> Remove Photo
+                        </button>
+                    </aside>
+
+                    <!-- RIGHT: TABS + PANELS -->
+                    <div class="settings-main-col">
+
+                        <!-- SETTINGS TABS -->
+                        <div class="settings-tabs" role="tablist">
+                            <button class="settings-tab active" data-tab="profile-info" role="tab" aria-selected="true">
+                                <i class="fas fa-id-card"></i> Profile Info
+                            </button>
+                            <button class="settings-tab" data-tab="academic-info" role="tab" aria-selected="false">
+                                <i class="fas fa-graduation-cap"></i> Academic Info
+                            </button>
+                            <button class="settings-tab" data-tab="notifications" role="tab" aria-selected="false">
+                                <i class="fas fa-bell"></i> Notifications
+                            </button>
+                            <button class="settings-tab" data-tab="security" role="tab" aria-selected="false">
+                                <i class="fas fa-shield-halved"></i> Security
+                            </button>
+                        </div>
+
+                        <!-- TAB PANELS -->
+                        <div class="settings-panels">
+
+                            <!-- ── PROFILE INFO ── -->
+                            <section id="panel-profile-info" class="settings-panel active" role="tabpanel">
+                                <form id="profileInfoForm" class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Profile Information</h3>
+                                        <p class="settings-card-desc">This information may be visible to your teachers and classmates.</p>
+                                    </div>
+
+                                    <div class="settings-form-grid">
+                                        <div class="settings-field">
+                                            <label for="fieldFirstName">First Name</label>
+                                            <input id="fieldFirstName" type="text" value="Aaron" required>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldLastName">Last Name</label>
+                                            <input id="fieldLastName" type="text" value="Santos" required>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldMiddleName">Middle Name</label>
+                                            <input id="fieldMiddleName" type="text" value="Dela Cruz">
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldNickname">Preferred Nickname</label>
+                                            <input id="fieldNickname" type="text" value="Aaron">
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldEmail">Email Address</label>
+                                            <input id="fieldEmail" type="email" value="aaron.santos@kapitolyohs.edu.ph" required>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label for="fieldPhone">Phone Number</label>
+                                            <input id="fieldPhone" type="tel" value="+63 912 345 6789">
+                                        </div>
+                                        <div class="settings-field settings-field-full">
+                                            <label for="fieldBio">Short Bio</label>
+                                            <textarea id="fieldBio" rows="3" placeholder="Tell your teachers a bit about yourself...">Aspiring chemical engineer who loves stoichiometry and badminton.</textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-card-footer">
+                                        <span id="profileInfoSaveStatus" class="settings-save-status"></span>
+                                        <button type="submit" class="settings-save-btn">
+                                            <i class="fas fa-floppy-disk"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </section>
+
+                            <!-- ── ACADEMIC INFO ── -->
+                            <section id="panel-academic-info" class="settings-panel" role="tabpanel">
+                                <div class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Academic Information</h3>
+                                        <p class="settings-card-desc">These details are managed by the school registrar and cannot be edited directly.</p>
+                                    </div>
+
+                                    <div class="settings-form-grid">
+                                        <div class="settings-field">
+                                            <label>Student ID</label>
+                                            <input type="text" value="22-04719" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>LRN</label>
+                                            <input type="text" value="136245100782" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Grade Level</label>
+                                            <input type="text" value="Grade 12" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Strand</label>
+                                            <input type="text" value="STEM" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Section</label>
+                                            <input type="text" value="Amethyst" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>Adviser</label>
+                                            <input type="text" value="Mila D. Valiente" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>School</label>
+                                            <input type="text" value="Kapitolyo High School" disabled>
+                                        </div>
+                                        <div class="settings-field">
+                                            <label>School Year</label>
+                                            <input type="text" value="2025 - 2026" disabled>
+                                        </div>
+                                    </div>
+
+                                    <div class="academic-notice">
+                                        <i class="fas fa-circle-info"></i>
+                                        <span>Spotted an error in your academic record? Please report it to your class adviser or the registrar's office.</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ── NOTIFICATIONS ── -->
+                            <section id="panel-notifications" class="settings-panel" role="tabpanel">
+                                <div class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Notification Preferences</h3>
+                                        <p class="settings-card-desc">Choose what you want to be notified about and how.</p>
+                                    </div>
+
+                                    <div class="notif-group">
+                                        <p class="notif-group-title">General</p>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">New Announcements</span>
+                                                <span class="notif-row-desc">Get notified when a teacher posts an announcement.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifAnnouncements" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">New Lesson Materials</span>
+                                                <span class="notif-row-desc">Get notified when new lesson PDFs are uploaded.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifLessons" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Quiz &amp; Exam Reminders</span>
+                                                <span class="notif-row-desc">Reminders before upcoming quizzes or exams.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifQuizzes" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="notif-group">
+                                        <p class="notif-group-title">QuestAI Coach</p>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">AI Insights</span>
+                                                <span class="notif-row-desc">Weekly personalized study tips based on your activity.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifInsights" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Adaptive Recommendations</span>
+                                                <span class="notif-row-desc">Alerts when QuestAI suggests a topic to review.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifAdaptive" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="notif-group">
+                                        <p class="notif-group-title">Delivery</p>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Email Notifications</span>
+                                                <span class="notif-row-desc">Receive a copy of important alerts via email.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifEmail">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">In-App Sound</span>
+                                                <span class="notif-row-desc">Play a sound when a new notification arrives.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="notifSound">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-card-footer">
+                                        <span id="notifSaveStatus" class="settings-save-status"></span>
+                                        <button id="notifSaveBtn" type="button" class="settings-save-btn">
+                                            <i class="fas fa-floppy-disk"></i> Save Preferences
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ── SECURITY ── -->
+                            <section id="panel-security" class="settings-panel" role="tabpanel">
+                                <form id="passwordForm" class="settings-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Change Password</h3>
+                                        <p class="settings-card-desc">Use a strong password you don't use anywhere else.</p>
+                                    </div>
+
+                                    <div class="settings-form-grid settings-form-grid-single">
+                                        <div class="settings-field">
+                                            <label for="currentPassword">Current Password</label>
+                                            <div class="password-input-wrap">
+                                                <input id="currentPassword" type="password" autocomplete="current-password" required>
+                                                <button type="button" class="password-toggle-btn" data-target="currentPassword" aria-label="Show password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="newPassword">New Password</label>
+                                            <div class="password-input-wrap">
+                                                <input id="newPassword" type="password" autocomplete="new-password" required>
+                                                <button type="button" class="password-toggle-btn" data-target="newPassword" aria-label="Show password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            <div id="passwordStrengthBar" class="password-strength-bar">
+                                                <span class="password-strength-fill"></span>
+                                            </div>
+                                            <span id="passwordStrengthLabel" class="password-strength-label"></span>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="confirmPassword">Confirm New Password</label>
+                                            <div class="password-input-wrap">
+                                                <input id="confirmPassword" type="password" autocomplete="new-password" required>
+                                                <button type="button" class="password-toggle-btn" data-target="confirmPassword" aria-label="Show password">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            <span id="passwordMatchHint" class="password-match-hint"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-card-footer">
+                                        <span id="passwordSaveStatus" class="settings-save-status"></span>
+                                        <button type="submit" class="settings-save-btn">
+                                            <i class="fas fa-key"></i> Update Password
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div class="settings-card danger-zone-card">
+                                    <div class="settings-card-header">
+                                        <h3 class="settings-card-title">Active Sessions</h3>
+                                        <p class="settings-card-desc">Devices currently signed in to your LearnQuest account.</p>
+                                    </div>
+
+                                    <div class="session-row">
+                                        <div class="session-row-icon"><i class="fas fa-desktop"></i></div>
+                                        <div class="session-row-text">
+                                            <span class="session-row-label">This Device &middot; Chrome on Windows</span>
+                                            <span class="session-row-desc">Quezon City, Philippines &middot; Active now</span>
+                                        </div>
+                                        <span class="session-current-badge">Current</span>
+                                    </div>
+
+                                    <div class="session-row">
+                                        <div class="session-row-icon"><i class="fas fa-mobile-screen"></i></div>
+                                        <div class="session-row-text">
+                                            <span class="session-row-label">LearnQuest Mobile &middot; Android</span>
+                                            <span class="session-row-desc">Quezon City, Philippines &middot; 2 days ago</span>
+                                        </div>
+                                        <button class="session-revoke-btn" type="button">Sign Out</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                        </div>
+                        <!-- end .settings-panels -->
+
+                    </div>
+                    <!-- end .settings-main-col -->
+
+                </div>
+                <!-- end .settings-body -->
+
+            </div>
+
+        </main>
+        <!-- End of main content -->
+
+    </div>
+    <!-- End of body area -->
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> System Alerts</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JOIN CLASS MODAL -->
+    <div id="joinClassModal">
+        <div id="joinClassModalCard">
+
+            <div class="jc-modal-header">
+                <div class="jc-modal-icon-wrap" id="jcModalIconWrap">
+                    <i class="fas fa-door-open" id="jcModalIcon"></i>
+                </div>
+                <div>
+                    <h3 class="modal-title" id="jcModalTitle">Join a Class</h3>
+                    <p class="jc-modal-subtitle" id="jcModalSubtitle">Enter the class code given by your teacher</p>
+                </div>
+                <button id="joinClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="jc-format-hint" id="jcFormatHint">
+                <i class="fas fa-info-circle"></i>
+                <p>Codes follow the format <strong>SUBJECT-NUMBER</strong> — always with a dash
+                   (e.g. <strong>BIO-2025</strong> or <strong>CHEM-101</strong>).</p>
+            </div>
+
+            <div class="jc-input-wrap" id="jcInputWrap">
+                <label class="jc-label" for="classCodeInput">Class Code</label>
+                <input id="classCodeInput" class="jc-input" type="text"
+                       placeholder="e.g. BIO-2025" maxlength="20"
+                       autocomplete="off" spellcheck="false" />
+                <div class="jc-attempt-bar" id="jcAttemptBar">
+                    <span class="jc-attempt-dot" id="jcDot1"></span>
+                    <span class="jc-attempt-dot" id="jcDot2"></span>
+                    <span class="jc-attempt-dot" id="jcDot3"></span>
+                    <span class="jc-attempt-label" id="jcAttemptLabel">3 attempts remaining</span>
+                </div>
+                <p id="jcError" class="jc-error hidden"></p>
+            </div>
+
+            <div id="jcPreview" class="jc-preview hidden">
+                <div class="jc-preview-dot" id="jcPreviewDot"></div>
+                <div class="jc-preview-info">
+                    <span id="jcPreviewName" class="jc-preview-name"></span>
+                    <span id="jcPreviewTeacher" class="jc-preview-teacher"></span>
+                </div>
+                <i class="fas fa-check-circle jc-preview-check"></i>
+            </div>
+
+            <div id="jcLockoutBanner" class="jc-lockout-banner hidden">
+                <i class="fas fa-lock"></i>
+                <div class="jc-lockout-text">
+                    Too many failed attempts. Please wait
+                    <span class="jc-lockout-timer" id="jcTimerSpan">30s</span>
+                    before trying again.
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="joinClassCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="joinClassConfirmBtn" class="modal-btn modal-btn-confirm jc-confirm-btn" disabled>
+                    <i class="fas fa-sign-in-alt"></i> Join Class
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <!-- Shared navigation JS -->
+    <script src="../../js/navigation.js"></script>
+
+    <!-- This page's own JS -->
+    <script src="../js/studentHome.js"></script>
+    <script src="../js/studentSettings.js"></script>
+
+</body>
+</html>

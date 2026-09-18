@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Chemistry - Quiz</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <!-- Icons & Font -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../css/navigation.css">
+    <link rel="stylesheet" href="../css/studentQuiz.css">
+
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+
+    <!-- HEADER -->
+    <header>
+
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/studentHome.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-root">Enrolled</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-parent" data-href="enrolledChemistry.html">Chemistry</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Quiz</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button id="joinClassBtn" class="join-class-btn" title="Join a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Join Class</span>
+            </button>
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">A</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Aaron!</div>
+                    <div id="headerProfileRole" class="profile-role">Student</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!--BODY AREA -->
+    <div class="body-area">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/studentHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/studentDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- Enrolled dropdown -->
+                <div class="labs-group">
+                    <button id="labsToggleBtn" class="sidebar-link labs-toggle" aria-expanded="false">
+                        <div class="labs-toggle-inner">
+                            <i class="fas fa-graduation-cap icon"></i>
+                            <span class="sidebar-text">Enrolled</span>
+                        </div>
+                        <i id="chevron-icon" class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="courses-dropdown-container" class="courses-dropdown">
+                        <a href="../html/enrolledChemistry.html"
+                           id="nav-chemistry"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Chemistry">
+                            <span class="dot dot-cyan"></span>
+                            <span class="sidebar-text">Chemistry</span>
+                        </a>
+                        <a href="../html/enrolledGeneralbiology.html"
+                           id="nav-general-biology"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="General Biology">
+                            <span class="dot dot-orange"></span>
+                            <span class="sidebar-text">General Biology</span>
+                        </a>
+                        <a href="../html/enrolledPhysics.html"
+                           id="nav-physics"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Physics">
+                            <span class="dot dot-purple"></span>
+                            <span class="sidebar-text">Physics</span>
+                        </a>
+                         <a href="../html/enrolledEarthscience.html"
+                           id="nav-earth-science"
+                           class="sidebar-link sub-link"
+                           data-parent="Enrolled"
+                           data-child="Earth Science">
+                            <span class="dot dot-green"></span>
+                            <span class="sidebar-text">Earth Science</span>
+                        </a>
+                    </div>
+                </div>
+
+                <a href="../html/studentQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/studentSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!--  MAIN CONTENT  -->
+        <main id="mainContent">
+
+            <div class="quiz-wrap">
+
+                <!-- QUIZ HEADER BANNER -->
+                <section id="quizBanner" class="quiz-banner">
+                    <div class="quiz-banner-text">
+                        <span id="quizBannerEyebrow" class="quiz-banner-eyebrow">Chemistry &middot; STEM - Amethyst</span>
+                        <h1 id="quizBannerTitle" class="quiz-banner-title">Periodic Table &amp; Atomic Structure</h1>
+                        <div class="quiz-banner-meta">
+                            <span class="quiz-meta-pill"><i class="fas fa-list-ol"></i> <span id="quizMetaCount">10 Items</span></span>
+                            <span class="quiz-meta-pill"><i class="fas fa-hourglass-half"></i> <span id="quizMetaTime">15:00 Limit</span></span>
+                            <span class="quiz-meta-pill"><i class="fas fa-redo"></i> <span id="quizMetaAttempts">1 of 2 attempts</span></span>
+                        </div>
+                    </div>
+                    <div class="quiz-timer-ring">
+                        <svg viewBox="0 0 80 80" class="timer-svg">
+                            <circle cx="40" cy="40" r="34" class="timer-track"></circle>
+                            <circle cx="40" cy="40" r="34" class="timer-progress" id="timerProgressCircle"></circle>
+                        </svg>
+                        <div class="timer-label">
+                            <span id="timerText">15:00</span>
+                            <small>remaining</small>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BACK BUTTON -->
+                <button id="backToClassworkBtn" class="back-to-class-btn" type="button">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Classwork</span>
+                </button>
+
+                <!-- TWO COLUMN: QUESTION AREA + NAVIGATOR -->
+                <div class="quiz-grid">
+
+                    <!-- LEFT: Active question -->
+                    <div class="question-column">
+
+                        <div class="progress-track-wrap">
+                            <div class="progress-track">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <span id="progressLabel" class="progress-label">Question 1 of 10</span>
+                        </div>
+
+                        <div id="questionCard" class="question-card">
+                            <div class="question-card-head">
+                                <span id="questionNumberBadge" class="question-number-badge">Q1</span>
+                                <button id="flagBtn" class="flag-btn" type="button" title="Mark for review">
+                                    <i class="far fa-flag"></i>
+                                    <span>Mark for review</span>
+                                </button>
+                            </div>
+                            <p id="questionText" class="question-text">Loading question…</p>
+
+                            <div id="optionsList" class="options-list">
+                                <!-- Populated dynamically by studentQuiz.js -->
+                            </div>
+                        </div>
+
+                        <div class="question-nav-actions">
+                            <button id="prevQBtn" class="qnav-btn qnav-btn-ghost" type="button" disabled>
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <button id="nextQBtn" class="qnav-btn qnav-btn-primary" type="button">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button id="submitQuizBtn" class="qnav-btn qnav-btn-submit" type="button">
+                                <i class="fas fa-paper-plane"></i> Submit Quiz
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Question navigator -->
+                    <div class="side-column">
+                        <div class="navigator-card">
+                            <button id="navigatorToggleBtn" class="navigator-card-header" aria-expanded="true" aria-controls="navigatorBody" type="button">
+                                <span class="navigator-card-title-group">
+                                    <span class="navigator-card-icon"><i class="fas fa-map-signs"></i></span>
+                                    <span class="navigator-card-title">Question Navigator</span>
+                                </span>
+                                <i id="navigatorChevron" class="fas fa-chevron-up navigator-chevron"></i>
+                            </button>
+                            <div id="navigatorBody" class="navigator-body">
+                                <div id="navigatorGrid" class="navigator-grid">
+                                    <!-- Populated dynamically by studentQuiz.js -->
+                                </div>
+                                <div class="navigator-legend">
+                                    <span><i class="legend-dot legend-current"></i> Current</span>
+                                    <span><i class="legend-dot legend-answered"></i> Answered</span>
+                                    <span><i class="legend-dot legend-flagged"></i> Flagged</span>
+                                    <span><i class="legend-dot legend-unanswered"></i> Unanswered</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+        <!-- End of main content -->
+
+    </div>
+    <!-- End of body area -->
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> System Alerts</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SUBMIT CONFIRMATION MODAL -->
+    <div id="submitConfirmModal">
+        <div id="submitConfirmModalCard">
+            <div class="modal-icon-wrap modal-icon-wrap-warn">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <h3 class="modal-title">Submit Quiz</h3>
+            <p class="modal-desc" id="submitConfirmDesc">
+                You've answered 0 of 10 questions. Once submitted, you won't be able to change your answers.
+            </p>
+            <div class="modal-actions">
+                <button id="submitCancelBtn" class="modal-btn modal-btn-cancel">Keep Reviewing</button>
+                <button id="submitConfirmBtn" class="modal-btn modal-btn-confirm">Submit Now</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- RESULTS MODAL -->
+    <div id="resultsModal">
+        <div id="resultsModalCard">
+            <div class="results-score-ring">
+                <svg viewBox="0 0 120 120" class="results-svg">
+                    <circle cx="60" cy="60" r="52" class="results-track"></circle>
+                    <circle cx="60" cy="60" r="52" class="results-progress" id="resultsProgressCircle"></circle>
+                </svg>
+                <div class="results-score-label">
+                    <span id="resultsScoreText">0/10</span>
+                    <small id="resultsPercentText">0%</small>
+                </div>
+            </div>
+            <h3 id="resultsTitle" class="modal-title">Quiz Complete!</h3>
+            <p id="resultsDesc" class="modal-desc">Great effort! Here's how you did.</p>
+
+            <div class="results-breakdown">
+                <div class="results-stat">
+                    <span class="results-stat-value" id="resultsCorrectCount">0</span>
+                    <span class="results-stat-label">Correct</span>
+                </div>
+                <div class="results-stat">
+                    <span class="results-stat-value" id="resultsIncorrectCount">0</span>
+                    <span class="results-stat-label">Incorrect</span>
+                </div>
+                <div class="results-stat">
+                    <span class="results-stat-value" id="resultsSkippedCount">0</span>
+                    <span class="results-stat-label">Skipped</span>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="reviewAnswersBtn" class="modal-btn modal-btn-cancel">Review Answers</button>
+                <button id="backToClassworkResultsBtn" class="modal-btn modal-btn-confirm">Back to Classwork</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <script src="../../js/navigation.js"></script>
+    <script src="../js/studentQuiz.js"></script>
+
+</body>
+</html>

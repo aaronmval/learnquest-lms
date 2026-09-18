@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnQuest | Professor Homepage</title>
+    <link rel="icon" type="image/svg+xml" href="../../images/LearnQuestLogo.svg">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../css/navigation.css">
+    <link rel="stylesheet" href="../css/professorHome.css">
+</head>
+<body>
+
+    <!-- PAGE LOADER -->
+    <div id="pageLoader">
+        <div class="loader-content">
+            <div class="loader-icon-wrap">
+                <div class="loader-logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+            </div>
+            <span class="loader-logo-text">LearnQuest</span>
+        </div>
+    </div>
+
+
+    <!-- HEADER (shared navigation)-->
+    <header>
+
+        <div class="header-left">
+            <button id="mobileSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button id="desktopSidebarToggle" class="icon-btn" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="../html/professorHome.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">LearnQuest</span>
+            </a>
+            <div class="breadcrumb">
+                <span id="breadcrumb-parent">Main</span>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span id="breadcrumb-child" class="breadcrumb-child">Home</span>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Professors create classes instead of joining them -->
+            <button id="createClassBtn" class="join-class-btn" title="Create a Class">
+                <i class="fas fa-plus"></i>
+                <span class="join-class-text">Create Class</span>
+            </button>
+
+            <!-- Notifications  -->
+            <div class="noti-btn">
+                <button id="notiBtn" class="icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <span id="notiBadge" class="noti-badge"></span>
+            </div>
+
+            <div class="profile-cluster">
+                <div id="headerAvatar" class="avatar">M</div>
+                <div class="profile-text">
+                    <div id="headerProfileName" class="profile-name">Welcome, Ma'am Mila!</div>
+                    <div id="headerProfileRole" class="profile-role">Chemistry Professor</div>
+                </div>
+            </div>
+            <button id="darkModeBtn" class="icon-btn" title="Toggle Dark/Light Mode">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+
+    <!--BODY AREA -->
+    <div class="body-area">
+
+        <!-- SIDEBAR — Professor navigation -->
+        <aside id="sidebar" class="collapsed">
+            <nav class="sidebar-nav">
+
+                <a href="../html/professorHome.html"
+                   id="nav-home"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Home">
+                    <i class="fas fa-home icon"></i>
+                    <span class="sidebar-text">Home</span>
+                </a>
+
+                <a href="../html/professorDashboard.html"
+                   id="nav-dashboard"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Dashboard">
+                    <i class="fas fa-th-large icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- My Classes — dropdown of all classes the professor teaches.-->
+                <button id="myClassesToggleBtn" class="sidebar-link labs-toggle" type="button">
+                    <span class="labs-toggle-inner">
+                        <i class="fas fa-chalkboard-user icon"></i>
+                        <span class="sidebar-text">My Classes</span>
+                    </span>
+                    <i class="fas fa-chevron-down" id="myClassesChevron"></i>
+                </button>
+
+                <div class="courses-dropdown" id="myClassesDropdownContainer">
+                    <a href="../html/teachingChemistry.html"
+                       id="nav-chemistry"
+                       class="sidebar-link sub-link"
+                       data-parent="My Classes"
+                       data-child="Chemistry">
+                        <span class="dot dot-cyan"></span>
+                        <span class="sidebar-text">Chemistry</span>
+                    </a>
+                </div>
+
+                <a href="../html/professorArchive.html"
+                   id="nav-archive"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Archived Classes">
+                    <i class="fas fa-box-archive icon"></i>
+                    <span class="sidebar-text">Archived Classes</span>
+                </a>
+
+                <a href="../html/professorQuestAI.html"
+                   id="nav-questai"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="QuestAI Coach">
+                    <i class="fas fa-brain icon questai-icon"></i>
+                    <span class="sidebar-text questai-text">QuestAI Coach</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="../html/professorSettings.html"
+                   id="nav-settings"
+                   class="sidebar-link"
+                   data-parent="Main"
+                   data-child="Settings">
+                    <i class="fas fa-cog icon"></i>
+                    <span class="sidebar-text">Settings</span>
+                </a>
+                <button id="signoutBtn" class="sidebar-link signout-link">
+                    <i class="fas fa-sign-out-alt icon"></i>
+                    <span class="sidebar-text">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+
+        <!-- MAIN CONTENT  -->
+        <main id="mainContent">
+
+            <!-- HERO BANNER -->
+            <section class="hero-banner">
+                <div class="hero-text">
+                    <h1 class="hero-title">Welcome back, <span id="heroName">Ma'am Mila</span>!</h1>
+                    <p class="hero-subtitle">
+                        Manage your Chemistry class, review student submissions,
+                        and post announcements — all in one place.
+                    </p>
+                    <a href="../html/teachingChemistry.html" class="hero-btn">
+                        <i class="fas fa-bullhorn"></i> Post an Announcement
+                    </a>
+                </div>
+                <div class="hero-illustration">
+                    <i class="fas fa-flask"></i>
+                </div>
+            </section>
+
+
+            <!-- QUICK STATS — scoped to Chemistry only -->
+            <section class="prof-stats-section">
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-blue">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statTotalStudents" class="prof-stat-value">42</span>
+                        <span class="prof-stat-label">Students in Chemistry</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-amber">
+                        <i class="fas fa-file-circle-exclamation"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statPendingSubmissions" class="prof-stat-value">8</span>
+                        <span class="prof-stat-label">Pending Submissions</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-green">
+                        <i class="fas fa-chalkboard"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statActiveSections" class="prof-stat-value">1</span>
+                        <span class="prof-stat-label">Active Section</span>
+                    </div>
+                </div>
+
+                <div class="prof-stat-card">
+                    <div class="prof-stat-icon prof-stat-icon-purple">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="prof-stat-text">
+                        <span id="statAvgScore" class="prof-stat-value">88%</span>
+                        <span class="prof-stat-label">Average Class Score</span>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- MY CLASS SECTION -->
+            <section class="enrolled-section">
+                <div class="enrolled-heading">
+                    <h2 class="enrolled-title">My Classes</h2>
+                    <p class="enrolled-subtitle">Manage lessons, announcements, and student progress</p>
+                </div>
+
+                <!-- CLASS CARDS GRID -->
+                <div class="class-grid class-grid-single" id="classGrid">
+
+                    <!-- Chemistry Card -->
+                    <a href="../html/teachingChemistry.html" class="class-card" style="--card-color: #22d3ee;">
+                        <div class="card-top" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                            <div class="card-subject">CHEMISTRY</div>
+                            <div class="card-section">STEM - AMETHYST</div>
+                            <div class="card-teacher-photo">
+                                <img src="../../images/teachers/chemistry.jpg"
+                                     alt="Mila D. Valiente"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                                <div class="card-teacher-initials" style="display:none;">MV</div>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <div class="card-teacher-info">
+                                <p class="card-teacher-name">42 Students</p>
+                                <p class="card-teacher-role">8 Pending Submissions</p>
+                            </div>
+                            <span class="card-enter-btn">
+                                Manage Class <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </a>
+
+                </div>
+                <!-- End of class grid -->
+
+            </section>
+
+
+            <!-- ARCHIVED CLASSES SECTION -->
+            <section class="prof-archive-section">
+                <div class="enrolled-heading">
+                    <h2 class="enrolled-title">Archived Classes</h2>
+                    <p class="enrolled-subtitle">Past Chemistry sections from previous school years</p>
+                </div>
+
+                <div class="prof-archive-list" id="archiveList">
+
+                    <div class="prof-archive-row">
+                        <div class="prof-archive-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="prof-archive-text">
+                            <p class="prof-archive-title">Chemistry &middot; STEM - Sapphire</p>
+                            <p class="prof-archive-meta">S.Y. 2024 - 2025 &middot; 39 Students &middot; Archived May 2025</p>
+                        </div>
+                        <a href="../html/professorArchive.html" class="prof-archive-action">
+                            <i class="fas fa-box-open"></i> View
+                        </a>
+                    </div>
+
+                    <div class="prof-archive-row">
+                        <div class="prof-archive-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="prof-archive-text">
+                            <p class="prof-archive-title">Chemistry &middot; STEM - Topaz</p>
+                            <p class="prof-archive-meta">S.Y. 2023 - 2024 &middot; 41 Students &middot; Archived May 2024</p>
+                        </div>
+                        <a href="../html/professorArchive.html" class="prof-archive-action">
+                            <i class="fas fa-box-open"></i> View
+                        </a>
+                    </div>
+
+                    <div class="prof-archive-empty-link">
+                        <a href="../html/professorArchive.html">
+                            View all archived classes <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+        <!-- End of main content -->
+
+    </div>
+    <!-- End of body area -->
+
+
+    <!-- NOTIFICATION DRAWER -->
+    <div id="notiDrawer">
+        <div class="noti-header">
+            <h3 class="noti-title"><i class="fas fa-bell"></i> Recent Activity</h3>
+            <button id="clearNotiBtn" class="clear-btn">Clear all</button>
+        </div>
+        <div id="notiList"></div>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebarOverlay"></div>
+
+
+    <!-- LOGOUT MODAL -->
+    <div id="logoutModal">
+        <div id="logoutModalCard">
+            <div class="modal-icon-wrap">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">Sign Out</h3>
+            <p class="modal-desc">Are you sure you want to exit your workspace session?</p>
+            <div class="modal-actions">
+                <button id="logoutCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="logoutConfirmBtn" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CREATE CLASS MODAL-->
+    <div id="createClassModal">
+        <div id="createClassModalCard">
+
+            <div class="cc-modal-header">
+                <h3 class="modal-title cc-modal-title">Create class</h3>
+                <button id="createClassCloseBtn" class="jc-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccClassName">Class name<span class="cc-required-star">*</span></label>
+                <input id="ccClassName" class="cc-input" type="text"
+                       placeholder="Class name" maxlength="60"
+                       autocomplete="off" spellcheck="false" />
+                <p id="ccNameError" class="cc-error hidden">*Required</p>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSection">Section</label>
+                <input id="ccSection" class="cc-input" type="text"
+                       placeholder="Section" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccSubject">Subject</label>
+                <input id="ccSubject" class="cc-input" type="text"
+                       placeholder="Subject" maxlength="40"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="ccRoom">Room</label>
+                <input id="ccRoom" class="cc-input" type="text"
+                       placeholder="Room" maxlength="20"
+                       autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div class="modal-actions cc-modal-actions">
+                <button id="createClassCancelBtn" class="modal-btn cc-cancel-btn">Cancel</button>
+                <button id="createClassConfirmBtn" class="modal-btn cc-create-btn">Create</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast">
+        <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <script src="../../js/navigation.js"></script>
+    <script src="../js/professorHome.js"></script>
+
+</body>
+</html>
