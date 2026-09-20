@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AI\SummaryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassPostController;
 use App\Http\Controllers\FrontendShellController;
@@ -62,6 +63,8 @@ Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')
         ->name('classes.posts.index');
     Route::get('/classes/{class}/posts/{post}/attachment', [StudentClassPostController::class, 'attachment'])
         ->name('classes.posts.attachment');
+    Route::get('/classes/{class}/posts/{post}/summary', [SummaryController::class, 'show'])
+        ->name('classes.posts.summary');
 });
 
 // Professor Routes

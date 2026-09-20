@@ -127,8 +127,10 @@ function renderLesson(lesson) {
     });
 }
 
-/* SUMMARY OF LESSON (static box — no real per-lesson AI summary source) */
-function renderLessonSummary() {
+/* SUMMARY OF LESSON — real AI summary of the lesson's attached PDF, cached
+   server-side after the first generation. Mastery chip stays a static
+   placeholder until BKT mastery tracking is implemented. */
+async function renderLessonSummary(lesson) {
     const result = document.getElementById("summaryResult");
     const masteryEl = document.getElementById("summaryLessonMastery");
     if (!result) return;
@@ -137,12 +139,57 @@ function renderLessonSummary() {
         masteryEl.textContent = `Lesson Mastery: ${DEFAULT_LESSON_SUMMARY.mastery}%`;
     }
 
-    result.innerHTML = `
-        <p class="summary-overview">${DEFAULT_LESSON_SUMMARY.overview}</p>
-        <ul class="summary-points">
-            ${DEFAULT_LESSON_SUMMARY.highlights.map((item) => `<li>${item}</li>`).join("")}
-        </ul>
-    `;
+    if (!lesson.attachment) {
+        result.innerHTML = `<p class="summary-overview">No material attached to summarize for this lesson.</p>`;
+        return;
+    }
+
+    result.innerHTML = `<p class="summary-overview">Generating summary…</p>`;
+
+    const url = `/student/classes/${CLASS_ID}/posts/${POST_ID}/summary`;
+    const startedAt = performance.now();
+    console.groupCollapsed(`[AI Summary] GET ${url}`);
+    console.log("post id:", POST_ID, "class id:", CLASS_ID);
+
+    try {
+        const res = await fetch(url, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+
+        const durationMs = Math.round(performance.now() - startedAt);
+        const data = await res.json().catch(() => null);
+
+        console.log(`status: ${res.status} (${durationMs}ms)`);
+        if (data?.request_id) console.log("request_id:", data.request_id);
+        console.log("response body:", data);
+
+        if (!res.ok) {
+            throw new Error(data?.message || `summary request failed (HTTP ${res.status})`);
+        }
+
+        console.groupEnd();
+
+        result.innerHTML = `
+            <p class="summary-overview">${ClassPostCard.escapeHtml(data.overview)}</p>
+            <ul class="summary-points">
+                ${(data.key_points || [])
+                    .map((item) => `<li>${ClassPostCard.escapeHtml(item)}</li>`)
+                    .join("")}
+            </ul>
+        `;
+    } catch (e) {
+        console.error("[AI Summary] Fetch threw:", e);
+        console.groupEnd();
+
+        result.innerHTML = `
+            <p class="summary-overview">We couldn't generate a summary right now.</p>
+            <button type="button" id="summaryRetryBtn" class="summary-retry-btn">Try again</button>
+        `;
+        document
+            .getElementById("summaryRetryBtn")
+            ?.addEventListener("click", () => renderLessonSummary(lesson));
+    }
 }
 
 /* QUIZ CARD */

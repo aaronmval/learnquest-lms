@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ClassPost extends Model
 {
@@ -45,5 +46,10 @@ class ClassPost extends Model
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class, 'module_id');
+    }
+
+    public function summary(): HasOne
+    {
+        return $this->hasOne(LessonSummary::class);
     }
 }

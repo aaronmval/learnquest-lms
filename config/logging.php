@@ -123,6 +123,16 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        // Dedicated channel for the AI pipeline (Routeway/Llama calls, PDF
+        // extraction, summary validation) — kept separate from laravel.log
+        // so it's easy to tail on its own while troubleshooting.
+        'ai' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/ai.log'),
+            'level' => env('LOG_AI_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
