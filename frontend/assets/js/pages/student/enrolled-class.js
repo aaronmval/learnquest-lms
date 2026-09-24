@@ -2,6 +2,7 @@ let CLASS_ID = null;
 let CLASS_TEACHER_NAME = "";
 let CLASS_TEACHER_INITIALS = "";
 let classPosts = [];
+let cardMasteryBadgesLoaded = Promise.resolve();
 
 async function loadClassInfo() {
     const classId = new URLSearchParams(window.location.search).get("id");
@@ -28,9 +29,37 @@ async function loadClassInfo() {
         CLASS_TEACHER_INITIALS = ClassPostCard.initialsFor(CLASS_TEACHER_NAME);
 
         ClassPostCard.renderClassBanner(data);
+        const summarizeBtn = document.getElementById("summarizeBtn");
+        if (summarizeBtn) summarizeBtn.disabled = false;
+        loadClassMastery();
         await loadPosts();
+        // Requested last: the AI call is slow, and the dev server handles
+        // one request at a time, so it must not queue ahead of the feed.
+        await cardMasteryBadgesLoaded;
+        loadInsights();
     } catch (e) {
         showClassNotFound();
+    }
+}
+
+/* AVERAGE MASTERY — BKT mastery averaged across every competency defined
+   for this class's subject (all lessons combined). Hidden until a subject
+   with at least one competency backs this class. */
+async function loadClassMastery() {
+    if (!CLASS_ID) return;
+
+    try {
+        const res = await fetch(`/student/classes/${CLASS_ID}/mastery`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error("failed to load mastery");
+
+        const data = await res.json();
+        const percent = data.average_mastery !== null ? data.average_mastery * 100 : null;
+        ClassPostCard.renderBannerMastery(percent, "Average Mastery");
+    } catch (e) {
+        ClassPostCard.renderBannerMastery(null, "Average Mastery");
     }
 }
 
@@ -82,8 +111,10 @@ function renderFeed() {
 
     const sorted = [...classPosts].sort((a, b) => b.id - a.id);
     feed.innerHTML = sorted
-        .map((post) => ClassPostCard.buildPostCard(post, CLASS_TEACHER_INITIALS))
+        .map((post) => ClassPostCard.buildPostCard(post, CLASS_TEACHER_INITIALS, true))
         .join("");
+
+    loadCardMasteryBadges();
 
     feed.querySelectorAll('.post-card[data-type="lesson"]').forEach((card) => {
         card.addEventListener("click", () => openLessonClasswork(card.dataset.postId));
@@ -114,87 +145,65 @@ function openLessonClasswork(postId) {
     window.location.href = `classwork.html?id=${CLASS_ID}&postId=${postId}`;
 }
 
-/* SUMMARIZE CLASS NOTE */
+/* PER-CARD MASTERY BADGES — each lesson card shows its own BKT lesson
+   mastery, once a quiz exists for it and the student has attempted it.
+   Fetched lazily per card so a class with no quizzes yet costs nothing. */
+function loadCardMasteryBadges() {
+    const badges = document.querySelectorAll(".post-mastery-badge[data-post-id]");
+    cardMasteryBadgesLoaded = Promise.all(
+        [...badges].map((badge) => loadCardMastery(badge.dataset.postId, badge))
+    );
+}
+
+async function loadCardMastery(postId, badge) {
+    try {
+        const res = await fetch(`/student/classes/${CLASS_ID}/posts/${postId}/mastery`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data.lesson_mastery === null || data.lesson_mastery === undefined) return;
+
+        const valueEl = badge.querySelector(".post-mastery-value");
+        if (valueEl) valueEl.textContent = `${Math.round(data.lesson_mastery * 100)}%`;
+        badge.classList.remove("hidden");
+    } catch (e) {
+        /* Non-critical enhancement — leave the badge hidden on failure. */
+    }
+}
+
+/* SUMMARIZE CLASS NOTE — hands off to QuestAI Coach, which summarizes
+   this class's posts and lessons in a saved chat the student can follow up in. */
 function summarizeClassNotes() {
-    const btn = document.getElementById("summarizeBtn");
-    const result = document.getElementById("summaryResult");
-    if (!btn || !result) return;
-
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner"></i> Summarizing...';
-    result.classList.add("hidden");
-
-    setTimeout(() => {
-        if (!classPosts.length) {
-            result.innerHTML = "<p>No class notes to summarize yet.</p>";
-        } else {
-            const sorted = [...classPosts].sort((a, b) => b.id - a.id);
-            const points = sorted
-                .slice(0, 3)
-                .map((p) => {
-                    if (p.type === "announcement") {
-                        const extra =
-                            p.checklist && p.checklist.length
-                                ? ": " + p.checklist.join(", ")
-                                : "";
-                        return `<li><strong>${p.date}</strong> — ${p.title}${extra}</li>`;
-                    }
-                    const extra = p.attachment ? ` (see ${p.attachment.name})` : "";
-                    return `<li><strong>${p.date}</strong> — ${p.title}${extra}</li>`;
-                })
-                .join("");
-
-            result.innerHTML = `
-                <p><strong>Summary of recent class notes:</strong></p>
-                <ul>${points}</ul>
-            `;
-        }
-
-        result.classList.remove("hidden");
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-    }, 900);
+    if (!CLASS_ID) return;
+    window.location.href = `student-quest-ai.html?classId=${encodeURIComponent(CLASS_ID)}&action=summarize`;
 }
 
-/* AI INSIGHTS */
-const INSIGHT_POOL = [
-    { label: "Tip", text: "Based on recent activity, completing your mini-game could improve mastery." },
-    { label: "Study Insight", text: "Try studying in short intervals (Pomodoro) for better focus." },
-    { label: "Tip", text: "Review last week's lesson PDF before the next quiz — it covers similar items." },
-    { label: "Study Insight", text: "Spacing out review sessions over multiple days improves retention." },
-    { label: "Tip", text: "You haven't opened this week's lesson material yet — give it a quick read." },
-];
+/* AI INSIGHTS — rendering lives in common/insights-card.js */
+let insightsLoading = false;
 
-let insightIndexes = [0, 1];
-
-function renderInsights() {
+async function loadInsights(refresh = false) {
     const list = document.getElementById("insightsList");
-    if (!list) return;
+    const btn = document.getElementById("insightsRefreshBtn");
+    if (!list || !CLASS_ID || insightsLoading) return;
 
-    list.innerHTML = insightIndexes
-        .map((i) => {
-            const insight = INSIGHT_POOL[i];
-            return `<div class="insight-item"><strong>${insight.label}:</strong> ${insight.text}</div>`;
-        })
-        .join("");
-}
+    insightsLoading = true;
+    if (btn) btn.disabled = true;
 
-function refreshInsights() {
-    const a = Math.floor(Math.random() * INSIGHT_POOL.length);
-    let b = Math.floor(Math.random() * INSIGHT_POOL.length);
-    if (b === a) b = (b + 1) % INSIGHT_POOL.length;
-    insightIndexes = [a, b];
-    renderInsights();
-    window.showToast?.("Insights refreshed");
+    const ok = await InsightsCard.load(list, CLASS_ID, { refresh });
+    if (ok && refresh) window.showToast?.("Insights refreshed");
+
+    insightsLoading = false;
+    if (btn) btn.disabled = false;
 }
 
 ClassPostCard.initPdfModalControls();
 
 document.addEventListener("DOMContentLoaded", () => {
     loadClassInfo();
-    renderInsights();
 
     document.getElementById("summarizeBtn")?.addEventListener("click", summarizeClassNotes);
-    document.getElementById("insightsRefreshBtn")?.addEventListener("click", refreshInsights);
+    document.getElementById("insightsRefreshBtn")?.addEventListener("click", () => loadInsights(true));
 });

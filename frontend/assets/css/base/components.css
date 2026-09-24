@@ -839,3 +839,110 @@ body.dark .pdf-placeholder-sub {
 }
 
 /* ===== end pdf-modal.css ===== */
+
+/* AI INSIGHTS CARD — shared by the class page and QuestAI (insights-card.js) */
+.insight-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.insight-status i {
+    margin-right: 6px;
+}
+
+.insight-level {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.insight-level-label,
+.insight-focus-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+body.dark .insight-level-label,
+body.dark .insight-focus-title {
+    color: #94a3b8;
+}
+
+.insight-level-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.insight-level-pill.level-low {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.insight-level-pill.level-developing {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+.insight-level-pill.level-high {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+body.dark .insight-level-pill.level-low {
+    background-color: rgba(185, 28, 28, 0.25);
+    color: #fca5a5;
+}
+
+body.dark .insight-level-pill.level-developing {
+    background-color: rgba(180, 83, 9, 0.25);
+    color: #fcd34d;
+}
+
+body.dark .insight-level-pill.level-high {
+    background-color: rgba(21, 128, 61, 0.25);
+    color: #86efac;
+}
+
+.insight-focus {
+    margin-bottom: 10px;
+}
+
+.insight-focus-title {
+    margin-bottom: 6px;
+}
+
+.insight-focus-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+}
+
+.insight-focus-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.insight-focus-name {
+    font-size: 0.78rem;
+    color: #0f172a;
+    overflow-wrap: anywhere;
+}
+
+body.dark .insight-focus-name {
+    color: #e2e8f0;
+}

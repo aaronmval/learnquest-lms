@@ -133,6 +133,48 @@ body.dark .class-not-found {
     font-weight: 500;
 }
 
+/* MASTERY STAT — big, professional readout of BKT mastery in the banner */
+.class-banner-mastery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 14px 30px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 20px rgba(8, 51, 68, 0.18);
+    flex-shrink: 0;
+    min-width: 132px;
+    position: relative;
+    z-index: 1;
+}
+
+.class-banner-mastery.hidden {
+    display: none;
+}
+
+.class-banner-mastery-value {
+    font-size: clamp(2.1rem, 4vw, 2.9rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.class-banner-mastery-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: rgba(255, 255, 255, 0.88);
+    white-space: nowrap;
+}
+
 .class-banner-icon {
     font-size: clamp(4rem, 8vw, 7rem);
     color: rgba(255, 255, 255, 0.18);
@@ -304,6 +346,31 @@ body.dark .post-author-name {
 
 body.dark .post-title {
     color: #f1f5f9;
+}
+
+.post-mastery-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #0891b2;
+    background-color: #ecfeff;
+    border: 1px solid #a5f3fc;
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 10px;
+}
+
+.post-mastery-badge.hidden {
+    display: none;
+}
+
+body.dark .post-mastery-badge {
+    color: #67e8f9;
+    background-color: rgba(8, 145, 178, 0.15);
+    border-color: rgba(103, 232, 249, 0.35);
 }
 
 .post-body {
@@ -482,35 +549,6 @@ body.dark .ai-panel {
     }
 }
 
-#summaryResult {
-    margin-top: 12px;
-    padding: 14px;
-    border-radius: 12px;
-    background-color: #eff6ff;
-    border: 1px solid #bfdbfe;
-    font-size: 0.8rem;
-    color: #1e3a8a;
-    line-height: 1.6;
-}
-
-body.dark #summaryResult {
-    background-color: rgba(30, 58, 138, 0.2);
-    border-color: #1e3a8a;
-    color: #bfdbfe;
-}
-
-#summaryResult.hidden {
-    display: none;
-}
-
-#summaryResult ul {
-    margin-top: 6px;
-    padding-left: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
 .ai-insights-card {
     background-color: #fff;
     border: 1.5px solid #e2e8f0;
@@ -643,6 +681,11 @@ body.dark .insight-item {
 
     .class-banner-text {
         max-width: 100%;
+    }
+
+    .class-banner-mastery {
+        align-self: flex-start;
+        padding: 10px 22px;
     }
 
     .class-banner-icon {

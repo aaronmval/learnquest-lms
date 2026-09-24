@@ -292,6 +292,55 @@
             </div>
         </div>
 
+        <!-- QUIZ FEEDBACK MODAL -->
+        <div id="quizFeedbackModal" aria-modal="true" role="dialog">
+            <div id="quizFeedbackModalCard">
+                <div class="pc-modal-header">
+                    <h3 class="modal-title">Quiz Feedback</h3>
+                    <button
+                        id="quizFeedbackCloseBtn"
+                        class="jc-close-btn"
+                        type="button"
+                        aria-label="Close quiz feedback"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="quizFeedbackBody"></div>
+            </div>
+        </div>
+
+        <!-- REGENERATE QUIZ CONFIRM MODAL -->
+        <div id="regenerateConfirmModal" aria-modal="true" role="dialog">
+            <div id="regenerateConfirmCard">
+                <div class="modal-icon-wrap modal-icon-warn">
+                    <i class="fas fa-rotate"></i>
+                </div>
+                <h3 class="modal-title">Regenerate this quiz?</h3>
+                <p class="modal-desc">
+                    This replaces the current quiz with a new AI-generated
+                    version informed by student feedback. Past attempts and
+                    mastery data are kept.
+                </p>
+                <div class="modal-actions">
+                    <button
+                        id="regenerateCancelBtn"
+                        class="modal-btn modal-btn-cancel"
+                        type="button"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        id="regenerateConfirmBtn"
+                        class="modal-btn modal-btn-confirm"
+                        type="button"
+                    >
+                        Regenerate
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- PDF MODAL -->
         <div
             id="pdfModal"

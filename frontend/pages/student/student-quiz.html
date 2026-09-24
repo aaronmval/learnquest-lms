@@ -123,7 +123,8 @@
                                 </button>
                             </div>
                             <p id="questionText" class="question-text">
-                                Loading question…
+                                Generating your AI quiz… this can take up to a
+                                minute the first time.
                             </p>
 
                             <div id="optionsList" class="options-list">
@@ -355,6 +356,36 @@
                             >+0%</span
                         >
                     </div>
+                </div>
+
+                <div id="feedbackSection" class="results-feedback">
+                    <p class="results-feedback-title">Rate this quiz</p>
+                    <div id="feedbackStars" class="feedback-stars" role="radiogroup" aria-label="Rating">
+                        <button type="button" class="feedback-star" data-value="1" aria-label="1 star"><i class="fas fa-star"></i></button>
+                        <button type="button" class="feedback-star" data-value="2" aria-label="2 stars"><i class="fas fa-star"></i></button>
+                        <button type="button" class="feedback-star" data-value="3" aria-label="3 stars"><i class="fas fa-star"></i></button>
+                        <button type="button" class="feedback-star" data-value="4" aria-label="4 stars"><i class="fas fa-star"></i></button>
+                        <button type="button" class="feedback-star" data-value="5" aria-label="5 stars"><i class="fas fa-star"></i></button>
+                    </div>
+                    <div id="feedbackDifficulty" class="feedback-difficulty-pills" role="radiogroup" aria-label="Difficulty">
+                        <button type="button" class="feedback-pill" data-value="too_easy">Too Easy</button>
+                        <button type="button" class="feedback-pill" data-value="just_right">Just Right</button>
+                        <button type="button" class="feedback-pill" data-value="too_hard">Too Hard</button>
+                    </div>
+                    <textarea
+                        id="feedbackComment"
+                        class="feedback-comment"
+                        maxlength="1000"
+                        placeholder="Anything else? (optional)"
+                    ></textarea>
+                    <div class="feedback-actions">
+                        <button id="feedbackSkipBtn" type="button" class="modal-btn modal-btn-cancel">Skip</button>
+                        <button id="feedbackSubmitBtn" type="button" class="modal-btn modal-btn-confirm" disabled>Submit Feedback</button>
+                    </div>
+                </div>
+                <div id="feedbackThanks" class="results-feedback results-feedback-thanks hidden">
+                    <i class="fas fa-circle-check"></i>
+                    <span>Thanks for your feedback!</span>
                 </div>
 
                 <div class="modal-actions">

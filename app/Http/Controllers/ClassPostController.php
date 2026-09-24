@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreClassPostRequest;
 use App\Models\ClassPost;
 use App\Models\ClassRoom;
+use App\Services\Notifications\AlertService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -27,7 +28,7 @@ class ClassPostController extends Controller
     /**
      * Create a new post (announcement or lesson) for the class.
      */
-    public function store(StoreClassPostRequest $request, ClassRoom $class): JsonResponse
+    public function store(StoreClassPostRequest $request, ClassRoom $class, AlertService $alerts): JsonResponse
     {
         $this->authorizeOwner($request, $class);
 
@@ -41,6 +42,7 @@ class ClassPostController extends Controller
         }
 
         $post = $class->posts()->create($data);
+        $alerts->classPostPublished($post);
 
         return response()->json($post, 201);
     }

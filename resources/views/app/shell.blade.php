@@ -33,6 +33,8 @@
             logoutFormId: 'shellLogoutForm',
             profileName: @json($user->name),
             role: @json($user->role),
+            avatarUrl: @json($user->avatarUrl()),
+            alertSound: @json($user->wantsAlert('sound')),
         };
     </script>
     <script src="{{ route('shell.navbar.js') }}"></script>

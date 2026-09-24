@@ -52,4 +52,14 @@ class ClassPost extends Model
     {
         return $this->hasOne(LessonSummary::class);
     }
+
+    /**
+     * The lesson's current AI-generated quiz — quizzes are versioned
+     * (archived_at IS NULL means "current"; regenerating archives the old
+     * version instead of deleting it, so past attempts/answers survive).
+     */
+    public function quiz(): HasOne
+    {
+        return $this->hasOne(Quiz::class)->whereNull('archived_at');
+    }
 }

@@ -25,6 +25,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'avatar_path',
+        'notification_preferences',
     ];
 
     /**
@@ -35,6 +37,16 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'avatar_path',
+    ];
+
+    /**
+     * System Alert preference keys a user can toggle, per role. Anything not
+     * stored defaults to enabled.
+     */
+    public const ALERT_PREFERENCES = [
+        'student' => ['announcements', 'lessons', 'mastery', 'sound'],
+        'professor' => ['enrollment', 'at_risk', 'quiz_feedback', 'sound'],
     ];
 
     /**
@@ -47,7 +59,39 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_preferences' => 'array',
         ];
+    }
+
+    /**
+     * Whether this user wants the given System Alert (or in-app sound).
+     * Unset preferences default to on.
+     */
+    public function wantsAlert(string $key): bool
+    {
+        return (bool) (($this->notification_preferences ?? [])[$key] ?? true);
+    }
+
+    /**
+     * The preference keys that apply to this user's role, with current values.
+     *
+     * @return array<string, bool>
+     */
+    public function alertPreferences(): array
+    {
+        $keys = self::ALERT_PREFERENCES[$this->role] ?? [];
+
+        return collect($keys)->mapWithKeys(fn ($key) => [$key => $this->wantsAlert($key)])->all();
+    }
+
+    /**
+     * URL of the user's own profile photo, cache-busted on change; null if none.
+     */
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path
+            ? route('settings.avatar.show', ['v' => $this->updated_at?->timestamp])
+            : null;
     }
 
     /**
@@ -82,5 +126,21 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Subject::class, 'subject_collaborators', 'user_id', 'subject_id')
             ->withTimestamps();
+    }
+
+    /**
+     * This user's quiz attempts (student role).
+     */
+    public function quizAttempts(): HasMany
+    {
+        return $this->hasMany(QuizAttempt::class, 'student_id');
+    }
+
+    /**
+     * This user's per-competency BKT mastery records (student role).
+     */
+    public function masteryRecords(): HasMany
+    {
+        return $this->hasMany(StudentMastery::class, 'student_id');
     }
 }

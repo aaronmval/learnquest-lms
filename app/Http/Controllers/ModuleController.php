@@ -7,6 +7,7 @@ use App\Models\ClassPost;
 use App\Models\ClassRoom;
 use App\Models\Module;
 use App\Models\Subject;
+use App\Services\Notifications\AlertService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,6 +17,10 @@ use Illuminate\Support\Str;
 
 class ModuleController extends Controller
 {
+    public function __construct(private AlertService $alerts)
+    {
+    }
+
     /**
      * List a subject's modules, newest first.
      */
@@ -187,7 +192,7 @@ class ModuleController extends Controller
                 $attachmentName = $module->file_name;
             }
 
-            ClassPost::create([
+            $post = ClassPost::create([
                 'class_id' => $classId,
                 'author_id' => $request->user()->id,
                 'module_id' => $module->id,
@@ -198,6 +203,8 @@ class ModuleController extends Controller
                 'attachment_path' => $attachmentPath,
                 'attachment_name' => $attachmentName,
             ]);
+
+            $this->alerts->classPostPublished($post);
         }
     }
 }

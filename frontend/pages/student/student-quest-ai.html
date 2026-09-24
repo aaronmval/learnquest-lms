@@ -44,35 +44,10 @@
                             >
                                 <button
                                     class="subject-chip active"
-                                    data-subject="All Subjects"
+                                    data-class-id=""
                                 >
                                     <i class="fas fa-layer-group"></i> All
-                                    Subjects
-                                </button>
-                                <button
-                                    class="subject-chip"
-                                    data-subject="Chemistry"
-                                >
-                                    <span class="dot dot-cyan"></span> Chemistry
-                                </button>
-                                <button
-                                    class="subject-chip"
-                                    data-subject="General Biology"
-                                >
-                                    <span class="dot dot-orange"></span> Biology
-                                </button>
-                                <button
-                                    class="subject-chip"
-                                    data-subject="Physics"
-                                >
-                                    <span class="dot dot-purple"></span> Physics
-                                </button>
-                                <button
-                                    class="subject-chip"
-                                    data-subject="Earth Science"
-                                >
-                                    <span class="dot dot-green"></span> Earth
-                                    Science
+                                    Classes
                                 </button>
                             </div>
 
@@ -86,18 +61,15 @@
                                         class="fas fa-chart-line personalization-icon"
                                     ></i>
                                     <span id="personalizationText">
-                                        Based on your
-                                        <strong>Quiz 1 (Module 6)</strong>
-                                        result, QuestAI recommends reviewing
-                                        <strong>stoichiometry</strong> before
-                                        your next assessment.
+                                        Loading your learning profile...
                                     </span>
                                 </div>
 
                                 <div id="chatMessages" class="chat-messages">
                                     <div class="chat-bubble-row">
                                         <div class="chat-bubble chat-bubble-ai">
-                                            Hello! I am your QuestAI Assistant.
+                                            Hello! I'm QuestAI, your study coach.
+                                            Ask me anything about your lessons.
                                         </div>
                                     </div>
                                 </div>
@@ -146,7 +118,7 @@
                             </form>
                         </div>
 
-                        <!-- RIGHT: AI tools panel (insights unchanged) -->
+                        <!-- RIGHT: AI tools panel -->
                         <div class="side-column">
                             <div class="ai-insights-card">
                                 <div class="ai-insights-header">
@@ -157,7 +129,11 @@
                                         >AI Insights for You</span
                                     >
                                 </div>
-                                <div id="insightsList"></div>
+                                <div id="insightsList">
+                                    <div class="insight-item insight-status">
+                                        <i class="fas fa-spinner fa-spin"></i> Analyzing your mastery...
+                                    </div>
+                                </div>
                                 <button
                                     id="insightsRefreshBtn"
                                     class="insight-refresh"
@@ -177,6 +153,13 @@
                                     <span class="ai-insights-title"
                                         >Session History</span
                                     >
+                                    <button
+                                        id="newChatBtn"
+                                        type="button"
+                                        class="new-chat-btn"
+                                    >
+                                        <i class="fas fa-plus"></i> New chat
+                                    </button>
                                 </div>
                                 <div
                                     id="sessionHistoryList"
@@ -191,6 +174,7 @@
                     </div>
                 </div>
             </main>
+    <script src="../../assets/js/common/insights-card.js"></script>
     <script src="../../assets/js/pages/student/student-quest-ai.js"></script>
     </body>
 </html>

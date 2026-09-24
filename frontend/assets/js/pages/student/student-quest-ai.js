@@ -1,77 +1,217 @@
-/* SUBJECT CONTEXT STATE*/
-let activeSubject = 'All Subjects';
+/* QUESTAI COACH — chat answered by Llama via Laravel, grounded in the
+   student's lesson materials and adapted to their BKT mastery. */
 
-const PERSONALIZATION_BY_SUBJECT = {
-    'All Subjects': {
-        icon: 'fa-chart-line',
-        html: 'Based on your <strong>Quiz 1 (Module 6)</strong> result, QuestAI recommends reviewing <strong>stoichiometry</strong> before your next assessment.',
-    },
-    'Chemistry': {
-        icon: 'fa-flask',
-        html: 'Your last Chemistry quiz shows lower mastery in <strong>stoichiometry</strong>. QuestAI will prioritize that topic in this session.',
-    },
-    'General Biology': {
-        icon: 'fa-leaf',
-        html: 'You haven\'t reviewed <strong>cell respiration</strong> in a while. QuestAI suggests starting there today.',
-    },
-    'Physics': {
-        icon: 'fa-atom',
-        html: 'Recent activity shows strong progress in <strong>kinematics</strong>. QuestAI will introduce slightly harder follow-up questions.',
-    },
-    'Earth Science': {
-        icon: 'fa-globe',
-        html: 'Your engagement with <strong>plate tectonics</strong> material was low this week. QuestAI recommends a quick refresher.',
-    },
-};
+/* STATE */
+let questaiClasses = [];
+let activeClassId = null; // null = All Classes
+let conversationId = null;
+let isSending = false;
+let greetingHtml = '';
 
-/*  SIMULATED AI RESPONSE POOL */
-const QUESTAI_REPLIES = [
-    "That's a great question! Based on your recent lessons, I'd suggest reviewing the related module before your next quiz.",
-    "Here's a quick way to think about it: break the concept into smaller parts and connect each one to something you already know.",
-    "I'd recommend checking the lesson PDF for this topic — it covers the key points you're asking about.",
-    "Good thinking! Try working through a practice problem first, then I can help you check your reasoning.",
-    "Let's break this down step by step. Could you tell me which part is the most confusing?",
-    "That concept usually clicks better with a real-world example. Want me to give you one?",
-];
+const DOT_CLASSES = ['dot-cyan', 'dot-orange', 'dot-purple', 'dot-green'];
 
-const QUICK_ASK_REPLIES = {
-    'Explain this topic simply': "Sure! Let's simplify it: think of it as a chain of small, related steps. Once you see how each step connects to the next, the whole topic becomes much easier to follow.",
-    'Give me a practice question': "Here's a quick practice question for you: try identifying the key variables in your current topic, then explain in your own words how they relate to each other.",
-    'Summarize my weak areas': "Based on your recent activity, your weaker areas seem to be in topics you haven't revisited recently. I'd suggest starting with your most recent lesson PDF.",
-};
+const esc = InsightsCard.escapeHtml;
 
-function getSimulatedReply(question) {
-    if (QUICK_ASK_REPLIES[question]) return QUICK_ASK_REPLIES[question];
-    const idx = Math.floor(Math.random() * QUESTAI_REPLIES.length);
-    return QUESTAI_REPLIES[idx];
+/* HTTP */
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
 }
 
-/* SUBJECT CHIPS */
-function setActiveSubject(subject) {
-    activeSubject = subject;
+async function apiRequest(url, { method = 'GET', body = null } = {}) {
+    const headers = { Accept: 'application/json' };
+    if (body !== null) {
+        headers['Content-Type'] = 'application/json';
+        headers['X-XSRF-TOKEN'] = getCsrfToken();
+    }
 
-    document.querySelectorAll('.subject-chip').forEach(chip => {
-        chip.classList.toggle('active', chip.dataset.subject === subject);
+    const res = await fetch(url, {
+        method,
+        credentials: 'same-origin',
+        headers,
+        body: body !== null ? JSON.stringify(body) : null,
     });
 
-    updatePersonalizationBanner(subject);
+    let data = null;
+    try {
+        data = await res.json();
+    } catch (e) {
+        /* Non-JSON error page — leave data null. */
+    }
+
+    return { ok: res.ok, status: res.status, data };
 }
 
-function updatePersonalizationBanner(subject) {
+/* CLASS CONTEXT (chips, banner, insights) */
+async function loadContext() {
+    try {
+        const { ok, data } = await apiRequest('/student/questai/context');
+        if (!ok) throw new Error('failed to load context');
+        questaiClasses = data.classes || [];
+    } catch (e) {
+        questaiClasses = [];
+    }
+
+    renderClassChips();
+    updatePersonalizationBanner();
+}
+
+function classLabel(cls) {
+    return cls ? cls.subject || cls.name : 'All Classes';
+}
+
+function findClass(classId) {
+    return questaiClasses.find((c) => c.id === classId) || null;
+}
+
+function renderClassChips() {
+    const container = document.getElementById('subjectChips');
+    if (!container) return;
+
+    container.querySelectorAll('.subject-chip[data-class-id]:not([data-class-id=""])').forEach((chip) => chip.remove());
+
+    questaiClasses.forEach((cls, i) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'subject-chip';
+        chip.dataset.classId = String(cls.id);
+        chip.title = cls.section ? `${cls.name} · ${cls.section}` : cls.name;
+        chip.innerHTML = `<span class="dot ${DOT_CLASSES[i % DOT_CLASSES.length]}"></span> ${esc(classLabel(cls))}`;
+        container.appendChild(chip);
+    });
+
+    container.querySelectorAll('.subject-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+            const id = chip.dataset.classId ? Number(chip.dataset.classId) : null;
+            if (id !== activeClassId) setActiveClass(id);
+        });
+    });
+
+    highlightActiveChip();
+}
+
+function highlightActiveChip() {
+    document.querySelectorAll('.subject-chip').forEach((chip) => {
+        const id = chip.dataset.classId ? Number(chip.dataset.classId) : null;
+        chip.classList.toggle('active', id === activeClassId);
+    });
+}
+
+/* Switching class starts a fresh chat scoped to that class. */
+function setActiveClass(classId, { startNew = true, refreshInsights = true } = {}) {
+    activeClassId = classId;
+    highlightActiveChip();
+    updatePersonalizationBanner();
+    if (refreshInsights) loadSideInsights();
+    if (startNew) startNewChat();
+}
+
+/* Banner reflects the real weakest BKT competency in the selected scope. */
+function updatePersonalizationBanner() {
     const banner = document.getElementById('personalizationBanner');
     const text = document.getElementById('personalizationText');
     if (!banner || !text) return;
 
-    const data = PERSONALIZATION_BY_SUBJECT[subject] || PERSONALIZATION_BY_SUBJECT['All Subjects'];
-
     const icon = banner.querySelector('.personalization-icon');
-    if (icon) icon.className = `fas ${data.icon} personalization-icon`;
+    const setIcon = (name) => {
+        if (icon) icon.className = `fas ${name} personalization-icon`;
+    };
 
-    text.innerHTML = data.html;
+    const scope = activeClassId ? [findClass(activeClassId)].filter(Boolean) : questaiClasses;
+
+    if (!questaiClasses.length) {
+        setIcon('fa-circle-info');
+        text.innerHTML = 'Join a class to get coaching based on your lessons and quiz results.';
+        return;
+    }
+
+    const weaknesses = scope.flatMap((cls) => (cls.weaknesses || []).map((w) => ({ ...w, cls })));
+    weaknesses.sort((a, b) => a.mastery - b.mastery);
+
+    if (weaknesses.length) {
+        const w = weaknesses[0];
+        setIcon('fa-chart-line');
+        text.innerHTML =
+            `Your quiz results show <strong>${esc(InsightsCard.levelLabel(w.level).toLowerCase())}</strong> mastery in ` +
+            `<strong>${esc(w.name)}</strong> (${Math.round(w.mastery * 100)}%, ${esc(classLabel(w.cls))}). ` +
+            'QuestAI will focus on it — try <strong>Give me a practice question</strong>.';
+        return;
+    }
+
+    if (scope.some((cls) => cls.overall)) {
+        setIcon('fa-trophy');
+        text.innerHTML =
+            'You\'re at <strong>high mastery</strong> in the competencies you\'ve been quizzed on. ' +
+            'Ask QuestAI for a challenge question to go further.';
+        return;
+    }
+
+    setIcon('fa-circle-info');
+    text.innerHTML = 'Take a lesson quiz so QuestAI can personalize your coaching to your weak areas.';
+}
+
+/* AI INSIGHTS CARD */
+let insightsLoading = false;
+
+async function loadSideInsights(refresh = false) {
+    const list = document.getElementById('insightsList');
+    const btn = document.getElementById('insightsRefreshBtn');
+    if (!list || insightsLoading) return;
+
+    insightsLoading = true;
+    if (btn) btn.disabled = true;
+
+    if (activeClassId) {
+        const ok = await InsightsCard.load(list, activeClassId, { refresh });
+        if (ok && refresh) window.showToast?.('Insights refreshed');
+    } else {
+        if (refresh) {
+            InsightsCard.renderLoading(list);
+            await loadContext();
+        }
+        InsightsCard.renderClassOverview(list, questaiClasses);
+    }
+
+    insightsLoading = false;
+    if (btn) btn.disabled = false;
 }
 
 /* CHAT RENDERING */
-function appendChatBubble(text, sender) {
+
+/* Safe mini-formatter for AI replies: escape everything first, then allow
+   **bold**, "- " bullet lists and line breaks. */
+function formatAiText(text) {
+    const lines = esc(text).split(/\r?\n/);
+    let html = '';
+    let inList = false;
+
+    lines.forEach((raw) => {
+        const line = raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        const bullet = line.match(/^\s*[-*•]\s+(.*)$/);
+
+        if (bullet) {
+            if (!inList) {
+                html += '<ul>';
+                inList = true;
+            }
+            html += `<li>${bullet[1]}</li>`;
+            return;
+        }
+
+        if (inList) {
+            html += '</ul>';
+            inList = false;
+        }
+
+        html += line.trim() === '' ? '<br>' : `<p>${line}</p>`;
+    });
+
+    if (inList) html += '</ul>';
+
+    return html.replace(/(<br>)+$/, '');
+}
+
+function appendChatBubble(text, sender, { messageId = null, feedback = null, error = false } = {}) {
     const messages = document.getElementById('chatMessages');
     if (!messages) return null;
 
@@ -80,11 +220,20 @@ function appendChatBubble(text, sender) {
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
-    bubble.textContent = text;
+
+    if (sender === 'user') {
+        bubble.textContent = text;
+    } else if (error) {
+        bubble.classList.add('chat-bubble-error');
+        bubble.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${esc(text)}`;
+    } else {
+        bubble.innerHTML = formatAiText(text);
+    }
+
     row.appendChild(bubble);
 
-    if (sender === 'ai') {
-        row.appendChild(buildFeedbackRow());
+    if (sender === 'ai' && messageId) {
+        row.appendChild(buildFeedbackRow(messageId, feedback));
     }
 
     messages.appendChild(row);
@@ -93,7 +242,7 @@ function appendChatBubble(text, sender) {
     return row;
 }
 
-function buildFeedbackRow() {
+function buildFeedbackRow(messageId, existingFeedback) {
     const feedback = document.createElement('div');
     feedback.className = 'chat-feedback';
     feedback.innerHTML = `
@@ -109,17 +258,38 @@ function buildFeedbackRow() {
     const upBtn = feedback.querySelector('.feedback-up');
     const downBtn = feedback.querySelector('.feedback-down');
 
-    const handleFeedback = (selected) => {
+    const markSelected = (selected) => {
         upBtn.disabled = true;
         downBtn.disabled = true;
         upBtn.classList.toggle('selected-up', selected === 'up');
         downBtn.classList.toggle('selected-down', selected === 'down');
-
-        const thanks = document.createElement('span');
-        thanks.className = 'chat-feedback-thanks';
-        thanks.textContent = 'Thanks for the feedback!';
-        feedback.appendChild(thanks);
     };
+
+    const handleFeedback = async (selected) => {
+        markSelected(selected);
+
+        try {
+            const { ok } = await apiRequest(`/student/questai/messages/${messageId}/feedback`, {
+                method: 'POST',
+                body: { helpful: selected === 'up' },
+            });
+            if (!ok) throw new Error('feedback failed');
+
+            const thanks = document.createElement('span');
+            thanks.className = 'chat-feedback-thanks';
+            thanks.textContent = 'Thanks for the feedback!';
+            feedback.appendChild(thanks);
+        } catch (e) {
+            upBtn.disabled = false;
+            downBtn.disabled = false;
+            upBtn.classList.remove('selected-up');
+            downBtn.classList.remove('selected-down');
+            window.showToast?.('Could not save your feedback. Please try again.');
+        }
+    };
+
+    if (existingFeedback === 1) markSelected('up');
+    else if (existingFeedback === -1) markSelected('down');
 
     upBtn.addEventListener('click', () => handleFeedback('up'));
     downBtn.addEventListener('click', () => handleFeedback('down'));
@@ -159,52 +329,150 @@ function scrollChatToBottom() {
     if (chatWindow) chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-/* SESSION HISTORY*/
-function logSessionHistory(question) {
+function resetChatMessages() {
+    const messages = document.getElementById('chatMessages');
+    if (messages) messages.innerHTML = greetingHtml;
+}
+
+function startNewChat() {
+    conversationId = null;
+    resetChatMessages();
+    highlightActiveConversation();
+}
+
+/* SESSION HISTORY — saved conversations from the server */
+async function loadConversations() {
     const list = document.getElementById('sessionHistoryList');
     if (!list) return;
 
-    const empty = list.querySelector('.session-history-empty');
-    if (empty) empty.remove();
+    let conversations = [];
+    try {
+        const { ok, data } = await apiRequest('/student/questai/conversations');
+        if (!ok) throw new Error('failed to load conversations');
+        conversations = data || [];
+    } catch (e) {
+        list.innerHTML = '<p class="session-history-empty">Could not load your past chats.</p>';
+        return;
+    }
 
-    const item = document.createElement('div');
-    item.className = 'session-history-item';
-    item.innerHTML = `
-        <i class="fas fa-comment-dots"></i>
-        <div>
-            <span class="history-subject-tag">${activeSubject}</span>
-            ${question}
-        </div>
-    `;
+    if (!conversations.length) {
+        list.innerHTML = '<p class="session-history-empty">Your recent questions will appear here.</p>';
+        return;
+    }
 
-    list.insertBefore(item, list.firstChild);
+    list.innerHTML = conversations
+        .map((c) => {
+            const cls = c.class_id ? findClass(c.class_id) : null;
+            const tag = c.class_id ? (cls ? classLabel(cls) : 'Class') : 'All Classes';
+            return `
+                <div class="session-history-item" role="button" tabindex="0" data-conversation-id="${c.id}">
+                    <i class="fas fa-comment-dots"></i>
+                    <div>
+                        <span class="history-subject-tag">${esc(tag)}</span>
+                        ${esc(c.title)}
+                    </div>
+                </div>`;
+        })
+        .join('');
 
-    /* Keep only the 5 most recent entries */
-    const items = list.querySelectorAll('.session-history-item');
-    if (items.length > 5) items[items.length - 1].remove();
+    list.querySelectorAll('.session-history-item').forEach((item) => {
+        const open = () => openConversation(Number(item.dataset.conversationId));
+        item.addEventListener('click', open);
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open();
+            }
+        });
+    });
+
+    highlightActiveConversation();
+}
+
+function highlightActiveConversation() {
+    document.querySelectorAll('.session-history-item[data-conversation-id]').forEach((item) => {
+        item.classList.toggle('active', Number(item.dataset.conversationId) === conversationId);
+    });
+}
+
+async function openConversation(id) {
+    if (isSending || id === conversationId) return;
+
+    try {
+        const { ok, data } = await apiRequest(`/student/questai/conversations/${id}`);
+        if (!ok) throw new Error('failed to load conversation');
+
+        const classId = data.conversation.class_id;
+        if (classId !== activeClassId) setActiveClass(classId, { startNew: false });
+
+        conversationId = data.conversation.id;
+        resetChatMessages();
+        data.messages.forEach((m) => {
+            if (m.role === 'user') appendChatBubble(m.content, 'user');
+            else appendChatBubble(m.content, 'ai', { messageId: m.id, feedback: m.feedback });
+        });
+        highlightActiveConversation();
+    } catch (e) {
+        window.showToast?.('Could not open that chat. Please try again.');
+    }
 }
 
 /* SEND / ASK HANDLER */
-function sendQuestion(question) {
+function setInputEnabled(enabled) {
     const input = document.getElementById('chatInput');
     const askBtn = document.getElementById('chatAskBtn');
-    if (!question) return;
+    if (input) input.disabled = !enabled;
+    if (askBtn) askBtn.disabled = !enabled;
+    document.querySelectorAll('.quick-ask-chip').forEach((chip) => {
+        chip.disabled = !enabled;
+    });
+    if (enabled && input) input.focus();
+}
 
+async function sendQuestion(question) {
+    const input = document.getElementById('chatInput');
+    if (!question || isSending) return;
+
+    isSending = true;
     appendChatBubble(question, 'user');
-    logSessionHistory(question);
-
     if (input) input.value = '';
-    if (input) input.disabled = true;
-    if (askBtn) askBtn.disabled = true;
-
+    setInputEnabled(false);
     appendTypingIndicator();
 
-    setTimeout(() => {
+    try {
+        const { ok, status, data } = await apiRequest('/student/questai/messages', {
+            method: 'POST',
+            body: { message: question, class_id: activeClassId, conversation_id: conversationId },
+        });
+
         removeTypingIndicator();
-        appendChatBubble(getSimulatedReply(question), 'ai');
-        if (input) { input.disabled = false; input.focus(); }
-        if (askBtn) askBtn.disabled = false;
-    }, 900);
+
+        // The question is saved even when the AI fails, so keep the thread.
+        if (data?.conversation?.id) conversationId = data.conversation.id;
+
+        if (ok) {
+            appendChatBubble(data.reply.content, 'ai', { messageId: data.reply.id });
+        } else {
+            appendChatBubble(errorMessageFor(status, data), 'ai', { error: true });
+        }
+    } catch (e) {
+        removeTypingIndicator();
+        appendChatBubble('Could not reach QuestAI. Check your connection and try again.', 'ai', { error: true });
+    } finally {
+        isSending = false;
+        setInputEnabled(true);
+        loadConversations();
+    }
+}
+
+function errorMessageFor(status, data) {
+    if (status === 419) return 'Your session expired. Please reload the page and try again.';
+    if (status === 429) return 'You\'re asking questions quickly — please wait a moment before trying again.';
+    if (status === 422) {
+        const first = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+        return first || data?.message || 'Please check your question and try again.';
+    }
+    return data?.message || 'QuestAI couldn\'t answer that right now. Please try again.';
 }
 
 function handleChatSubmit(e) {
@@ -218,52 +486,60 @@ function handleChatSubmit(e) {
     sendQuestion(question);
 }
 
-/* AI INSIGHTS (unchanged behavior)*/
-const INSIGHT_POOL = [
-    { label: 'Tip', text: 'Based on recent activity, completing your mini-game could improve mastery.' },
-    { label: 'Study Insight', text: 'Try studying in short intervals (Pomodoro) for better focus.' },
-    { label: 'Tip', text: 'Review last week\'s lesson PDF before the next quiz — it covers similar items.' },
-    { label: 'Study Insight', text: 'Spacing out review sessions over multiple days improves retention.' },
-    { label: 'Tip', text: 'You haven\'t opened this week\'s lesson material yet — give it a quick read.' },
-];
-
-let insightIndexes = [0, 1];
-
-function renderInsights() {
-    const list = document.getElementById('insightsList');
-    if (!list) return;
-
-    list.innerHTML = insightIndexes.map(i => {
-        const insight = INSIGHT_POOL[i];
-        return `<div class="insight-item"><strong>${insight.label}:</strong> ${insight.text}</div>`;
-    }).join('');
-}
-
-function refreshInsights() {
-    const a = Math.floor(Math.random() * INSIGHT_POOL.length);
-    let b = Math.floor(Math.random() * INSIGHT_POOL.length);
-    if (b === a) b = (b + 1) % INSIGHT_POOL.length;
-    insightIndexes = [a, b];
-    renderInsights();
-    showToast('Insights refreshed');
-}
-
 /* INIT */
-document.addEventListener('DOMContentLoaded', () => {
-    renderInsights();
-    updatePersonalizationBanner(activeSubject);
+document.addEventListener('DOMContentLoaded', async () => {
+    greetingHtml = document.getElementById('chatMessages')?.innerHTML || '';
 
-    const chatForm = document.getElementById('chatInputBar');
-    if (chatForm) chatForm.addEventListener('submit', handleChatSubmit);
+    document.getElementById('chatInputBar')?.addEventListener('submit', handleChatSubmit);
+    document.getElementById('insightsRefreshBtn')?.addEventListener('click', () => loadSideInsights(true));
+    document.getElementById('newChatBtn')?.addEventListener('click', startNewChat);
 
-    const refreshBtn = document.getElementById('insightsRefreshBtn');
-    if (refreshBtn) refreshBtn.addEventListener('click', refreshInsights);
-
-    document.querySelectorAll('.subject-chip').forEach(chip => {
-        chip.addEventListener('click', () => setActiveSubject(chip.dataset.subject));
-    });
-
-    document.querySelectorAll('.quick-ask-chip').forEach(chip => {
+    document.querySelectorAll('.quick-ask-chip').forEach((chip) => {
         chip.addEventListener('click', () => sendQuestion(chip.dataset.prompt));
     });
+
+    // Sequential on purpose: the local dev server handles one request at a
+    // time, and chips/banner are what the student needs first.
+    await loadContext();
+
+    const requested = takeRequestedAction();
+    if (requested) {
+        // Chat first so the summary isn't queued behind the insights request.
+        await runRequestedAction(requested);
+    } else {
+        await loadConversations();
+    }
+    loadSideInsights();
 });
+
+/* HAND-OFF FROM OTHER PAGES — e.g. the class page's "Summarize class note"
+   opens student-quest-ai.html?classId=5&action=summarize. Only whitelisted
+   actions run; the URL never carries free-form prompt text. */
+const REQUESTED_ACTIONS = {
+    summarize: (cls) => `Summarize the class notes for ${classLabel(cls)}`,
+};
+
+function takeRequestedAction() {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    const classId = Number(params.get('classId'));
+
+    if (!action && !params.has('classId')) return null;
+
+    // Consume the parameters so reloading the page doesn't resend the request.
+    try {
+        window.history.replaceState(null, '', window.location.pathname);
+    } catch (e) {
+        /* Non-critical. */
+    }
+
+    const cls = findClass(classId);
+    if (!cls || !REQUESTED_ACTIONS[action]) return null;
+
+    return { cls, prompt: REQUESTED_ACTIONS[action](cls) };
+}
+
+async function runRequestedAction({ cls, prompt }) {
+    setActiveClass(cls.id, { refreshInsights: false });
+    await sendQuestion(prompt);
+}

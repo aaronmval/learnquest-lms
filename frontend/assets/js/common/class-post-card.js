@@ -50,6 +50,26 @@ const ClassPostCard = (function () {
             data.professor?.name || "";
     }
 
+    /**
+     * Populates the big mastery stat block in a class/lesson banner.
+     * `percent` is 0-100 or null (nothing to show yet — hides the block).
+     */
+    function renderBannerMastery(percent, label) {
+        const block = document.getElementById("classBannerMastery");
+        const valueEl = document.getElementById("classBannerMasteryValue");
+        const labelEl = document.getElementById("classBannerMasteryLabel");
+        if (!block || !valueEl || !labelEl) return;
+
+        if (percent === null || percent === undefined) {
+            block.classList.add("hidden");
+            return;
+        }
+
+        valueEl.textContent = `${Math.round(percent)}%`;
+        labelEl.textContent = label;
+        block.classList.remove("hidden");
+    }
+
     function mapServerPost(post, teacherName) {
         return {
             id: post.id,
@@ -67,7 +87,7 @@ const ClassPostCard = (function () {
         };
     }
 
-    function buildPostCard(post, teacherInitials) {
+    function buildPostCard(post, teacherInitials, showMasteryBadge = false) {
         const isAnnouncement = post.type === "announcement";
         const badgeClass = isAnnouncement ? "badge-announcement" : "badge-lesson";
         const badgeLabel = isAnnouncement ? "Announcement" : "Lesson";
@@ -116,6 +136,14 @@ const ClassPostCard = (function () {
                 ? `role="button" tabindex="0" aria-label="Open ${escapeHtml(post.title)}"`
                 : "";
 
+        const masteryBadgeHtml =
+            showMasteryBadge && post.type === "lesson"
+                ? `<div class="post-mastery-badge hidden" data-post-id="${post.id}">
+                        <i class="fas fa-brain"></i>
+                        <span class="post-mastery-value">0%</span> Mastery
+                   </div>`
+                : "";
+
         return `
             <article class="post-card" data-post-id="${post.id}" data-type="${post.type}" ${cardAttrs}>
                 <div class="post-header">
@@ -134,6 +162,7 @@ const ClassPostCard = (function () {
                     </div>
                 </div>
                 <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                ${masteryBadgeHtml}
                 ${bodyHtml}
             </article>
         `;
@@ -202,6 +231,7 @@ const ClassPostCard = (function () {
         escapeHtml,
         formatPostDate,
         renderClassBanner,
+        renderBannerMastery,
         mapServerPost,
         buildPostCard,
         openPdfModal,

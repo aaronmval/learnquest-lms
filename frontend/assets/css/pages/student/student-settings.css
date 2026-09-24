@@ -772,3 +772,20 @@ body.dark .session-revoke-btn:hover { background-color: rgba(220, 38, 38, 0.1); 
     .settings-card-title { font-size: 0.92rem; }
     .settings-card-desc { font-size: 0.76rem; }
 }
+
+/* Helper text under fields and in the My Classes list */
+.settings-field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+body.dark .settings-field-hint {
+    color: #94a3b8;
+}
+
+.my-classes-list .notif-row:last-child {
+    border-bottom: none;
+}

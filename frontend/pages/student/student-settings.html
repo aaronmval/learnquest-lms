@@ -19,8 +19,7 @@
                         <div class="hero-text">
                             <h1 class="hero-title">Profile Settings</h1>
                             <p class="hero-subtitle">
-                                Manage your personal information, academic
-                                details, and account preferences.
+                                Manage your profile, classes, alerts, and password.
                             </p>
                         </div>
                         <div class="hero-illustration">
@@ -43,9 +42,7 @@
                                 <div
                                     id="profilePhotoInitials"
                                     class="profile-side-initials"
-                                >
-                                    A
-                                </div>
+                                ></div>
                                 <button
                                     id="profilePhotoEditBtn"
                                     class="profile-photo-edit-btn"
@@ -57,7 +54,7 @@
                                 <input
                                     id="profilePhotoInput"
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/png,image/jpeg,image/webp"
                                     hidden
                                 />
                             </div>
@@ -67,18 +64,14 @@
                                 Student</span
                             >
 
-                            <h2 id="profileHeroName" class="profile-side-name">
-                                Aaron D. Santos
-                            </h2>
-                            <p id="profileHeroMeta" class="profile-side-meta">
-                                Grade 12 &middot; STEM - Amethyst &middot;
-                                Kapitolyo High School
-                            </p>
+                            <h2 id="profileHeroName" class="profile-side-name"></h2>
+                            <p id="profileHeroMeta" class="profile-side-meta"></p>
 
                             <button
                                 id="profilePhotoRemoveBtn"
                                 class="profile-side-btn"
                                 type="button"
+                                hidden
                             >
                                 <i class="fas fa-trash-can"></i> Remove Photo
                             </button>
@@ -102,8 +95,7 @@
                                     role="tab"
                                     aria-selected="false"
                                 >
-                                    <i class="fas fa-graduation-cap"></i>
-                                    Academic Info
+                                    <i class="fas fa-chalkboard"></i> My Classes
                                 </button>
                                 <button
                                     class="settings-tab"
@@ -127,439 +119,114 @@
                             <!-- TAB PANELS -->
                             <div class="settings-panels">
                                 <!-- ── PROFILE INFO ── -->
-                                <section
-                                    id="panel-profile-info"
-                                    class="settings-panel active"
-                                    role="tabpanel"
-                                >
-                                    <form
-                                        id="profileInfoForm"
-                                        class="settings-card"
-                                    >
+                                <section id="panel-profile-info" class="settings-panel active" role="tabpanel">
+                                    <form id="profileInfoForm" class="settings-card" novalidate>
                                         <div class="settings-card-header">
-                                            <h3 class="settings-card-title">
-                                                Profile Information
-                                            </h3>
-                                            <p class="settings-card-desc">
-                                                This information may be visible
-                                                to your teachers and classmates.
-                                            </p>
+                                            <h3 class="settings-card-title">Profile Information</h3>
+                                            <p class="settings-card-desc">Your name is shown to your teachers and classmates.</p>
                                         </div>
 
                                         <div class="settings-form-grid">
                                             <div class="settings-field">
-                                                <label for="fieldFirstName"
-                                                    >First Name</label
-                                                >
-                                                <input
-                                                    id="fieldFirstName"
-                                                    type="text"
-                                                    value="Aaron"
-                                                    required
-                                                />
+                                                <label for="fieldName">Full Name</label>
+                                                <input id="fieldName" type="text" maxlength="255" autocomplete="name" required />
                                             </div>
                                             <div class="settings-field">
-                                                <label for="fieldLastName"
-                                                    >Last Name</label
-                                                >
-                                                <input
-                                                    id="fieldLastName"
-                                                    type="text"
-                                                    value="Santos"
-                                                    required
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label for="fieldMiddleName"
-                                                    >Middle Name</label
-                                                >
-                                                <input
-                                                    id="fieldMiddleName"
-                                                    type="text"
-                                                    value="Dela Cruz"
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label for="fieldNickname"
-                                                    >Preferred Nickname</label
-                                                >
-                                                <input
-                                                    id="fieldNickname"
-                                                    type="text"
-                                                    value="Aaron"
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label for="fieldEmail"
-                                                    >Email Address</label
-                                                >
-                                                <input
-                                                    id="fieldEmail"
-                                                    type="email"
-                                                    value="aaron.santos@kapitolyohs.edu.ph"
-                                                    required
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label for="fieldPhone"
-                                                    >Phone Number</label
-                                                >
-                                                <input
-                                                    id="fieldPhone"
-                                                    type="tel"
-                                                    value="+63 912 345 6789"
-                                                />
-                                            </div>
-                                            <div
-                                                class="settings-field settings-field-full"
-                                            >
-                                                <label for="fieldBio"
-                                                    >Short Bio</label
-                                                >
-                                                <textarea
-                                                    id="fieldBio"
-                                                    rows="3"
-                                                    placeholder="Tell your teachers a bit about yourself..."
-                                                >
-Aspiring chemical engineer who loves stoichiometry and badminton.</textarea
-                                                >
+                                                <label for="fieldEmail">Email Address</label>
+                                                <input id="fieldEmail" type="email" disabled />
+                                                <span class="settings-field-hint">Your email is your sign-in ID and can't be changed here.</span>
                                             </div>
                                         </div>
 
                                         <div class="settings-card-footer">
-                                            <span
-                                                id="profileInfoSaveStatus"
-                                                class="settings-save-status"
-                                            ></span>
-                                            <button
-                                                type="submit"
-                                                class="settings-save-btn"
-                                            >
-                                                <i
-                                                    class="fas fa-floppy-disk"
-                                                ></i>
-                                                Save Changes
+                                            <span id="profileInfoSaveStatus" class="settings-save-status"></span>
+                                            <button type="submit" class="settings-save-btn">
+                                                <i class="fas fa-floppy-disk"></i> Save Changes
                                             </button>
                                         </div>
                                     </form>
                                 </section>
 
-                                <!-- ── ACADEMIC INFO ── -->
-                                <section
-                                    id="panel-academic-info"
-                                    class="settings-panel"
-                                    role="tabpanel"
-                                >
+                                <!-- ── MY CLASSES ── -->
+                                <section id="panel-academic-info" class="settings-panel" role="tabpanel">
                                     <div class="settings-card">
                                         <div class="settings-card-header">
-                                            <h3 class="settings-card-title">
-                                                Academic Information
-                                            </h3>
-                                            <p class="settings-card-desc">
-                                                These details are managed by the
-                                                school registrar and cannot be
-                                                edited directly.
-                                            </p>
+                                            <h3 class="settings-card-title">My Classes</h3>
+                                            <p class="settings-card-desc">The classes you're enrolled in. Join a class from the home page using its class code.</p>
                                         </div>
-
-                                        <div class="settings-form-grid">
-                                            <div class="settings-field">
-                                                <label>Student ID</label>
-                                                <input
-                                                    type="text"
-                                                    value="22-04719"
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label>LRN</label>
-                                                <input
-                                                    type="text"
-                                                    value="136245100782"
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label>Grade Level</label>
-                                                <input
-                                                    type="text"
-                                                    value="Grade 12"
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label>Strand</label>
-                                                <input
-                                                    type="text"
-                                                    value="STEM"
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label>Section</label>
-                                                <input
-                                                    type="text"
-                                                    value="Amethyst"
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label>Adviser</label>
-                                                <input
-                                                    type="text"
-                                                    value="Mila D. Valiente"
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label>School</label>
-                                                <input
-                                                    type="text"
-                                                    value="Kapitolyo High School"
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div class="settings-field">
-                                                <label>School Year</label>
-                                                <input
-                                                    type="text"
-                                                    value="2025 - 2026"
-                                                    disabled
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div class="academic-notice">
-                                            <i class="fas fa-circle-info"></i>
-                                            <span
-                                                >Spotted an error in your
-                                                academic record? Please report
-                                                it to your class adviser or the
-                                                registrar's office.</span
-                                            >
+                                        <div id="myClassesList" class="my-classes-list">
+                                            <p class="settings-field-hint">Loading your classes...</p>
                                         </div>
                                     </div>
                                 </section>
 
                                 <!-- ── NOTIFICATIONS ── -->
-                                <section
-                                    id="panel-notifications"
-                                    class="settings-panel"
-                                    role="tabpanel"
-                                >
+                                <section id="panel-notifications" class="settings-panel" role="tabpanel">
                                     <div class="settings-card">
                                         <div class="settings-card-header">
-                                            <h3 class="settings-card-title">
-                                                Notification Preferences
-                                            </h3>
-                                            <p class="settings-card-desc">
-                                                Choose what you want to be
-                                                notified about and how.
-                                            </p>
+                                            <h3 class="settings-card-title">Notification Preferences</h3>
+                                            <p class="settings-card-desc">Choose which System Alerts you receive.</p>
                                         </div>
 
                                         <div class="notif-group">
-                                            <p class="notif-group-title">
-                                                General
-                                            </p>
+                                            <p class="notif-group-title">Class Updates</p>
 
                                             <div class="notif-row">
                                                 <div class="notif-row-text">
-                                                    <span
-                                                        class="notif-row-label"
-                                                        >New Announcements</span
-                                                    >
-                                                    <span class="notif-row-desc"
-                                                        >Get notified when a
-                                                        teacher posts an
-                                                        announcement.</span
-                                                    >
+                                                    <span class="notif-row-label">New Announcements</span>
+                                                    <span class="notif-row-desc">Get notified when a teacher posts an announcement.</span>
                                                 </div>
                                                 <label class="toggle-switch">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="notifAnnouncements"
-                                                        checked
-                                                    />
-                                                    <span
-                                                        class="toggle-slider"
-                                                    ></span>
+                                                    <input type="checkbox" id="notif-announcements" data-pref="announcements" checked />
+                                                    <span class="toggle-slider"></span>
                                                 </label>
                                             </div>
-
                                             <div class="notif-row">
                                                 <div class="notif-row-text">
-                                                    <span
-                                                        class="notif-row-label"
-                                                        >New Lesson
-                                                        Materials</span
-                                                    >
-                                                    <span class="notif-row-desc"
-                                                        >Get notified when new
-                                                        lesson PDFs are
-                                                        uploaded.</span
-                                                    >
+                                                    <span class="notif-row-label">New Lesson Materials</span>
+                                                    <span class="notif-row-desc">Get notified when a new lesson is posted to your class.</span>
                                                 </div>
                                                 <label class="toggle-switch">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="notifLessons"
-                                                        checked
-                                                    />
-                                                    <span
-                                                        class="toggle-slider"
-                                                    ></span>
-                                                </label>
-                                            </div>
-
-                                            <div class="notif-row">
-                                                <div class="notif-row-text">
-                                                    <span
-                                                        class="notif-row-label"
-                                                        >Quiz &amp; Exam
-                                                        Reminders</span
-                                                    >
-                                                    <span class="notif-row-desc"
-                                                        >Reminders before
-                                                        upcoming quizzes or
-                                                        exams.</span
-                                                    >
-                                                </div>
-                                                <label class="toggle-switch">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="notifQuizzes"
-                                                        checked
-                                                    />
-                                                    <span
-                                                        class="toggle-slider"
-                                                    ></span>
+                                                    <input type="checkbox" id="notif-lessons" data-pref="lessons" checked />
+                                                    <span class="toggle-slider"></span>
                                                 </label>
                                             </div>
                                         </div>
 
                                         <div class="notif-group">
-                                            <p class="notif-group-title">
-                                                QuestAI Coach
-                                            </p>
+                                            <p class="notif-group-title">Learning Progress</p>
 
                                             <div class="notif-row">
                                                 <div class="notif-row-text">
-                                                    <span
-                                                        class="notif-row-label"
-                                                        >AI Insights</span
-                                                    >
-                                                    <span class="notif-row-desc"
-                                                        >Weekly personalized
-                                                        study tips based on your
-                                                        activity.</span
-                                                    >
+                                                    <span class="notif-row-label">Mastery Alerts</span>
+                                                    <span class="notif-row-desc">Get notified when a quiz moves a competency into Low or High mastery.</span>
                                                 </div>
                                                 <label class="toggle-switch">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="notifInsights"
-                                                        checked
-                                                    />
-                                                    <span
-                                                        class="toggle-slider"
-                                                    ></span>
-                                                </label>
-                                            </div>
-
-                                            <div class="notif-row">
-                                                <div class="notif-row-text">
-                                                    <span
-                                                        class="notif-row-label"
-                                                        >Adaptive
-                                                        Recommendations</span
-                                                    >
-                                                    <span class="notif-row-desc"
-                                                        >Alerts when QuestAI
-                                                        suggests a topic to
-                                                        review.</span
-                                                    >
-                                                </div>
-                                                <label class="toggle-switch">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="notifAdaptive"
-                                                        checked
-                                                    />
-                                                    <span
-                                                        class="toggle-slider"
-                                                    ></span>
+                                                    <input type="checkbox" id="notif-mastery" data-pref="mastery" checked />
+                                                    <span class="toggle-slider"></span>
                                                 </label>
                                             </div>
                                         </div>
 
                                         <div class="notif-group">
-                                            <p class="notif-group-title">
-                                                Delivery
-                                            </p>
+                                            <p class="notif-group-title">Delivery</p>
 
                                             <div class="notif-row">
                                                 <div class="notif-row-text">
-                                                    <span
-                                                        class="notif-row-label"
-                                                        >Email
-                                                        Notifications</span
-                                                    >
-                                                    <span class="notif-row-desc"
-                                                        >Receive a copy of
-                                                        important alerts via
-                                                        email.</span
-                                                    >
+                                                    <span class="notif-row-label">In-App Sound</span>
+                                                    <span class="notif-row-desc">Play a sound when a new System Alert arrives.</span>
                                                 </div>
                                                 <label class="toggle-switch">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="notifEmail"
-                                                    />
-                                                    <span
-                                                        class="toggle-slider"
-                                                    ></span>
-                                                </label>
-                                            </div>
-
-                                            <div class="notif-row">
-                                                <div class="notif-row-text">
-                                                    <span
-                                                        class="notif-row-label"
-                                                        >In-App Sound</span
-                                                    >
-                                                    <span class="notif-row-desc"
-                                                        >Play a sound when a new
-                                                        notification
-                                                        arrives.</span
-                                                    >
-                                                </div>
-                                                <label class="toggle-switch">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="notifSound"
-                                                    />
-                                                    <span
-                                                        class="toggle-slider"
-                                                    ></span>
+                                                    <input type="checkbox" id="notif-sound" data-pref="sound" checked />
+                                                    <span class="toggle-slider"></span>
                                                 </label>
                                             </div>
                                         </div>
 
                                         <div class="settings-card-footer">
-                                            <span
-                                                id="notifSaveStatus"
-                                                class="settings-save-status"
-                                            ></span>
-                                            <button
-                                                id="notifSaveBtn"
-                                                type="button"
-                                                class="settings-save-btn"
-                                            >
-                                                <i
-                                                    class="fas fa-floppy-disk"
-                                                ></i>
-                                                Save Preferences
+                                            <span id="notifSaveStatus" class="settings-save-status"></span>
+                                            <button id="notifSaveBtn" type="button" class="settings-save-btn">
+                                                <i class="fas fa-floppy-disk"></i> Save Preferences
                                             </button>
                                         </div>
                                     </div>
@@ -698,60 +365,6 @@ Aspiring chemical engineer who loves stoichiometry and badminton.</textarea
                                         </div>
                                     </form>
 
-                                    <div class="settings-card danger-zone-card">
-                                        <div class="settings-card-header">
-                                            <h3 class="settings-card-title">
-                                                Active Sessions
-                                            </h3>
-                                            <p class="settings-card-desc">
-                                                Devices currently signed in to
-                                                your LearnQuest account.
-                                            </p>
-                                        </div>
-
-                                        <div class="session-row">
-                                            <div class="session-row-icon">
-                                                <i class="fas fa-desktop"></i>
-                                            </div>
-                                            <div class="session-row-text">
-                                                <span class="session-row-label"
-                                                    >This Device &middot; Chrome
-                                                    on Windows</span
-                                                >
-                                                <span class="session-row-desc"
-                                                    >Quezon City, Philippines
-                                                    &middot; Active now</span
-                                                >
-                                            </div>
-                                            <span class="session-current-badge"
-                                                >Current</span
-                                            >
-                                        </div>
-
-                                        <div class="session-row">
-                                            <div class="session-row-icon">
-                                                <i
-                                                    class="fas fa-mobile-screen"
-                                                ></i>
-                                            </div>
-                                            <div class="session-row-text">
-                                                <span class="session-row-label"
-                                                    >LearnQuest Mobile &middot;
-                                                    Android</span
-                                                >
-                                                <span class="session-row-desc"
-                                                    >Quezon City, Philippines
-                                                    &middot; 2 days ago</span
-                                                >
-                                            </div>
-                                            <button
-                                                class="session-revoke-btn"
-                                                type="button"
-                                            >
-                                                Sign Out
-                                            </button>
-                                        </div>
-                                    </div>
                                 </section>
                             </div>
                             <!-- end .settings-panels -->
@@ -761,8 +374,7 @@ Aspiring chemical engineer who loves stoichiometry and badminton.</textarea
                     <!-- end .settings-body -->
                 </div>
             </main>
-    <script src="../../assets/js/pages/student/student-home.js"></script>
-    <script src="../../assets/js/pages/student/student-settings.js"></script>
+    <script src="../../assets/js/common/settings-page.js"></script>
     </body>
 </html>
 

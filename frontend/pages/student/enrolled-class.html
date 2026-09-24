@@ -52,6 +52,10 @@
                         <p id="classBannerTeacher" class="class-banner-teacher"></p>
                         <p class="class-banner-role">Teacher</p>
                     </div>
+                    <div id="classBannerMastery" class="class-banner-mastery hidden">
+                        <span id="classBannerMasteryValue" class="class-banner-mastery-value">—</span>
+                        <span id="classBannerMasteryLabel" class="class-banner-mastery-label">Average Mastery</span>
+                    </div>
                     <i class="fas fa-book-open class-banner-icon"></i>
                 </section>
 
@@ -63,11 +67,10 @@
                     <!-- RIGHT: AI tools panel -->
                     <div class="side-column">
                         <div class="ai-panel">
-                            <button id="summarizeBtn" class="summarize-btn">
+                            <button id="summarizeBtn" class="summarize-btn" disabled>
                                 <span class="bot-icon"><i class="fas fa-robot"></i></span>
                                 Summarize class note
                             </button>
-                            <div id="summaryResult" class="hidden"></div>
                         </div>
 
                         <div class="ai-insights-card">
@@ -75,7 +78,11 @@
                                 <span class="ai-insights-icon"><i class="fas fa-cloud"></i></span>
                                 <span class="ai-insights-title">AI Insights for You</span>
                             </div>
-                            <div id="insightsList"></div>
+                            <div id="insightsList">
+                                <div class="insight-item insight-status">
+                                    <i class="fas fa-spinner fa-spin"></i> Analyzing your mastery...
+                                </div>
+                            </div>
                             <button id="insightsRefreshBtn" class="insight-refresh">
                                 <i class="fas fa-rotate"></i> Refresh insights
                             </button>
@@ -146,6 +153,7 @@
         </div>
 
         <script src="../../assets/js/common/class-post-card.js"></script>
+        <script src="../../assets/js/common/insights-card.js"></script>
         <script src="../../assets/js/pages/student/enrolled-class.js"></script>
     </body>
 </html>

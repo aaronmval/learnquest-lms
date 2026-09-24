@@ -862,6 +862,7 @@ body.dark .modal-desc {
     border: 1.5px solid transparent;
     cursor: pointer;
     transition: all 0.2s ease;
+    margin: 5px;
 }
 
 .modal-btn-cancel {
@@ -893,6 +894,8 @@ body.dark .modal-btn-cancel:hover {
 /*  RESULTS MODAL */
 #resultsModalCard {
     width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 .results-score-ring {
     position: relative;
@@ -1094,6 +1097,150 @@ body.dark .mastery-delta-chip.delta-negative {
 body.dark .mastery-delta-chip.delta-neutral {
     color: #cbd5e1;
     background: rgba(148, 163, 184, 0.2);
+}
+
+/*  RESULTS FEEDBACK — "Rate this quiz" section  */
+.results-feedback {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+body.dark .results-feedback {
+    border-top-color: #334155;
+}
+
+.results-feedback-title {
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+body.dark .results-feedback-title {
+    color: #f1f5f9;
+}
+
+.feedback-stars {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.feedback-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.4rem;
+    color: #cbd5e1;
+    padding: 2px;
+    transition:
+        color 0.15s ease,
+        transform 0.1s ease;
+}
+
+.feedback-star:hover {
+    transform: scale(1.1);
+}
+
+.feedback-star.selected {
+    color: #f59e0b;
+}
+
+body.dark .feedback-star {
+    color: #475569;
+}
+
+.feedback-difficulty-pills {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.feedback-pill {
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.feedback-pill:hover {
+    background: #f1f5f9;
+}
+
+.feedback-pill.selected {
+    background: #0891b2;
+    border-color: #0891b2;
+    color: #fff;
+}
+
+body.dark .feedback-pill {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+body.dark .feedback-pill:hover {
+    background: #334155;
+}
+
+.feedback-comment {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 56px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.feedback-comment:focus {
+    outline: none;
+    border-color: #0891b2;
+}
+
+body.dark .feedback-comment {
+    background: #16202f;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.feedback-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.feedback-actions .modal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.results-feedback-thanks {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #16a34a;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+body.dark .results-feedback-thanks {
+    color: #4ade80;
 }
 
 /*  TOAST  */

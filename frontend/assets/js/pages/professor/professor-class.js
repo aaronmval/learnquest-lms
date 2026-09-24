@@ -241,6 +241,17 @@ function renderFeed() {
         },
     );
 
+    /* Quiz feedback (lesson posts only) */
+    feed.querySelectorAll('.post-kebab-item[data-action="quiz-feedback"]').forEach(
+        (item) => {
+            item.addEventListener("click", (e) => {
+                e.stopPropagation();
+                closeAllKebabMenus();
+                openQuizFeedbackModal(item.dataset.postId);
+            });
+        },
+    );
+
     renderClassSnapshot();
 }
 
@@ -311,6 +322,13 @@ function buildPostCard(post) {
                             <button class="post-kebab-item" type="button" data-action="edit" data-post-id="${post.id}">
                                 <i class="fas fa-pen"></i> Edit
                             </button>
+                            ${
+                                post.type === "lesson"
+                                    ? `<button class="post-kebab-item" type="button" data-action="quiz-feedback" data-post-id="${post.id}">
+                                <i class="fas fa-chart-simple"></i> Quiz Feedback
+                            </button>`
+                                    : ""
+                            }
                             <button class="post-kebab-item danger" type="button" data-action="delete" data-post-id="${post.id}">
                                 <i class="fas fa-trash-alt"></i> Delete
                             </button>
@@ -613,6 +631,169 @@ async function confirmDeletePost() {
     }
 }
 
+/* QUIZ FEEDBACK + REGENERATE */
+let quizFeedbackPostId = null;
+let quizFeedbackThreshold = 1;
+
+function openQuizFeedbackModal(postId) {
+    quizFeedbackPostId = postId;
+    const modal = document.getElementById("quizFeedbackModal");
+    if (!modal) return;
+
+    renderQuizFeedbackLoading();
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+
+    loadQuizFeedback(postId);
+}
+
+function closeQuizFeedbackModal() {
+    const modal = document.getElementById("quizFeedbackModal");
+    if (!modal) return;
+    modal.classList.remove("open");
+    document.body.style.overflow = "";
+    quizFeedbackPostId = null;
+}
+
+function renderQuizFeedbackLoading() {
+    const body = document.getElementById("quizFeedbackBody");
+    if (body) {
+        body.innerHTML = `<p class="qf-empty-state"><i class="fas fa-spinner fa-spin"></i> Loading feedback...</p>`;
+    }
+}
+
+async function loadQuizFeedback(postId) {
+    if (!CLASS_ID) return;
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/posts/${postId}/quiz/feedback`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error("failed to load quiz feedback");
+
+        const data = await res.json();
+        renderQuizFeedbackBody(data);
+    } catch (e) {
+        const body = document.getElementById("quizFeedbackBody");
+        if (body) {
+            body.innerHTML = `<p class="qf-empty-state">Could not load quiz feedback. Please try again.</p>`;
+        }
+    }
+}
+
+const DIFFICULTY_LABELS = { too_easy: "Too Easy", just_right: "Just Right", too_hard: "Too Hard" };
+
+function renderQuizFeedbackBody(data) {
+    const body = document.getElementById("quizFeedbackBody");
+    if (!body) return;
+
+    quizFeedbackThreshold = data.min_feedback_for_regeneration || 1;
+
+    if (!data.has_quiz) {
+        body.innerHTML = `<p class="qf-empty-state"><i class="fas fa-circle-info"></i> No quiz has been generated for this lesson yet.</p>`;
+        return;
+    }
+
+    const summary = data.summary;
+
+    if (!summary || summary.count === 0) {
+        body.innerHTML = `
+            <p class="qf-empty-state"><i class="fas fa-circle-info"></i> No student feedback yet.</p>
+            <p class="qf-threshold-note">Needs at least ${quizFeedbackThreshold} response(s) before this quiz can be regenerated.</p>
+        `;
+        return;
+    }
+
+    const difficultyRows = Object.keys(DIFFICULTY_LABELS)
+        .map((key) => {
+            const stat = summary.difficulty[key] || { count: 0, percent: 0 };
+            return `
+                <div class="qf-difficulty-row">
+                    <span class="qf-difficulty-label">${DIFFICULTY_LABELS[key]}</span>
+                    <div class="qf-difficulty-bar-track">
+                        <div class="qf-difficulty-bar" style="width: ${stat.percent}%"></div>
+                    </div>
+                    <span class="qf-difficulty-percent">${stat.percent}%</span>
+                </div>
+            `;
+        })
+        .join("");
+
+    const comments = summary.recent_comments.length
+        ? summary.recent_comments
+              .map(
+                  (c) => `
+            <div class="qf-comment-item">
+                <div class="qf-comment-meta">
+                    <span class="qf-comment-rating">${"★".repeat(c.rating)}${"☆".repeat(5 - c.rating)}</span>
+                    <span class="qf-comment-difficulty">${escapeHtml(DIFFICULTY_LABELS[c.difficulty] || c.difficulty)}</span>
+                </div>
+                <p class="qf-comment-text">${escapeHtml(c.comment)}</p>
+            </div>
+        `,
+              )
+              .join("")
+        : `<p class="qf-empty-state">No written comments yet.</p>`;
+
+    const canRegenerate = summary.count >= quizFeedbackThreshold;
+
+    body.innerHTML = `
+        <div class="qf-rating-block">
+            <span class="qf-rating-value">${summary.average_rating}</span>
+            <span class="qf-rating-label">Average Rating (${summary.count} response${summary.count === 1 ? "" : "s"})</span>
+        </div>
+        <div class="qf-difficulty-block">${difficultyRows}</div>
+        <div class="qf-comments-block">${comments}</div>
+        <button id="regenerateQuizBtn" class="modal-btn modal-btn-confirm qf-regenerate-btn" type="button" ${canRegenerate ? "" : "disabled"}>
+            <i class="fas fa-rotate"></i> Regenerate Quiz
+        </button>
+        ${canRegenerate ? "" : `<p class="qf-threshold-note">Needs at least ${quizFeedbackThreshold} response(s) to regenerate.</p>`}
+    `;
+
+    document.getElementById("regenerateQuizBtn")?.addEventListener("click", openRegenerateConfirm);
+}
+
+function openRegenerateConfirm() {
+    document.getElementById("regenerateConfirmModal")?.classList.add("open");
+}
+
+function closeRegenerateConfirm() {
+    document.getElementById("regenerateConfirmModal")?.classList.remove("open");
+}
+
+async function confirmRegenerateQuiz() {
+    if (!CLASS_ID || !quizFeedbackPostId) return;
+
+    const btn = document.getElementById("regenerateConfirmBtn");
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/posts/${quizFeedbackPostId}/quiz/regenerate`, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { Accept: "application/json", "X-XSRF-TOKEN": getCsrfToken() },
+        });
+
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+            closeRegenerateConfirm();
+            showToast(data?.message || "Could not regenerate the quiz. Please try again.");
+            return;
+        }
+
+        closeRegenerateConfirm();
+        closeQuizFeedbackModal();
+        showToast("Quiz regenerated.");
+    } catch (e) {
+        closeRegenerateConfirm();
+        showToast("Could not regenerate the quiz. Please try again.");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
 /* INVITE CODE — copy & regenerate */
 async function copyInviteCode() {
     if (!CLASS_INFO || !CLASS_INFO.code) return;
@@ -771,6 +952,29 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("pdfModalBackdrop")
         ?.addEventListener("click", closePdfModal);
 
+    /* Quiz feedback modal */
+    document
+        .getElementById("quizFeedbackCloseBtn")
+        ?.addEventListener("click", closeQuizFeedbackModal);
+    document
+        .getElementById("quizFeedbackModal")
+        ?.addEventListener("click", (e) => {
+            if (e.target.id === "quizFeedbackModal") closeQuizFeedbackModal();
+        });
+
+    /* Regenerate confirm modal */
+    document
+        .getElementById("regenerateCancelBtn")
+        ?.addEventListener("click", closeRegenerateConfirm);
+    document
+        .getElementById("regenerateConfirmBtn")
+        ?.addEventListener("click", confirmRegenerateQuiz);
+    document
+        .getElementById("regenerateConfirmModal")
+        ?.addEventListener("click", (e) => {
+            if (e.target.id === "regenerateConfirmModal") closeRegenerateConfirm();
+        });
+
     /* Close kebab menus when clicking anywhere else */
     document.addEventListener("click", () => {
         if (openKebabPostId !== null) closeAllKebabMenus();
@@ -782,6 +986,8 @@ document.addEventListener("DOMContentLoaded", () => {
         closePdfModal();
         closeComposerModal();
         closeDeleteModal();
+        closeRegenerateConfirm();
+        closeQuizFeedbackModal();
         closeAllKebabMenus();
     });
 });

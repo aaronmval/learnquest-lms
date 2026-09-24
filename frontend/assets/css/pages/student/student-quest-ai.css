@@ -561,6 +561,113 @@ body.dark .session-history-item .history-subject-tag {
     color: #60a5fa;
 }
 
+.session-history-card .ai-insights-header {
+    flex-wrap: wrap;
+}
+
+.new-chat-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #1e40af;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 4px 10px;
+    transition: background-color 0.2s;
+}
+
+.new-chat-btn:hover {
+    background-color: #dbeafe;
+}
+
+body.dark .new-chat-btn {
+    color: #93c5fd;
+    background-color: rgba(37, 99, 235, 0.15);
+    border-color: rgba(96, 165, 250, 0.35);
+}
+
+.session-history-item[data-conversation-id] {
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition:
+        border-color 0.2s,
+        background-color 0.2s;
+}
+
+.session-history-item[data-conversation-id]:hover,
+.session-history-item[data-conversation-id]:focus-visible {
+    border-color: #bfdbfe;
+    outline: none;
+}
+
+.session-history-item.active {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+body.dark .session-history-item.active {
+    border-color: #3b82f6;
+    background-color: rgba(30, 58, 138, 0.3);
+}
+
+/* Class chip color dots */
+.dot-cyan {
+    background-color: #06b6d4;
+}
+
+.dot-orange {
+    background-color: #f97316;
+}
+
+.dot-purple {
+    background-color: #8b5cf6;
+}
+
+.dot-green {
+    background-color: #22c55e;
+}
+
+/* Formatted AI replies */
+.chat-bubble-ai p {
+    margin: 0 0 6px;
+}
+
+.chat-bubble-ai p:last-child {
+    margin-bottom: 0;
+}
+
+.chat-bubble-ai ul {
+    margin: 4px 0 8px;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.chat-bubble-ai strong {
+    font-weight: 700;
+}
+
+.chat-bubble-ai.chat-bubble-error {
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+
+body.dark .chat-bubble-ai.chat-bubble-error {
+    background-color: rgba(153, 27, 27, 0.25);
+    color: #fecaca;
+}
+
+.chat-ask-btn:disabled,
+.quick-ask-chip:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* SIDE PANEL — AI tools*/
 .side-column {
     display: flex;

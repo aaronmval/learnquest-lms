@@ -1,0 +1,150 @@
+/* PROFESSOR COMPETENCIES PAGE — reuses professor-modules.css for the
+   header/wrap/modal shell; this file only covers what's genuinely new. */
+
+.pc-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: #64748b;
+    max-width: 60ch;
+}
+
+body.dark .pc-subtitle {
+    color: #94a3b8;
+}
+
+.pc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pc-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    background-color: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+body.dark .pc-row {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+.pc-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.pc-row-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+body.dark .pc-row-name {
+    color: #f1f5f9;
+}
+
+.pc-row-desc {
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+body.dark .pc-row-desc {
+    color: #94a3b8;
+}
+
+.pc-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.pc-icon-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.pc-icon-btn:hover {
+    background-color: #f1f5f9;
+    color: #1e293b;
+}
+
+body.dark .pc-icon-btn:hover {
+    background-color: #334155;
+    color: #f1f5f9;
+}
+
+.pc-delete-btn:hover {
+    color: #ef4444;
+}
+
+.pc-textarea {
+    resize: vertical;
+    min-height: 72px;
+    font-family: inherit;
+}
+
+.pc-danger-btn {
+    background-color: #ef4444;
+}
+
+.pc-danger-btn:hover {
+    background-color: #dc2626;
+}
+
+#pcToast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #1e293b;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(24px);
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 100;
+    max-width: min(360px, calc(100vw - 56px));
+}
+
+#pcToast.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+    #pcToast {
+        right: 16px;
+        bottom: 16px;
+        left: 16px;
+        max-width: unset;
+        justify-content: center;
+    }
+}

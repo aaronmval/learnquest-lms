@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\JoinClassRequest;
 use App\Models\ClassRoom;
+use App\Services\Notifications\AlertService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,7 +42,7 @@ class StudentClassController extends Controller
     /**
      * Enroll the authenticated student in a class via its invite code.
      */
-    public function join(JoinClassRequest $request): JsonResponse
+    public function join(JoinClassRequest $request, AlertService $alerts): JsonResponse
     {
         $code = strtoupper(trim($request->validated('code')));
 
@@ -62,6 +63,8 @@ class StudentClassController extends Controller
             // surface the same friendly message instead of a 500.
             return response()->json(['message' => 'You are already enrolled in this class.'], 422);
         }
+
+        $alerts->studentJoined($class, $request->user());
 
         return response()->json($class, 201);
     }

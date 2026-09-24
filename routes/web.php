@@ -1,13 +1,23 @@
 <?php
 
+use App\Http\Controllers\AI\InsightController;
+use App\Http\Controllers\AI\QuestAiController;
+use App\Http\Controllers\AI\QuizGenerationController;
 use App\Http\Controllers\AI\SummaryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassPostController;
+use App\Http\Controllers\CompetencyController;
 use App\Http\Controllers\FrontendShellController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ProfessorClassController;
+use App\Http\Controllers\QuizAttemptController;
+use App\Http\Controllers\QuizFeedbackController;
 use App\Http\Controllers\StudentClassController;
 use App\Http\Controllers\StudentClassPostController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\StudentMasteryController;
 use App\Http\Controllers\SubjectCollaboratorController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\SubjectSectionController;
@@ -36,6 +46,26 @@ Route::middleware('auth')->group(function () {
     Route::get('/components/navbar/navbar.js', [FrontendShellController::class, 'navbarJs'])->name('shell.navbar.js');
     Route::get('/assets/{path}', [FrontendShellController::class, 'frontendAsset'])
         ->where('path', '.*');
+
+    // System Alerts drawer (shared by every role)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])
+        ->name('notifications.read-all');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])
+        ->name('notifications.read');
+    Route::delete('/notifications', [NotificationController::class, 'clear'])->name('notifications.clear');
+
+    // Account settings (shared by every role; always the signed-in user)
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [SettingsController::class, 'show'])->name('show');
+        Route::put('/profile', [SettingsController::class, 'updateProfile'])->name('profile');
+        Route::put('/notifications', [SettingsController::class, 'updateNotifications'])->name('notifications');
+        Route::put('/password', [SettingsController::class, 'updatePassword'])
+            ->middleware('throttle:6,1')->name('password');
+        Route::get('/avatar', [SettingsController::class, 'showAvatar'])->name('avatar.show');
+        Route::post('/avatar', [SettingsController::class, 'uploadAvatar'])->name('avatar.upload');
+        Route::delete('/avatar', [SettingsController::class, 'deleteAvatar'])->name('avatar.delete');
+    });
 });
 
 Route::middleware(['auth', 'student.role'])->prefix('pages/student')->group(function () {
@@ -51,6 +81,7 @@ Route::middleware(['auth', 'professor.role'])->prefix('pages/professor')->group(
 // Student Routes
 Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [FrontendShellController::class, 'showShell'])->name('dashboard');
+    Route::get('/analytics', [StudentDashboardController::class, 'data'])->name('analytics');
 
     Route::get('/classes', [StudentClassController::class, 'index'])->name('classes.index');
     Route::get('/classes/lookup/{code}', [StudentClassController::class, 'lookup'])
@@ -58,13 +89,36 @@ Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')
     Route::post('/classes/join', [StudentClassController::class, 'join'])
         ->middleware('throttle:20,1')->name('classes.join');
     Route::get('/classes/{class}', [StudentClassController::class, 'show'])->name('classes.show');
+    Route::get('/classes/{class}/mastery', [StudentMasteryController::class, 'forClass'])
+        ->name('classes.mastery');
+    Route::get('/classes/{class}/insights', [InsightController::class, 'show'])
+        ->middleware('throttle:10,1')->name('classes.insights');
+
+    Route::prefix('questai')->name('questai.')->group(function () {
+        Route::get('/context', [QuestAiController::class, 'context'])->name('context');
+        Route::get('/conversations', [QuestAiController::class, 'conversations'])->name('conversations.index');
+        Route::get('/conversations/{conversation}', [QuestAiController::class, 'showConversation'])
+            ->name('conversations.show');
+        Route::post('/messages', [QuestAiController::class, 'storeMessage'])
+            ->middleware('throttle:20,1')->name('messages.store');
+        Route::post('/messages/{message}/feedback', [QuestAiController::class, 'feedback'])
+            ->name('messages.feedback');
+    });
 
     Route::get('/classes/{class}/posts', [StudentClassPostController::class, 'index'])
         ->name('classes.posts.index');
     Route::get('/classes/{class}/posts/{post}/attachment', [StudentClassPostController::class, 'attachment'])
         ->name('classes.posts.attachment');
+    Route::get('/classes/{class}/posts/{post}/mastery', [StudentMasteryController::class, 'forPost'])
+        ->name('classes.posts.mastery');
     Route::get('/classes/{class}/posts/{post}/summary', [SummaryController::class, 'show'])
         ->name('classes.posts.summary');
+    Route::get('/classes/{class}/posts/{post}/quiz', [QuizGenerationController::class, 'show'])
+        ->name('classes.posts.quiz.show');
+    Route::post('/classes/{class}/posts/{post}/quiz/attempts', [QuizAttemptController::class, 'store'])
+        ->name('classes.posts.quiz.attempts.store');
+    Route::post('/classes/{class}/posts/{post}/quiz/attempts/{attempt}/feedback', [QuizFeedbackController::class, 'store'])
+        ->name('classes.posts.quiz.attempts.feedback.store');
 });
 
 // Professor Routes
@@ -89,6 +143,10 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
         ->name('classes.posts.destroy');
     Route::get('/classes/{class}/posts/{post}/attachment', [ClassPostController::class, 'attachment'])
         ->name('classes.posts.attachment');
+    Route::get('/classes/{class}/posts/{post}/quiz/feedback', [QuizGenerationController::class, 'feedback'])
+        ->name('classes.posts.quiz.feedback');
+    Route::post('/classes/{class}/posts/{post}/quiz/regenerate', [QuizGenerationController::class, 'regenerate'])
+        ->name('classes.posts.quiz.regenerate');
 
     Route::prefix('subjects')->name('subjects.')->group(function () {
         Route::get('/', [SubjectController::class, 'index'])->name('index');
@@ -112,5 +170,12 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
             ->name('modules.destroy');
         Route::get('/{subject}/modules/{module}/attachment', [ModuleController::class, 'attachment'])
             ->name('modules.attachment');
+
+        Route::get('/{subject}/competencies', [CompetencyController::class, 'index'])->name('competencies.index');
+        Route::post('/{subject}/competencies', [CompetencyController::class, 'store'])->name('competencies.store');
+        Route::put('/{subject}/competencies/{competency}', [CompetencyController::class, 'update'])
+            ->name('competencies.update');
+        Route::delete('/{subject}/competencies/{competency}', [CompetencyController::class, 'destroy'])
+            ->name('competencies.destroy');
     });
 });

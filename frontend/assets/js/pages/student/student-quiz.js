@@ -1,144 +1,36 @@
-/* Mock quiz data — swap this out for a real fetch from the backend */
-const QUIZ_DATA = {
-    subject: "Chemistry",
-    section: "STEM - Amethyst",
-    title: "Periodic Table & Atomic Structure",
-    timeLimitSeconds: 15 * 60,
-    attemptLabel: "1 of 2 attempts",
-    questions: [
-        {
-            id: "q1",
-            text: "Which subatomic particle has a negative charge?",
-            options: ["Proton", "Neutron", "Electron", "Positron"],
-            answer: 2,
-        },
-        {
-            id: "q2",
-            text: "Elements in the same column of the periodic table are called a...",
-            options: ["Period", "Group", "Series", "Block"],
-            answer: 1,
-        },
-        {
-            id: "q3",
-            text: "What is the atomic number of an element equal to?",
-            options: [
-                "Number of neutrons only",
-                "Number of protons in the nucleus",
-                "Total mass of the atom",
-                "Number of electron shells",
-            ],
-            answer: 1,
-        },
-        {
-            id: "q4",
-            text: "Which element is a noble gas?",
-            options: ["Chlorine", "Sodium", "Neon", "Oxygen"],
-            answer: 2,
-        },
-        {
-            id: "q5",
-            text: "Isotopes of an element differ in their number of...",
-            options: ["Protons", "Electrons", "Neutrons", "Valence shells"],
-            answer: 2,
-        },
-        {
-            id: "q6",
-            text: "Metals are generally found on which side of the periodic table?",
-            options: [
-                "Right side",
-                "Left side",
-                "Top row only",
-                "Bottom row only",
-            ],
-            answer: 1,
-        },
-        {
-            id: "q7",
-            text: 'Which of the following best describes the "octet rule"?',
-            options: [
-                "Atoms react to have 8 protons",
-                "Atoms tend to gain, lose, or share electrons to have 8 valence electrons",
-                "Only 8 elements exist per period",
-                "Atoms always form 8 bonds",
-            ],
-            answer: 1,
-        },
-        {
-            id: "q8",
-            text: "Which particle is located in the nucleus along with protons?",
-            options: ["Electron", "Neutron", "Ion", "Photon"],
-            answer: 1,
-        },
-        {
-            id: "q9",
-            text: "As you move left to right across a period, atomic radius generally...",
-            options: ["Increases", "Decreases", "Stays the same", "Doubles"],
-            answer: 1,
-        },
-        {
-            id: "q10",
-            text: "Which of these is an alkali metal?",
-            options: ["Calcium", "Potassium", "Aluminum", "Sulfur"],
-            answer: 1,
-        },
-    ],
-};
-
 const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
-
-const SUBJECT_BASE_MASTERY = {
-    chemistry: 85,
-    "general biology": 88,
-    "earth science": 75,
-    physics: 70,
-};
-
-const LESSON_QUIZ_BASE_MASTERY = {
-    "quiz-1-module-6": 72,
-};
-
-const params = new URLSearchParams(window.location.search);
-const quizSubject = params.get("subject") || QUIZ_DATA.subject;
-const quizSubjectKey = quizSubject.toLowerCase();
-const quizId = params.get("quizId") || "";
-const lessonTitle = params.get("lessonTitle") || QUIZ_DATA.title;
-const subjectMasteryBefore =
-    SUBJECT_BASE_MASTERY[quizSubjectKey] ?? SUBJECT_BASE_MASTERY.chemistry;
-const lessonMasteryBefore =
-    Number(params.get("lessonMastery")) ||
-    LESSON_QUIZ_BASE_MASTERY[quizId] ||
-    70;
-
-/* STATE */
-let currentIndex = 0;
-let userAnswers = new Array(QUIZ_DATA.questions.length).fill(null);
-let flagged = new Array(QUIZ_DATA.questions.length).fill(false);
-let secondsLeft = QUIZ_DATA.timeLimitSeconds;
-let timerInterval = null;
-let quizSubmitted = false;
-let reviewMode = false;
-
+const DEFAULT_TIME_LIMIT_SECONDS = 15 * 60;
 const TIMER_CIRCUMFERENCE = 213.6;
 const RESULTS_CIRCUMFERENCE = 326.7;
 
+const params = new URLSearchParams(window.location.search);
+const CLASS_ID = params.get("id");
+const POST_ID = params.get("postId");
+
+/* STATE — populated once the quiz has loaded from the server */
+let QUIZ = null;
+let currentIndex = 0;
+let userAnswers = [];
+let flagged = [];
+let secondsLeft = DEFAULT_TIME_LIMIT_SECONDS;
+let timerInterval = null;
+let quizSubmitted = false;
+let reviewMode = false;
+let reviewByQuestionId = {};
+let currentAttemptId = null;
+let selectedRating = null;
+let selectedDifficulty = null;
+let feedbackSubmitted = false;
+
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : "";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Populate banner meta
-    document.getElementById("quizBannerEyebrow").textContent =
-        `${quizSubject} · ${QUIZ_DATA.section}`;
-    document.getElementById("quizBannerTitle").textContent = QUIZ_DATA.title;
-    document.getElementById("quizMetaCount").textContent =
-        `${QUIZ_DATA.questions.length} Items`;
-    document.getElementById("quizMetaTime").textContent =
-        `${formatTime(QUIZ_DATA.timeLimitSeconds)} Limit`;
-    document.getElementById("quizMetaAttempts").textContent =
-        QUIZ_DATA.attemptLabel;
-
-    buildNavigatorGrid();
-    renderQuestion(0);
-    startTimer();
     initNavigatorToggle();
+    setInteractiveButtonsEnabled(false);
 
-    // Navigation buttons
     document
         .getElementById("prevQBtn")
         .addEventListener("click", () => goToQuestion(currentIndex - 1));
@@ -146,10 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("nextQBtn")
         .addEventListener("click", () => goToQuestion(currentIndex + 1));
 
-    // Flag button
     document.getElementById("flagBtn").addEventListener("click", toggleFlag);
 
-    // Submit flow
     document
         .getElementById("submitQuizBtn")
         .addEventListener("click", openSubmitConfirm);
@@ -160,19 +50,17 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("submitConfirmBtn")
         .addEventListener("click", finalizeSubmit);
 
-    // Back buttons
     document
         .getElementById("backToClassworkBtn")
         .addEventListener("click", () => {
-            window.location.href = resolveClassworkPage();
+            window.location.href = classworkUrl();
         });
     document
         .getElementById("backToClassworkResultsBtn")
         .addEventListener("click", () => {
-            window.location.href = resolveClassworkPage();
+            window.location.href = classworkUrl();
         });
 
-    // Review answers from results modal
     document
         .getElementById("reviewAnswersBtn")
         .addEventListener("click", () => {
@@ -181,12 +69,209 @@ document.addEventListener("DOMContentLoaded", () => {
             goToQuestion(0);
         });
 
-    // Hide page loader
-    setTimeout(() => {
-        const loader = document.getElementById("pageLoader");
-        if (loader) loader.classList.add("hidden");
-    }, 700);
+    initFeedbackControls();
+
+    loadQuiz();
 });
+
+/*  QUIZ FEEDBACK — inline "Rate this quiz" section in the results modal  */
+function initFeedbackControls() {
+    document.querySelectorAll(".feedback-star").forEach((star) => {
+        star.addEventListener("click", () => {
+            selectedRating = Number(star.dataset.value);
+            document.querySelectorAll(".feedback-star").forEach((s) => {
+                s.classList.toggle("selected", Number(s.dataset.value) <= selectedRating);
+            });
+            updateFeedbackSubmitState();
+        });
+    });
+
+    document.querySelectorAll(".feedback-pill").forEach((pill) => {
+        pill.addEventListener("click", () => {
+            selectedDifficulty = pill.dataset.value;
+            document.querySelectorAll(".feedback-pill").forEach((p) => {
+                p.classList.toggle("selected", p === pill);
+            });
+            updateFeedbackSubmitState();
+        });
+    });
+
+    document.getElementById("feedbackSkipBtn")?.addEventListener("click", () => {
+        document.getElementById("feedbackSection").hidden = true;
+    });
+
+    document.getElementById("feedbackSubmitBtn")?.addEventListener("click", submitFeedback);
+}
+
+function updateFeedbackSubmitState() {
+    const btn = document.getElementById("feedbackSubmitBtn");
+    if (btn) btn.disabled = !(selectedRating && selectedDifficulty);
+}
+
+function resetFeedbackUI() {
+    selectedRating = null;
+    selectedDifficulty = null;
+    feedbackSubmitted = false;
+
+    document.querySelectorAll(".feedback-star").forEach((s) => s.classList.remove("selected"));
+    document.querySelectorAll(".feedback-pill").forEach((p) => p.classList.remove("selected"));
+
+    const comment = document.getElementById("feedbackComment");
+    if (comment) comment.value = "";
+
+    updateFeedbackSubmitState();
+
+    document.getElementById("feedbackSection").hidden = false;
+    document.getElementById("feedbackThanks").classList.add("hidden");
+}
+
+async function submitFeedback() {
+    if (feedbackSubmitted || !currentAttemptId || !selectedRating || !selectedDifficulty) return;
+
+    const submitBtn = document.getElementById("feedbackSubmitBtn");
+    if (submitBtn) submitBtn.disabled = true;
+
+    const url = `/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz/attempts/${currentAttemptId}/feedback`;
+    const comment = document.getElementById("feedbackComment")?.value.trim() || undefined;
+
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify({ rating: selectedRating, difficulty: selectedDifficulty, comment }),
+        });
+
+        if (!res.ok) throw new Error(`feedback submit failed (HTTP ${res.status})`);
+
+        feedbackSubmitted = true;
+        document.getElementById("feedbackSection").hidden = true;
+        document.getElementById("feedbackThanks").classList.remove("hidden");
+    } catch (e) {
+        console.error("[AI Quiz] Feedback submit threw:", e);
+        showToast("Couldn't submit feedback. Please try again.");
+        if (submitBtn) submitBtn.disabled = false;
+    }
+}
+
+function classworkUrl() {
+    return `classwork.html?id=${CLASS_ID}&postId=${POST_ID}`;
+}
+
+/**
+ * Enables/disables the buttons that only make sense once a quiz is loaded.
+ * Prevents crashes from clicks (flag, submit) that land before QUIZ exists,
+ * and gives clear visual feedback that the page is busy, not frozen.
+ */
+function setInteractiveButtonsEnabled(enabled) {
+    ["prevQBtn", "nextQBtn", "flagBtn", "submitQuizBtn"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
+    });
+}
+
+/*  LOAD QUIZ FROM SERVER  */
+async function loadQuiz() {
+    renderLoadingState();
+
+    if (!CLASS_ID || !POST_ID) {
+        renderLoadError("This quiz link is missing information. Please go back and try again.");
+        return;
+    }
+
+    const url = `/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz`;
+    console.groupCollapsed(`[AI Quiz] GET ${url}`);
+    console.log("post id:", POST_ID, "class id:", CLASS_ID);
+
+    try {
+        const res = await fetch(url, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+
+        const data = await res.json().catch(() => null);
+        console.log(`status: ${res.status}`);
+        if (data?.request_id) console.log("request_id:", data.request_id);
+        console.log("response body:", data);
+
+        if (!res.ok) {
+            throw new Error(data?.message || `quiz request failed (HTTP ${res.status})`);
+        }
+
+        console.groupEnd();
+
+        if (!data.questions || data.questions.length === 0) {
+            renderLoadError("This quiz doesn't have any questions yet.");
+            return;
+        }
+
+        QUIZ = {
+            subject: data.subject || "Science",
+            section: data.section || "",
+            title: data.lesson_title || "Quiz",
+            timeLimitSeconds: DEFAULT_TIME_LIMIT_SECONDS,
+            questions: data.questions.map((q) => ({
+                id: q.id,
+                text: q.text,
+                options: q.choices,
+            })),
+        };
+
+        userAnswers = new Array(QUIZ.questions.length).fill(null);
+        flagged = new Array(QUIZ.questions.length).fill(false);
+        secondsLeft = QUIZ.timeLimitSeconds;
+
+        renderBanner();
+        buildNavigatorGrid();
+        setInteractiveButtonsEnabled(true);
+        renderQuestion(0);
+        startTimer();
+    } catch (e) {
+        console.error("[AI Quiz] Fetch threw:", e);
+        console.groupEnd();
+        renderLoadError("We couldn't load this quiz right now.");
+    }
+}
+
+/**
+ * Shown immediately when a (re)load starts. Only touches questionText and
+ * optionsList — never questionCard's innerHTML — so questionNumberBadge and
+ * flagBtn stay in the DOM for renderQuestion() to use once the quiz loads.
+ */
+function renderLoadingState() {
+    const textEl = document.getElementById("questionText");
+    const optionsList = document.getElementById("optionsList");
+    if (textEl) {
+        textEl.textContent = "Generating your AI quiz… this can take up to a minute the first time.";
+    }
+    if (optionsList) optionsList.innerHTML = "";
+    setInteractiveButtonsEnabled(false);
+}
+
+function renderLoadError(message) {
+    const textEl = document.getElementById("questionText");
+    const optionsList = document.getElementById("optionsList");
+    if (textEl) textEl.textContent = message;
+    if (optionsList) {
+        optionsList.innerHTML = `<button type="button" id="quizRetryBtn" class="btn btn-secondary">Try again</button>`;
+        document.getElementById("quizRetryBtn")?.addEventListener("click", loadQuiz);
+    }
+    setInteractiveButtonsEnabled(false);
+}
+
+function renderBanner() {
+    document.getElementById("quizBannerEyebrow").textContent = QUIZ.section
+        ? `${QUIZ.subject} · ${QUIZ.section}`
+        : QUIZ.subject;
+    document.getElementById("quizBannerTitle").textContent = QUIZ.title;
+    document.getElementById("quizMetaCount").textContent = `${QUIZ.questions.length} Items`;
+    document.getElementById("quizMetaTime").textContent = `${formatTime(QUIZ.timeLimitSeconds)} Limit`;
+    document.getElementById("quizMetaAttempts").textContent = "Attempt";
+}
 
 /* ── NAVIGATOR COLLAPSE / EXPAND ── */
 function initNavigatorToggle() {
@@ -194,7 +279,6 @@ function initNavigatorToggle() {
     const card = document.querySelector(".navigator-card");
     if (!toggleBtn || !card) return;
 
-    // Default: collapsed on narrow screens, expanded on wider ones
     let startCollapsed;
     try {
         const saved = localStorage.getItem("lq_navigatorCollapsed");
@@ -221,7 +305,7 @@ function setNavigatorCollapsed(collapsed, card, toggleBtn) {
     toggleBtn.setAttribute("aria-expanded", String(!collapsed));
 }
 
-/*  TIMER  */
+/*  TIMER — cosmetic only; the server does not trust or enforce this.  */
 function startTimer() {
     updateTimerDisplay();
     timerInterval = setInterval(() => {
@@ -245,7 +329,7 @@ function updateTimerDisplay() {
     const circleEl = document.getElementById("timerProgressCircle");
     textEl.textContent = formatTime(secondsLeft);
 
-    const ratio = secondsLeft / QUIZ_DATA.timeLimitSeconds;
+    const ratio = secondsLeft / QUIZ.timeLimitSeconds;
     const offset = TIMER_CIRCUMFERENCE * (1 - ratio);
     circleEl.style.strokeDashoffset = offset;
 
@@ -266,7 +350,7 @@ function formatTime(totalSeconds) {
 function buildNavigatorGrid() {
     const grid = document.getElementById("navigatorGrid");
     grid.innerHTML = "";
-    QUIZ_DATA.questions.forEach((q, i) => {
+    QUIZ.questions.forEach((q, i) => {
         const cell = document.createElement("div");
         cell.className = "nav-cell";
         cell.id = `navCell-${i}`;
@@ -278,7 +362,7 @@ function buildNavigatorGrid() {
 }
 
 function refreshNavigatorState() {
-    QUIZ_DATA.questions.forEach((q, i) => {
+    QUIZ.questions.forEach((q, i) => {
         const cell = document.getElementById(`navCell-${i}`);
         if (!cell) return;
         cell.classList.toggle("current", i === currentIndex);
@@ -289,25 +373,24 @@ function refreshNavigatorState() {
 
 /*  RENDER QUESTION  */
 function renderQuestion(index) {
-    const q = QUIZ_DATA.questions[index];
+    const q = QUIZ.questions[index];
     currentIndex = index;
 
-    document.getElementById("questionNumberBadge").textContent =
-        `Q${index + 1}`;
+    document.getElementById("questionNumberBadge").textContent = `Q${index + 1}`;
     document.getElementById("questionText").textContent = q.text;
     document.getElementById("progressLabel").textContent =
-        `Question ${index + 1} of ${QUIZ_DATA.questions.length}`;
+        `Question ${index + 1} of ${QUIZ.questions.length}`;
     document.getElementById("progressFill").style.width =
-        `${((index + 1) / QUIZ_DATA.questions.length) * 100}%`;
+        `${((index + 1) / QUIZ.questions.length) * 100}%`;
 
-    // Flag button state
     const flagBtn = document.getElementById("flagBtn");
     flagBtn.classList.toggle("flagged", flagged[index]);
     flagBtn.querySelector("i").className = flagged[index]
         ? "fas fa-flag"
         : "far fa-flag";
 
-    // Options
+    const review = reviewByQuestionId[q.id];
+
     const optionsList = document.getElementById("optionsList");
     optionsList.innerHTML = "";
     q.options.forEach((optionText, i) => {
@@ -318,11 +401,11 @@ function renderQuestion(index) {
         const isSelected = userAnswers[index] === i;
         if (isSelected && !reviewMode) item.classList.add("selected");
 
-        if (reviewMode) {
+        if (reviewMode && review) {
             item.classList.add("locked");
-            if (i === q.answer) {
+            if (i === review.correct_index) {
                 item.classList.add("correct");
-            } else if (isSelected && i !== q.answer) {
+            } else if (isSelected && i !== review.correct_index) {
                 item.classList.add("incorrect");
             }
         } else {
@@ -336,9 +419,8 @@ function renderQuestion(index) {
         optionsList.appendChild(item);
     });
 
-    // Prev/Next/Submit button states
     document.getElementById("prevQBtn").disabled = index === 0;
-    const isLast = index === QUIZ_DATA.questions.length - 1;
+    const isLast = index === QUIZ.questions.length - 1;
     document.getElementById("nextQBtn").style.display = isLast
         ? "none"
         : "inline-flex";
@@ -346,10 +428,6 @@ function renderQuestion(index) {
         isLast && !reviewMode ? "inline-flex" : "none";
 
     if (reviewMode) {
-        document.getElementById("nextQBtn").style.display = isLast
-            ? "none"
-            : "inline-flex";
-        document.getElementById("submitQuizBtn").style.display = "none";
         document.getElementById("flagBtn").style.visibility = "hidden";
     } else {
         document.getElementById("flagBtn").style.visibility = "visible";
@@ -359,7 +437,7 @@ function renderQuestion(index) {
 }
 
 function goToQuestion(index) {
-    if (index < 0 || index >= QUIZ_DATA.questions.length) return;
+    if (!QUIZ || index < 0 || index >= QUIZ.questions.length) return;
     renderQuestion(index);
 }
 
@@ -370,7 +448,7 @@ function selectOption(questionIndex, optionIndex) {
 }
 
 function toggleFlag() {
-    if (reviewMode) return;
+    if (!QUIZ || reviewMode) return;
     flagged[currentIndex] = !flagged[currentIndex];
     renderQuestion(currentIndex);
     showToast(
@@ -380,9 +458,10 @@ function toggleFlag() {
 
 /*  SUBMIT FLOW  */
 function openSubmitConfirm() {
+    if (!QUIZ) return;
     const answeredCount = userAnswers.filter((a) => a !== null).length;
     document.getElementById("submitConfirmDesc").textContent =
-        `You've answered ${answeredCount} of ${QUIZ_DATA.questions.length} questions. Once submitted, you won't be able to change your answers.`;
+        `You've answered ${answeredCount} of ${QUIZ.questions.length} questions. Once submitted, you won't be able to change your answers.`;
     openModal("submitConfirmModal");
 }
 
@@ -390,58 +469,97 @@ function closeSubmitConfirm() {
     closeModal("submitConfirmModal");
 }
 
-function finalizeSubmit() {
+async function finalizeSubmit() {
     closeSubmitConfirm();
-    if (quizSubmitted) return;
+    if (quizSubmitted || !QUIZ) return;
     quizSubmitted = true;
     clearInterval(timerInterval);
 
-    let correct = 0,
-        incorrect = 0,
-        skipped = 0;
-    QUIZ_DATA.questions.forEach((q, i) => {
-        if (userAnswers[i] === null) skipped++;
-        else if (userAnswers[i] === q.answer) correct++;
-        else incorrect++;
-    });
+    const url = `/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz/attempts`;
+    const payload = {
+        answers: QUIZ.questions.map((q, i) => ({
+            question_id: q.id,
+            selected_index: userAnswers[i],
+        })),
+    };
 
-    showResults(correct, incorrect, skipped);
+    console.groupCollapsed(`[AI Quiz] POST ${url}`);
+    console.log("payload:", payload);
+
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await res.json().catch(() => null);
+        console.log(`status: ${res.status}`);
+        console.log("response body:", data);
+
+        if (!res.ok) {
+            throw new Error(data?.message || `submit failed (HTTP ${res.status})`);
+        }
+
+        console.groupEnd();
+
+        reviewByQuestionId = {};
+        (data.review || []).forEach((entry) => {
+            reviewByQuestionId[entry.question_id] = entry;
+        });
+
+        currentAttemptId = data.attempt_id;
+        showResults(data);
+    } catch (e) {
+        console.error("[AI Quiz] Submit threw:", e);
+        console.groupEnd();
+        quizSubmitted = false;
+        showToast("We couldn't submit your quiz. Please try again.");
+    }
 }
 
-function showResults(correct, incorrect, skipped) {
-    const total = QUIZ_DATA.questions.length;
-    const percent = Math.round((correct / total) * 100);
+function showResults(data) {
+    const { correct, incorrect, skipped, total, percent } = data.score;
 
-    document.getElementById("resultsScoreText").textContent =
-        `${correct}/${total}`;
+    document.getElementById("resultsScoreText").textContent = `${correct}/${total}`;
     document.getElementById("resultsPercentText").textContent = `${percent}%`;
     document.getElementById("resultsCorrectCount").textContent = correct;
     document.getElementById("resultsIncorrectCount").textContent = incorrect;
     document.getElementById("resultsSkippedCount").textContent = skipped;
 
-    const subjectMasteryAfter = calculateUpdatedMastery(
-        subjectMasteryBefore,
-        percent,
-    );
-    const lessonMasteryAfter = calculateUpdatedMastery(
-        lessonMasteryBefore,
-        percent,
-    );
+    // Lesson mastery: average mastery across just this lesson's tested
+    // competencies. Subject mastery: average across every competency
+    // defined for the subject (all lessons combined), not only this one.
+    const lessonMastery = data.lesson_mastery;
+    if (lessonMastery && lessonMastery.before !== null && lessonMastery.after !== null) {
+        renderMasteryComparison(
+            "lessonMasteryBefore",
+            "lessonMasteryAfter",
+            "lessonMasteryDelta",
+            lessonMastery.before * 100,
+            lessonMastery.after * 100,
+        );
+    } else {
+        hideMasteryRow("lessonMasteryBefore", "lessonMasteryAfter", "lessonMasteryDelta");
+    }
 
-    renderMasteryComparison(
-        "subjectMasteryBefore",
-        "subjectMasteryAfter",
-        "subjectMasteryDelta",
-        subjectMasteryBefore,
-        subjectMasteryAfter,
-    );
-    renderMasteryComparison(
-        "lessonMasteryBefore",
-        "lessonMasteryAfter",
-        "lessonMasteryDelta",
-        lessonMasteryBefore,
-        lessonMasteryAfter,
-    );
+    const subjectMastery = data.subject_mastery;
+    if (subjectMastery && subjectMastery.before !== null && subjectMastery.after !== null) {
+        renderMasteryComparison(
+            "subjectMasteryBefore",
+            "subjectMasteryAfter",
+            "subjectMasteryDelta",
+            subjectMastery.before * 100,
+            subjectMastery.after * 100,
+        );
+    } else {
+        hideMasteryRow("subjectMasteryBefore", "subjectMasteryAfter", "subjectMasteryDelta");
+    }
 
     let title, desc, ringColor;
     if (percent >= 80) {
@@ -459,25 +577,20 @@ function showResults(correct, incorrect, skipped) {
     }
     document.getElementById("resultsTitle").textContent = title;
     document.getElementById("resultsDesc").textContent =
-        `${desc} ${lessonTitle ? `Lesson: ${lessonTitle}.` : ""}`;
+        `${desc} ${QUIZ.title ? `Lesson: ${QUIZ.title}.` : ""}`;
 
     const circle = document.getElementById("resultsProgressCircle");
     circle.style.stroke = ringColor;
 
+    resetFeedbackUI();
     openModal("resultsModal");
 
-    // Animate the ring in after the modal is visible
     requestAnimationFrame(() => {
         const offset = RESULTS_CIRCUMFERENCE * (1 - correct / total);
         setTimeout(() => {
             circle.style.strokeDashoffset = offset;
         }, 50);
     });
-}
-
-function calculateUpdatedMastery(beforeMastery, quizPercent) {
-    const updated = Math.round(beforeMastery * 0.72 + quizPercent * 0.28);
-    return Math.max(0, Math.min(100, updated));
 }
 
 function renderMasteryComparison(beforeId, afterId, deltaId, before, after) {
@@ -488,40 +601,27 @@ function renderMasteryComparison(beforeId, afterId, deltaId, before, after) {
         return;
     }
 
-    const delta = after - before;
+    const beforeRounded = Math.round(before);
+    const afterRounded = Math.round(after);
+    const delta = afterRounded - beforeRounded;
     const sign = delta >= 0 ? "+" : "";
 
-    beforeEl.textContent = `${before}%`;
-    afterEl.textContent = `${after}%`;
+    beforeEl.textContent = `${beforeRounded}%`;
+    afterEl.textContent = `${afterRounded}%`;
     deltaEl.textContent = `${sign}${delta}%`;
-    deltaEl.classList.remove(
-        "delta-positive",
-        "delta-negative",
-        "delta-neutral",
-    );
+    deltaEl.classList.remove("delta-positive", "delta-negative", "delta-neutral");
     deltaEl.classList.add(
-        delta > 0
-            ? "delta-positive"
-            : delta < 0
-              ? "delta-negative"
-              : "delta-neutral",
+        delta > 0 ? "delta-positive" : delta < 0 ? "delta-negative" : "delta-neutral",
     );
 }
 
-function resolveClassworkPage() {
-    if (quizSubjectKey.includes("earth")) {
-        return "student-classwork-earthscience.html";
-    }
-
-    if (quizSubjectKey.includes("biology")) {
-        return "student-classwork-generalbiology.html";
-    }
-
-    if (quizSubjectKey.includes("physics")) {
-        return "student-classwork-physics.html";
-    }
-
-    return "student-classwork-chemistry.html";
+function hideMasteryRow(beforeId, afterId, deltaId) {
+    const beforeEl = document.getElementById(beforeId);
+    const afterEl = document.getElementById(afterId);
+    const deltaEl = document.getElementById(deltaId);
+    if (beforeEl) beforeEl.textContent = "—";
+    if (afterEl) afterEl.textContent = "—";
+    if (deltaEl) deltaEl.textContent = "";
 }
 
 /*  MODAL HELPERS  */

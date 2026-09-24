@@ -39,6 +39,11 @@ class Subject extends Model
         return $this->hasMany(Module::class, 'subject_id');
     }
 
+    public function competencies(): HasMany
+    {
+        return $this->hasMany(Competency::class);
+    }
+
     /**
      * Whether the given user may manage this subject — its sections,
      * modules, and collaborator list. Collaborators are full co-owners,

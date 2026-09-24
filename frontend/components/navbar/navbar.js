@@ -139,27 +139,9 @@ function getActiveSidebar() {
     return sidebar;
 }
 
-/* NOTIFICATIONS DATA */
-let notifications = [
-    {
-        id: 1,
-        text: "Welcome back, Aaron! Today's lesson is Classical Mechanics in physics.",
-        time: "Just Now",
-        read: false,
-    },
-    {
-        id: 2,
-        text: "Chemistry assignment 'Covalent Bonding quiz' has been posted.",
-        time: "2h ago",
-        read: false,
-    },
-    {
-        id: 3,
-        text: "Streak achievement unlocked: 4 Days Active!",
-        time: "1d ago",
-        read: true,
-    },
-];
+/* NOTIFICATIONS — System Alerts, loaded from /notifications */
+let notifications = [];
+const NOTIFICATION_POLL_MS = 60000;
 
 /*INIT — runs when page loads */
 document.addEventListener("DOMContentLoaded", () => {
@@ -194,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // I-highlight yung active nav link base sa current URL
     highlightActiveLink();
 
-    renderNotifications();
+    initNotifications();
 
     // Sidebar toggles
     on("mobileSidebarToggle", "click", openMobileSidebar);
@@ -558,9 +540,7 @@ function applyHostRole(role) {
         headerProfileName.textContent = `Welcome, ${profileName}!`;
     }
 
-    if (headerAvatar && profileName) {
-        headerAvatar.textContent = profileName.charAt(0).toUpperCase();
-    }
+    renderHeaderAvatar(profileName, getHostConfig().avatarUrl);
 
     if (headerProfileRole)
         headerProfileRole.textContent =
@@ -1221,50 +1201,211 @@ function renderEnrolledDropdown() {
     });
 }
 
-/* NOTIFICATION DRAWER */
-function toggleNotifications() {
-    if (notiDrawer) notiDrawer.classList.toggle("open");
+/* PROFILE (header avatar + live updates from the Settings page) */
+let currentProfileName = getHostConfig().profileName || "";
+
+function renderHeaderAvatar(name, avatarUrl) {
+    if (!headerAvatar) return;
+
+    headerAvatar.textContent = "";
+    if (avatarUrl) {
+        const img = document.createElement("img");
+        img.src = avatarUrl;
+        img.alt = "";
+        img.className = "avatar-img";
+        headerAvatar.appendChild(img);
+    } else {
+        headerAvatar.textContent = (name || "?").trim().charAt(0).toUpperCase();
+    }
 }
 
-function renderNotifications() {
-    if (!notiList) return;
+/* Called by the Settings page (inside the content iframe) after a save. */
+window.LQ_updateProfile = function (changes = {}) {
+    const config = getHostConfig();
 
-    const unreadCount = notifications.filter((n) => !n.read).length;
-    if (notiBadge) notiBadge.classList.toggle("hidden", unreadCount === 0);
+    if (typeof changes.name === "string" && changes.name) {
+        currentProfileName = changes.name;
+        config.profileName = changes.name;
+        if (headerProfileName) headerProfileName.textContent = `Welcome, ${changes.name}!`;
+    }
+    if ("avatarUrl" in changes) config.avatarUrl = changes.avatarUrl;
+    if ("alertSound" in changes) config.alertSound = Boolean(changes.alertSound);
+
+    renderHeaderAvatar(currentProfileName, config.avatarUrl);
+};
+
+/* IN-APP SOUND — a short two-note chime via Web Audio (no audio file). */
+function playAlertChime() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        [880, 1320].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const start = ctx.currentTime + i * 0.12;
+            osc.type = "sine";
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(0.15, start + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.25);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.3);
+        });
+        setTimeout(() => ctx.close(), 800);
+    } catch (e) {
+        /* Autoplay blocked or audio unavailable — silently skip. */
+    }
+}
+
+/* NOTIFICATION DRAWER */
+let lastUnreadCount = null; // null until the first load, so opening the app never chimes
+
+function initNotifications() {
+    fetchNotifications();
+
+    // Poll for new alerts; skip while the tab is hidden and catch up on return.
+    setInterval(() => {
+        if (!document.hidden) fetchNotifications();
+    }, NOTIFICATION_POLL_MS);
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) fetchNotifications();
+    });
+}
+
+function toggleNotifications() {
+    if (!notiDrawer) return;
+    notiDrawer.classList.toggle("open");
+    if (notiDrawer.classList.contains("open")) fetchNotifications();
+}
+
+function closeNotifications() {
+    if (notiDrawer) notiDrawer.classList.remove("open");
+}
+
+async function notificationRequest(url, method = "GET") {
+    const headers = { Accept: "application/json" };
+    if (method !== "GET") headers["X-XSRF-TOKEN"] = getCsrfToken();
+
+    const res = await fetch(url, { method, credentials: "same-origin", headers });
+    if (!res.ok) throw new Error(`notification request failed (${res.status})`);
+    return res.status === 204 ? null : res.json();
+}
+
+async function fetchNotifications() {
+    try {
+        const data = await notificationRequest("/notifications");
+        notifications = data.notifications || [];
+        renderNotifications(data.unread_count);
+
+        if (lastUnreadCount !== null && data.unread_count > lastUnreadCount && getHostConfig().alertSound) {
+            playAlertChime();
+        }
+        lastUnreadCount = data.unread_count;
+    } catch (e) {
+        /* Keep whatever is already shown; the next poll will retry. */
+    }
+}
+
+function relativeTime(iso) {
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return "";
+
+    const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
+    if (seconds < 60) return "Just now";
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.round(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(iso).toLocaleDateString();
+}
+
+function renderNotifications(unreadCount) {
+    const unread = unreadCount ?? notifications.filter((n) => !n.read).length;
+    if (notiBadge) notiBadge.classList.toggle("hidden", unread === 0);
+
+    if (!notiList) return;
 
     if (!notifications.length) {
         notiList.innerHTML = '<div class="noti-empty">No new alerts.</div>';
         return;
     }
 
+    const esc = escapeHtmlForNavbar;
     notiList.innerHTML = notifications
         .map(
             (n) => `
-        <div class="noti-item ${n.read ? "read" : "unread"}">
-            <p class="noti-text">${n.text}</p>
-            <span class="noti-time">${n.time}</span>
-            ${!n.read ? `<button class="noti-read-btn" data-id="${n.id}">Read</button>` : ""}
+        <div class="noti-item ${n.read ? "read" : "unread"}${n.url ? " clickable" : ""}" data-id="${esc(n.id)}"
+             ${n.url ? 'role="button" tabindex="0"' : ""}>
+            <p class="noti-item-title"><i class="fas ${esc(n.icon || "fa-bell")}"></i> ${esc(n.title)}</p>
+            <p class="noti-text">${esc(n.message)}</p>
+            <span class="noti-time">${esc(relativeTime(n.created_at))}</span>
+            ${!n.read ? `<button type="button" class="noti-read-btn" data-id="${esc(n.id)}">Read</button>` : ""}
         </div>
     `,
         )
         .join("");
 
     notiList.querySelectorAll(".noti-read-btn").forEach((btn) => {
-        btn.addEventListener("click", () => markRead(Number(btn.dataset.id)));
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            markRead(btn.dataset.id);
+        });
+    });
+
+    notiList.querySelectorAll(".noti-item.clickable").forEach((item) => {
+        const open = () => openNotification(item.dataset.id);
+        item.addEventListener("click", open);
+        item.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                open();
+            }
+        });
     });
 }
 
-function markRead(id) {
-    notifications = notifications.map((n) =>
-        n.id === id ? { ...n, read: true } : n,
-    );
+async function markRead(id) {
+    const target = notifications.find((n) => n.id === id);
+    if (!target || target.read) return;
+
+    target.read = true;
     renderNotifications();
+
+    try {
+        await notificationRequest(`/notifications/${encodeURIComponent(id)}/read`, "POST");
+    } catch (e) {
+        target.read = false;
+        renderNotifications();
+    }
 }
 
-function clearNotifications() {
-    notifications = [];
-    renderNotifications();
-    showToast("Cleared all notifications");
+/* Clicking an alert marks it read and opens its page in the content frame. */
+function openNotification(id) {
+    const target = notifications.find((n) => n.id === id);
+    if (!target) return;
+
+    markRead(id);
+    if (target.url) {
+        loadFramePage(target.url);
+        closeNotifications();
+    }
+}
+
+async function clearNotifications() {
+    if (!notifications.length) return;
+
+    try {
+        await notificationRequest("/notifications", "DELETE");
+        notifications = [];
+        renderNotifications(0);
+        showToast("Cleared all notifications");
+    } catch (e) {
+        showToast("Could not clear notifications. Please try again.");
+    }
 }
 
 /* CREATE CLASS MODAL */

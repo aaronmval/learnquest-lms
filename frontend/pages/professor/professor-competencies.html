@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <script src="../../assets/js/common/frame-guard.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LearnQuest | Competencies</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../../../assets/images/LearnQuestLogo.svg"
+        />
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <link rel="stylesheet" href="../../assets/css/base/components.css" />
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/professor/professor-modules.css"
+        />
+        <link
+            rel="stylesheet"
+            href="../../assets/css/pages/professor/professor-competencies.css"
+        />
+    </head>
+    <body>
+        <main id="mainContent">
+            <!-- SUBJECT NOT FOUND / ACCESS DENIED -->
+            <div id="subjectNotFound" class="class-not-found hidden">
+                <i class="fas fa-circle-exclamation"></i>
+                <h1>Subject not found</h1>
+                <p>
+                    This subject doesn't exist, or you don't have access to
+                    it.
+                </p>
+                <a href="professor-modules.html" class="hero-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Modules
+                </a>
+            </div>
+
+            <div id="competenciesWrap" class="mv-wrap hidden">
+                <!-- HEADER -->
+                <section class="mv-header">
+                    <div class="mv-header-text">
+                        <a id="backToSubjectLink" href="professor-module-view.html" class="mv-back-link">
+                            <i class="fas fa-arrow-left"></i> Back to subject
+                        </a>
+                        <h1 id="pcSubjectName" class="mv-subject-name">Competencies</h1>
+                        <p class="pc-subtitle">
+                            Competencies are the skills AI-generated quizzes tag
+                            each question with, so student mastery can be
+                            tracked per competency.
+                        </p>
+                    </div>
+                    <div class="mv-header-actions">
+                        <button id="addCompetencyBtn" class="mv-action-btn mv-action-primary">
+                            <i class="fas fa-plus"></i> Add Competency
+                        </button>
+                    </div>
+                </section>
+
+                <!-- COMPETENCY LIST -->
+                <section class="mv-modules-section">
+                    <div id="competencyList" class="pc-list"></div>
+                    <p id="competencyLoading" class="mat-search-empty hidden">
+                        <i class="fas fa-spinner fa-spin"></i> Loading
+                        competencies...
+                    </p>
+                    <p id="competencyEmpty" class="mat-search-empty hidden">
+                        <i class="fas fa-list-check"></i> No competencies
+                        defined yet. Click "Add Competency" to create one.
+                    </p>
+                </section>
+            </div>
+
+            <!-- ADD / EDIT COMPETENCY MODAL -->
+            <div id="competencyModal" class="modal-overlay">
+                <div id="competencyModalCard" class="cc-card">
+                    <div class="cc-modal-header">
+                        <h3 id="pcModalTitle" class="modal-title cc-modal-title">
+                            Add Competency
+                        </h3>
+                        <button
+                            id="competencyModalCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="pcName"
+                            >Competency Name<span class="cc-required-star"
+                                >*</span
+                            ></label
+                        >
+                        <input
+                            id="pcName"
+                            class="cc-input"
+                            type="text"
+                            placeholder="e.g. Atomic Structure"
+                            maxlength="120"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <p id="pcNameError" class="cc-error hidden">
+                            *Competency name is required
+                        </p>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="pcDescription"
+                            >Description (optional)</label
+                        >
+                        <textarea
+                            id="pcDescription"
+                            class="cc-input pc-textarea"
+                            rows="3"
+                            maxlength="1000"
+                            placeholder="What does this competency cover?"
+                        ></textarea>
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button
+                            id="competencyCancelBtn"
+                            class="modal-btn cc-cancel-btn"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="competencyConfirmBtn"
+                            class="modal-btn cc-create-btn"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DELETE CONFIRM MODAL -->
+            <div id="deleteCompetencyModal" class="modal-overlay">
+                <div id="deleteCompetencyModalCard" class="cc-card">
+                    <div class="cc-modal-header">
+                        <h3 class="modal-title cc-modal-title">
+                            Delete Competency
+                        </h3>
+                        <button
+                            id="deleteCompetencyCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <p id="deleteCompetencyDesc" class="modal-desc">
+                        Are you sure you want to delete this competency?
+                    </p>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button
+                            id="deleteCompetencyCancelBtn"
+                            class="modal-btn cc-cancel-btn"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="deleteCompetencyConfirmBtn"
+                            class="modal-btn cc-create-btn pc-danger-btn"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOAST -->
+            <div id="pcToast">
+                <div class="toast-icon"><i class="fas fa-info-circle"></i></div>
+                <span id="pcToastMessage"></span>
+            </div>
+        </main>
+
+        <script src="../../assets/js/pages/professor/professor-competencies.js"></script>
+    </body>
+</html>

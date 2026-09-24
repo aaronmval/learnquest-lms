@@ -297,7 +297,16 @@ a.logo {
     user-select: none;
 }
 
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
 .avatar {
+    overflow: hidden;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -734,6 +743,31 @@ body.dark .noti-item.unread {
 }
 body.dark .noti-item.read {
     background-color: rgba(51, 65, 85, 0.3);
+}
+
+.noti-item.clickable {
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+}
+
+.noti-item.clickable:hover,
+.noti-item.clickable:focus-visible {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+    outline: none;
+}
+
+.noti-item-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #1e40af;
+    font-weight: 700;
+    margin-bottom: 3px;
+    padding-right: 40px;
+}
+
+body.dark .noti-item-title {
+    color: #93c5fd;
 }
 
 .noti-text {

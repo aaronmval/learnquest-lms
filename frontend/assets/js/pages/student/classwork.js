@@ -1,16 +1,3 @@
-const STUDENT_GENERATED_QUIZ_STORAGE_KEY = "lq_student_generated_ai_quiz_v1";
-
-const DEFAULT_LESSON_SUMMARY = {
-    mastery: 76,
-    overview:
-        "Here's a quick recap of this lesson based on the material your teacher shared.",
-    highlights: [
-        "Review the attached material for the full lesson content.",
-        "Revisit your notes and any checklist items above before your next quiz.",
-        "Reach out to your teacher if anything is unclear.",
-    ],
-};
-
 let CLASS_ID = null;
 let CLASS_SUBJECT = "";
 let CLASS_TEACHER_INITIALS = "";
@@ -96,6 +83,7 @@ async function loadLesson() {
         renderLesson(lesson);
         renderLessonSummary(lesson);
         renderQuizCard();
+        loadLessonMastery();
     } catch (e) {
         showNotFound(
             "Lesson not found",
@@ -128,16 +116,11 @@ function renderLesson(lesson) {
 }
 
 /* SUMMARY OF LESSON — real AI summary of the lesson's attached PDF, cached
-   server-side after the first generation. Mastery chip stays a static
-   placeholder until BKT mastery tracking is implemented. */
+   server-side after the first generation. Real lesson mastery is shown on
+   the banner above (see loadLessonMastery()), not here. */
 async function renderLessonSummary(lesson) {
     const result = document.getElementById("summaryResult");
-    const masteryEl = document.getElementById("summaryLessonMastery");
     if (!result) return;
-
-    if (masteryEl) {
-        masteryEl.textContent = `Lesson Mastery: ${DEFAULT_LESSON_SUMMARY.mastery}%`;
-    }
 
     if (!lesson.attachment) {
         result.innerHTML = `<p class="summary-overview">No material attached to summarize for this lesson.</p>`;
@@ -192,78 +175,51 @@ async function renderLessonSummary(lesson) {
     }
 }
 
-/* QUIZ CARD */
-function getGeneratedValidatorQuiz() {
+/* LESSON MASTERY — BKT mastery averaged across just this lesson's tested
+   competencies. Hidden until an AI quiz has been generated for the lesson
+   and the student has at least attempted it. */
+async function loadLessonMastery() {
+    if (!CLASS_ID || !POST_ID) return;
+
     try {
-        const payload = JSON.parse(
-            localStorage.getItem(STUDENT_GENERATED_QUIZ_STORAGE_KEY) || "{}",
-        );
+        const res = await fetch(`/student/classes/${CLASS_ID}/posts/${POST_ID}/mastery`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error("failed to load mastery");
 
-        if (!payload || typeof payload !== "object") {
-            return null;
-        }
-
-        if (!payload.visible || payload.subject !== CLASS_SUBJECT) {
-            return null;
-        }
-
-        return {
-            label: payload.label || "AI Generated MCQ",
-            quizId: payload.quizId || "ai-generated-mcq",
-            quizUrl: payload.quizUrl || "student-quiz.html",
-            lessonTitle: payload.materialTitle || "AI Generated Worksheet",
-            lessonMastery:
-                typeof payload.mastery === "number" ? payload.mastery : "",
-        };
+        const data = await res.json();
+        const percent = data.lesson_mastery !== null ? data.lesson_mastery * 100 : null;
+        ClassPostCard.renderBannerMastery(percent, "Lesson Mastery");
     } catch (e) {
-        return null;
+        ClassPostCard.renderBannerMastery(null, "Lesson Mastery");
     }
 }
 
+/* QUIZ CARD — real AI-generated quiz, lazily generated server-side on first
+   "Take Quiz" click and cached after that (same pattern as the AI summary). */
 function renderQuizCard() {
     const titleEl = document.getElementById("quizCardTitle");
     const takeBtn = document.getElementById("takeQuizBtn");
     if (!titleEl || !takeBtn) return;
 
-    const generatedQuiz = getGeneratedValidatorQuiz();
-
-    if (generatedQuiz) {
-        titleEl.textContent = generatedQuiz.label;
+    if (CURRENT_LESSON?.attachment) {
+        titleEl.textContent = "AI Generated Quiz";
         takeBtn.textContent = "Take AI Quiz";
         takeBtn.disabled = false;
-        takeBtn.dataset.quizUrl = generatedQuiz.quizUrl;
-        takeBtn.dataset.quizId = generatedQuiz.quizId;
-        takeBtn.dataset.lessonTitle = generatedQuiz.lessonTitle;
-        takeBtn.dataset.lessonMastery = String(generatedQuiz.lessonMastery);
         return;
     }
 
     titleEl.textContent = "No quiz available yet";
     takeBtn.textContent = "Take Quiz";
     takeBtn.disabled = true;
-    delete takeBtn.dataset.quizUrl;
-    delete takeBtn.dataset.quizId;
-    delete takeBtn.dataset.lessonTitle;
-    delete takeBtn.dataset.lessonMastery;
 }
 
 function handleTakeQuiz() {
     const takeBtn = document.getElementById("takeQuizBtn");
     if (!takeBtn || takeBtn.disabled) return;
 
-    const quizUrl = takeBtn.dataset.quizUrl || "student-quiz.html";
-    const quizId = takeBtn.dataset.quizId || "";
-    const lessonTitle = takeBtn.dataset.lessonTitle || CURRENT_LESSON?.title || "";
-    const lessonMastery = takeBtn.dataset.lessonMastery || "";
-
-    const params = new URLSearchParams({
-        subject: CLASS_SUBJECT,
-        ...(quizId ? { quizId } : {}),
-        lessonTitle,
-        lessonMastery,
-    });
-
-    window.location.href = `${quizUrl}?${params.toString()}`;
+    window.location.href = `student-quiz.html?id=${CLASS_ID}&postId=${POST_ID}`;
 }
 
 function handleBackToClass() {

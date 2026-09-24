@@ -113,6 +113,12 @@ document.addEventListener("DOMContentLoaded", () => {
             SUBJECT_ID = subjectData.id;
             subjectWrap?.classList.remove("hidden");
             subjectNotFound?.classList.add("hidden");
+
+            const competenciesLink = document.getElementById("manageCompetenciesLink");
+            if (competenciesLink) {
+                competenciesLink.href = `professor-competencies.html?subject=${SUBJECT_ID}`;
+            }
+
             renderAll();
         } catch (e) {
             showNotFound();

@@ -1244,6 +1244,253 @@ body.dark .modal-icon-danger {
     background-color: #b91c1c;
 }
 
+.modal-icon-warn {
+    background-color: #fffbeb;
+    color: #d97706;
+}
+
+body.dark .modal-icon-warn {
+    background-color: rgba(217, 119, 6, 0.15);
+    color: #fbbf24;
+}
+
+/* QUIZ FEEDBACK MODAL */
+#quizFeedbackModal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(15, 23, 42, 0.55);
+    padding: 20px;
+}
+
+#quizFeedbackModal.open {
+    display: flex;
+}
+
+#quizFeedbackModalCard {
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: #fff;
+    border-radius: 20px;
+    padding: 26px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    animation: pcSlideIn 0.22s ease;
+}
+
+body.dark #quizFeedbackModalCard {
+    background-color: #1e293b;
+}
+
+.qf-empty-state {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.85rem;
+    padding: 20px 0;
+}
+
+body.dark .qf-empty-state {
+    color: #94a3b8;
+}
+
+.qf-threshold-note {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    margin-top: 8px;
+}
+
+.qf-rating-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 0 18px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+}
+
+body.dark .qf-rating-block {
+    border-bottom-color: #334155;
+}
+
+.qf-rating-value {
+    font-size: clamp(2.1rem, 4vw, 2.6rem);
+    font-weight: 800;
+    color: #0891b2;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+body.dark .qf-rating-value {
+    color: #67e8f9;
+}
+
+.qf-rating-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 6px;
+}
+
+body.dark .qf-rating-label {
+    color: #94a3b8;
+}
+
+.qf-difficulty-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.qf-difficulty-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 36px;
+    align-items: center;
+    gap: 10px;
+}
+
+.qf-difficulty-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+body.dark .qf-difficulty-label {
+    color: #e2e8f0;
+}
+
+.qf-difficulty-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background-color: #f1f5f9;
+    overflow: hidden;
+}
+
+body.dark .qf-difficulty-bar-track {
+    background-color: #334155;
+}
+
+.qf-difficulty-bar {
+    height: 100%;
+    background-color: #0891b2;
+    border-radius: 999px;
+}
+
+.qf-difficulty-percent {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    text-align: right;
+}
+
+body.dark .qf-difficulty-percent {
+    color: #94a3b8;
+}
+
+.qf-comments-block {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.qf-comment-item {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+body.dark .qf-comment-item {
+    background-color: #16202f;
+    border-color: #334155;
+}
+
+.qf-comment-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.qf-comment-rating {
+    color: #f59e0b;
+    font-size: 0.8rem;
+}
+
+.qf-comment-difficulty {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+body.dark .qf-comment-difficulty {
+    color: #94a3b8;
+}
+
+.qf-comment-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #334155;
+}
+
+body.dark .qf-comment-text {
+    color: #e2e8f0;
+}
+
+.qf-regenerate-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.qf-regenerate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* REGENERATE CONFIRM MODAL */
+#regenerateConfirmModal {
+    position: fixed;
+    inset: 0;
+    z-index: 1001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(15, 23, 42, 0.55);
+    padding: 20px;
+}
+
+#regenerateConfirmModal.open {
+    display: flex;
+}
+
+#regenerateConfirmCard {
+    width: 100%;
+    max-width: 380px;
+    background-color: #fff;
+    border-radius: 20px;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    animation: pcSlideIn 0.22s ease;
+}
+
+body.dark #regenerateConfirmCard {
+    background-color: #1e293b;
+}
+
 /* TOAST */
 #toast {
     position: fixed;
