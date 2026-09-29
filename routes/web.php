@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\AI\ClassInsightController;
 use App\Http\Controllers\AI\InsightController;
+use App\Http\Controllers\AI\ProfessorQuestAiController;
 use App\Http\Controllers\AI\QuestAiController;
 use App\Http\Controllers\AI\QuizGenerationController;
+use App\Http\Controllers\AI\SlideDeckController;
 use App\Http\Controllers\AI\SummaryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassPostController;
@@ -12,8 +15,10 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ProfessorClassController;
+use App\Http\Controllers\ProfessorDashboardController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizFeedbackController;
+use App\Http\Controllers\QuizStudioController;
 use App\Http\Controllers\StudentClassController;
 use App\Http\Controllers\StudentClassPostController;
 use App\Http\Controllers\StudentDashboardController;
@@ -124,6 +129,25 @@ Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')
 // Professor Routes
 Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('professor.')->group(function () {
     Route::get('/dashboard', [FrontendShellController::class, 'showShell'])->name('dashboard');
+    Route::get('/analytics', [ProfessorDashboardController::class, 'data'])->name('analytics');
+    Route::get('/analytics/insights', [ClassInsightController::class, 'show'])
+        ->middleware('throttle:10,1')->name('analytics.insights');
+
+    Route::prefix('questai')->name('questai.')->group(function () {
+        Route::get('/context', [ProfessorQuestAiController::class, 'context'])->name('context');
+        Route::get('/conversations', [ProfessorQuestAiController::class, 'conversations'])->name('conversations.index');
+        Route::get('/conversations/{conversation}', [ProfessorQuestAiController::class, 'showConversation'])
+            ->name('conversations.show');
+        Route::post('/messages', [ProfessorQuestAiController::class, 'storeMessage'])
+            ->middleware('throttle:20,1')->name('messages.store');
+        Route::post('/messages/{message}/feedback', [ProfessorQuestAiController::class, 'feedback'])
+            ->name('messages.feedback');
+
+        Route::post('/decks', [SlideDeckController::class, 'store'])
+            ->middleware('throttle:5,1')->name('decks.store');
+        Route::get('/decks/{deck}/download', [SlideDeckController::class, 'download'])
+            ->name('decks.download');
+    });
 
     Route::get('/classes', [ProfessorClassController::class, 'index'])->name('classes.index');
     Route::post('/classes', [ProfessorClassController::class, 'store'])->name('classes.store');
@@ -147,6 +171,21 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
         ->name('classes.posts.quiz.feedback');
     Route::post('/classes/{class}/posts/{post}/quiz/regenerate', [QuizGenerationController::class, 'regenerate'])
         ->name('classes.posts.quiz.regenerate');
+
+    // Quiz & AI Setup page: settings, question review (AI training), metrics
+    Route::get('/quiz-studio/lessons', [QuizStudioController::class, 'lessons'])->name('quiz-studio.lessons');
+    Route::get('/quiz-studio/training', [QuizStudioController::class, 'training'])->name('quiz-studio.training');
+    Route::prefix('/classes/{class}/posts/{post}/quiz')->name('classes.posts.quiz.')->group(function () {
+        Route::get('/studio', [QuizStudioController::class, 'show'])->name('studio');
+        Route::put('/settings', [QuizStudioController::class, 'updateSettings'])->name('settings');
+        Route::post('/generate', [QuizStudioController::class, 'generate'])
+            ->middleware('throttle:6,1')->name('generate');
+        Route::post('/top-up', [QuizStudioController::class, 'topUp'])
+            ->middleware('throttle:6,1')->name('top-up');
+        Route::put('/questions/{question}/review', [QuizStudioController::class, 'review'])->name('questions.review');
+        Route::delete('/questions/{question}/review', [QuizStudioController::class, 'clearReview'])
+            ->name('questions.review.clear');
+    });
 
     Route::prefix('subjects')->name('subjects.')->group(function () {
         Route::get('/', [SubjectController::class, 'index'])->name('index');

@@ -103,6 +103,36 @@
                 </div>
             </section>
 
+            <!-- SUMMARY CARDS (filled from /student/analytics) -->
+            <section class="stat-tiles" aria-label="Summary">
+                <article class="stat-tile">
+                    <p class="stat-label">Overall mastery</p>
+                    <p class="stat-value" id="statMasteryValue">—</p>
+                    <div class="stat-meter" aria-hidden="true">
+                        <span id="statMasteryMeter" class="stat-meter-fill"></span>
+                    </div>
+                    <p class="stat-caption" id="statMasteryCaption">Loading…</p>
+                </article>
+
+                <article class="stat-tile">
+                    <p class="stat-label">Average quiz score</p>
+                    <p class="stat-value" id="statScoreValue">—</p>
+                    <p class="stat-caption" id="statScoreCaption">Loading…</p>
+                </article>
+
+                <article class="stat-tile">
+                    <p class="stat-label">Quizzes taken</p>
+                    <p class="stat-value" id="statQuizzesValue">—</p>
+                    <p class="stat-caption" id="statQuizzesCaption">Loading…</p>
+                </article>
+
+                <article class="stat-tile">
+                    <p class="stat-label">Competencies mastered</p>
+                    <p class="stat-value" id="statCompetenciesValue">—</p>
+                    <p class="stat-caption" id="statCompetenciesCaption">Loading…</p>
+                </article>
+            </section>
+
             <!-- CHARTS GRID -->
             <section class="charts-grid">
                 <div class="chart-card chart-card-main-radar">

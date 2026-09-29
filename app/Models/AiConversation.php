@@ -10,6 +10,7 @@ class AiConversation extends Model
 {
     protected $fillable = [
         'student_id',
+        'professor_id',
         'class_id',
         'title',
         'last_message_at',
@@ -25,6 +26,11 @@ class AiConversation extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function professor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'professor_id');
     }
 
     public function classRoom(): BelongsTo

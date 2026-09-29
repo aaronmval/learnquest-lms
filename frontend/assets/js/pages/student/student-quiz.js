@@ -198,6 +198,13 @@ async function loadQuiz() {
         if (data?.request_id) console.log("request_id:", data.request_id);
         console.log("response body:", data);
 
+        if (res.status === 403) {
+            // The teacher's attempt limit has been reached — nothing to retry.
+            console.groupEnd();
+            renderLoadError(data?.message || "You've used all attempts allowed for this quiz.", { retry: false });
+            return;
+        }
+
         if (!res.ok) {
             throw new Error(data?.message || `quiz request failed (HTTP ${res.status})`);
         }
@@ -209,27 +216,44 @@ async function loadQuiz() {
             return;
         }
 
+        const settings = data.settings || {};
+
         QUIZ = {
             subject: data.subject || "Science",
             section: data.section || "",
             title: data.lesson_title || "Quiz",
-            timeLimitSeconds: DEFAULT_TIME_LIMIT_SECONDS,
+            // null = the teacher set no time limit.
+            timeLimitSeconds: settings.time_limit_seconds ?? null,
+            maxAttempts: settings.max_attempts ?? null,
+            attemptsUsed: settings.attempts_used ?? 0,
             questions: data.questions.map((q) => ({
                 id: q.id,
                 text: q.text,
                 options: q.choices,
+                // Original index of each displayed choice (choices may be
+                // shuffled); answers are submitted as original indexes.
+                choiceIndexes: q.choice_indexes || q.choices.map((_, i) => i),
             })),
         };
 
         userAnswers = new Array(QUIZ.questions.length).fill(null);
         flagged = new Array(QUIZ.questions.length).fill(false);
-        secondsLeft = QUIZ.timeLimitSeconds;
+        // The server keeps the clock for timed quizzes, so a reload resumes
+        // the remaining time instead of restarting it.
+        secondsLeft = settings.remaining_seconds ?? QUIZ.timeLimitSeconds ?? 0;
 
         renderBanner();
         buildNavigatorGrid();
         setInteractiveButtonsEnabled(true);
         renderQuestion(0);
-        startTimer();
+        if (QUIZ.timeLimitSeconds) startTimer();
+
+        // Questions were picked for the student's BKT mastery level.
+        const ADAPTED_MESSAGES = {
+            high: "You've shown high mastery here, so this quiz has more challenging questions.",
+            low: "This quiz focuses on the core ideas first to help you build mastery.",
+        };
+        if (ADAPTED_MESSAGES[settings.mastery_level]) showToast(ADAPTED_MESSAGES[settings.mastery_level]);
     } catch (e) {
         console.error("[AI Quiz] Fetch threw:", e);
         console.groupEnd();
@@ -252,12 +276,14 @@ function renderLoadingState() {
     setInteractiveButtonsEnabled(false);
 }
 
-function renderLoadError(message) {
+function renderLoadError(message, { retry = true } = {}) {
     const textEl = document.getElementById("questionText");
     const optionsList = document.getElementById("optionsList");
     if (textEl) textEl.textContent = message;
     if (optionsList) {
-        optionsList.innerHTML = `<button type="button" id="quizRetryBtn" class="btn btn-secondary">Try again</button>`;
+        optionsList.innerHTML = retry
+            ? `<button type="button" id="quizRetryBtn" class="btn btn-secondary">Try again</button>`
+            : "";
         document.getElementById("quizRetryBtn")?.addEventListener("click", loadQuiz);
     }
     setInteractiveButtonsEnabled(false);
@@ -269,8 +295,16 @@ function renderBanner() {
         : QUIZ.subject;
     document.getElementById("quizBannerTitle").textContent = QUIZ.title;
     document.getElementById("quizMetaCount").textContent = `${QUIZ.questions.length} Items`;
-    document.getElementById("quizMetaTime").textContent = `${formatTime(QUIZ.timeLimitSeconds)} Limit`;
-    document.getElementById("quizMetaAttempts").textContent = "Attempt";
+    document.getElementById("quizMetaTime").textContent = QUIZ.timeLimitSeconds
+        ? `${formatTime(QUIZ.timeLimitSeconds)} Limit`
+        : "No time limit";
+    document.getElementById("quizMetaAttempts").textContent = QUIZ.maxAttempts
+        ? `Attempt ${QUIZ.attemptsUsed + 1} of ${QUIZ.maxAttempts}`
+        : "Unlimited attempts";
+
+    // No timer set by the teacher: hide the countdown ring.
+    const ring = document.querySelector(".quiz-timer-ring");
+    if (ring) ring.style.display = QUIZ.timeLimitSeconds ? "" : "none";
 }
 
 /* ── NAVIGATOR COLLAPSE / EXPAND ── */
@@ -305,7 +339,8 @@ function setNavigatorCollapsed(collapsed, card, toggleBtn) {
     toggleBtn.setAttribute("aria-expanded", String(!collapsed));
 }
 
-/*  TIMER — cosmetic only; the server does not trust or enforce this.  */
+/*  TIMER — mirrors the server's deadline for timed quizzes; submissions
+    after the deadline (plus a short grace period) are marked late.  */
 function startTimer() {
     updateTimerDisplay();
     timerInterval = setInterval(() => {
@@ -390,6 +425,12 @@ function renderQuestion(index) {
         : "far fa-flag";
 
     const review = reviewByQuestionId[q.id];
+    // Review data uses original choice indexes; map to the displayed order.
+    // correct_index is null when the teacher hides answers.
+    const correctDisplayIndex =
+        review && review.correct_index !== null && review.correct_index !== undefined
+            ? q.choiceIndexes.indexOf(review.correct_index)
+            : null;
 
     const optionsList = document.getElementById("optionsList");
     optionsList.innerHTML = "";
@@ -403,19 +444,26 @@ function renderQuestion(index) {
 
         if (reviewMode && review) {
             item.classList.add("locked");
-            if (i === review.correct_index) {
-                item.classList.add("correct");
-            } else if (isSelected && i !== review.correct_index) {
-                item.classList.add("incorrect");
+            if (correctDisplayIndex !== null) {
+                if (i === correctDisplayIndex) {
+                    item.classList.add("correct");
+                } else if (isSelected) {
+                    item.classList.add("incorrect");
+                }
+            } else if (isSelected) {
+                item.classList.add(review.is_correct ? "correct" : "incorrect");
             }
         } else {
             item.addEventListener("click", () => selectOption(index, i));
         }
 
-        item.innerHTML = `
-            <span class="option-letter">${OPTION_LETTERS[i]}</span>
-            <span class="option-text">${optionText}</span>
-        `;
+        const letter = document.createElement("span");
+        letter.className = "option-letter";
+        letter.textContent = OPTION_LETTERS[i];
+        const text = document.createElement("span");
+        text.className = "option-text";
+        text.textContent = optionText;
+        item.append(letter, text);
         optionsList.appendChild(item);
     });
 
@@ -479,7 +527,7 @@ async function finalizeSubmit() {
     const payload = {
         answers: QUIZ.questions.map((q, i) => ({
             question_id: q.id,
-            selected_index: userAnswers[i],
+            selected_index: userAnswers[i] === null ? null : q.choiceIndexes[userAnswers[i]],
         })),
     };
 
@@ -502,6 +550,13 @@ async function finalizeSubmit() {
         console.log(`status: ${res.status}`);
         console.log("response body:", data);
 
+        if (res.status === 403) {
+            // Attempt limit reached (e.g. submitted from another tab).
+            console.groupEnd();
+            showToast(data?.message || "You've used all attempts allowed for this quiz.");
+            return;
+        }
+
         if (!res.ok) {
             throw new Error(data?.message || `submit failed (HTTP ${res.status})`);
         }
@@ -515,6 +570,9 @@ async function finalizeSubmit() {
 
         currentAttemptId = data.attempt_id;
         showResults(data);
+        if (data.status === "late") {
+            showToast("Submitted after the time limit — your teacher will see it as late.");
+        }
     } catch (e) {
         console.error("[AI Quiz] Submit threw:", e);
         console.groupEnd();

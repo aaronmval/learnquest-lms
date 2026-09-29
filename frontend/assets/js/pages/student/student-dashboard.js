@@ -113,6 +113,7 @@ async function loadDashboard() {
         if (e.name === "AbortError") return;
         dashboardData = null;
         destroyCharts();
+        renderStatTiles();
         ["radarChart", "subjectRadarChart", "performanceChart", "masteryChart"].forEach((id) =>
             setEmptyState(id, EMPTY_MESSAGES.loadFailed)
         );
@@ -160,6 +161,7 @@ function renderCharts() {
         selectedClassId = subjects[0]?.class_id ?? null;
     }
 
+    renderStatTiles();
     renderSubjectRadar(subjects);
     renderCompetencyRadar();
     renderQuizScores();
@@ -388,6 +390,132 @@ function renderMasteryTrend() {
             },
         },
     });
+}
+
+/* SUMMARY CARDS — headline numbers from the same payload as the charts,
+   so they follow the filters too. Levels come from the server (BKT
+   thresholds live in config/bkt.php, not here). */
+const LEVEL_DISPLAY = {
+    low: { label: "Low", icon: "fa-triangle-exclamation" },
+    developing: { label: "Developing", icon: "fa-seedling" },
+    high: { label: "High", icon: "fa-circle-check" },
+};
+
+function setTile(valueId, captionId, value, captionNodes) {
+    const valueEl = document.getElementById(valueId);
+    const captionEl = document.getElementById(captionId);
+    if (valueEl) valueEl.textContent = value;
+    if (captionEl) captionEl.replaceChildren(...captionNodes);
+}
+
+function textNode(text) {
+    return document.createTextNode(text);
+}
+
+function iconNode(icon, className = "") {
+    const i = document.createElement("i");
+    i.className = `fas ${icon} ${className}`.trim();
+    i.setAttribute("aria-hidden", "true");
+    return i;
+}
+
+/* Status chip: icon + label, never color alone. */
+function levelChip(level) {
+    const display = LEVEL_DISPLAY[level] || { label: level, icon: "fa-circle" };
+    const chip = document.createElement("span");
+    chip.className = `stat-chip level-${level}`;
+    chip.append(iconNode(display.icon), textNode(` ${display.label}`));
+    return chip;
+}
+
+function renderStatTiles() {
+    const meter = document.getElementById("statMasteryMeter");
+
+    if (!dashboardData) {
+        ["statMasteryValue", "statScoreValue", "statQuizzesValue", "statCompetenciesValue"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = "—";
+        });
+        ["statMasteryCaption", "statScoreCaption", "statQuizzesCaption", "statCompetenciesCaption"].forEach((id) => {
+            document.getElementById(id)?.replaceChildren(textNode("Unavailable"));
+        });
+        if (meter) meter.style.width = "0%";
+        return;
+    }
+
+    const noActivity = dashboardData.record_count === 0;
+
+    // 1. Overall mastery (BKT) + change across the trend window
+    const overall = dashboardData.overall;
+    if (!overall) {
+        setTile("statMasteryValue", "statMasteryCaption", "—", [textNode(subjectsEmptyMessage())]);
+        if (meter) meter.style.width = "0%";
+    } else {
+        const nodes = [levelChip(overall.level)];
+        const trend = dashboardData.mastery_trend || [];
+        if (trend.length >= 2) {
+            const delta = Math.round(trend[trend.length - 1].mastery - trend[0].mastery);
+            const deltaEl = document.createElement("span");
+            deltaEl.className = `stat-delta ${delta > 0 ? "up" : delta < 0 ? "down" : ""}`;
+            deltaEl.append(
+                iconNode(delta > 0 ? "fa-arrow-up" : delta < 0 ? "fa-arrow-down" : "fa-minus"),
+                textNode(` ${delta > 0 ? "+" : ""}${delta} pts since ${trend[0].label}`)
+            );
+            nodes.push(deltaEl);
+        } else if (!overall.assessed) {
+            nodes.push(textNode(" Starting estimate — take a quiz"));
+        }
+        setTile("statMasteryValue", "statMasteryCaption", `${Math.round(overall.mastery)}%`, nodes);
+        if (meter) {
+            meter.style.width = `${Math.max(0, Math.min(100, overall.mastery))}%`;
+            meter.className = `stat-meter-fill level-${overall.level}`;
+        }
+    }
+
+    // 2 & 3. Raw quiz scores (not mastery) — weighted by attempts per month
+    const scores = dashboardData.quiz_scores || [];
+    const attempts = scores.reduce((sum, p) => sum + p.attempts, 0);
+    if (!attempts) {
+        setTile("statScoreValue", "statScoreCaption", "—", [textNode("No quizzes for these filters yet")]);
+        setTile("statQuizzesValue", "statQuizzesCaption", "0", [textNode("Take a lesson quiz to get started")]);
+    } else {
+        const average = scores.reduce((sum, p) => sum + p.average * p.attempts, 0) / attempts;
+        setTile("statScoreValue", "statScoreCaption", `${Math.round(average)}%`, [
+            textNode(`Raw score across ${attempts} attempt${attempts === 1 ? "" : "s"}`),
+        ]);
+        const answers = dashboardData.record_count;
+        setTile("statQuizzesValue", "statQuizzesCaption", attempts.toLocaleString(), [
+            textNode(`${answers.toLocaleString()} answer${answers === 1 ? "" : "s"} graded`),
+        ]);
+    }
+
+    // 4. Competencies at High mastery, plus the one needing the most work
+    const competencies = new Map();
+    (dashboardData.subjects || []).forEach((s) => s.competencies.forEach((c) => competencies.set(c.id, c)));
+    const all = [...competencies.values()];
+
+    if (!all.length) {
+        setTile("statCompetenciesValue", "statCompetenciesCaption", "—", [textNode(subjectsEmptyMessage())]);
+    } else {
+        const assessed = all.filter((c) => c.observations > 0);
+        const mastered = assessed.filter((c) => c.level === "high").length;
+        const needsWork = assessed.filter((c) => c.level === "low").sort((a, b) => a.mastery - b.mastery);
+
+        let caption;
+        if (noActivity || !assessed.length) {
+            caption = [textNode("None assessed yet")];
+        } else if (needsWork.length) {
+            const weakest = needsWork[0];
+            caption = [
+                iconNode("fa-triangle-exclamation", "stat-warn-icon"),
+                textNode(` ${needsWork.length} need${needsWork.length === 1 ? "s" : ""} attention · weakest: ${weakest.name} (${Math.round(weakest.mastery)}%)`),
+            ];
+        } else {
+            caption = [iconNode("fa-circle-check", "stat-ok-icon"), textNode(" None at Low mastery")];
+        }
+
+        setTile("statCompetenciesValue", "statCompetenciesCaption", `${mastered} of ${all.length}`, caption);
+    }
 }
 
 /* FILTERS */

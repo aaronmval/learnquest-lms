@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <script src="../../assets/js/common/frame-guard.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>LearnQuest | Professor Worksheets</title>
+        <title>LearnQuest | Quiz &amp; AI Setup</title>
         <link
             rel="icon"
             type="image/svg+xml"
@@ -30,135 +30,265 @@
         <main id="mainContent">
             <section class="worksheets-hero">
                 <div>
-                    <p class="hero-kicker">AI Quiz Validator</p>
-                    <h1>Validate generated multiple-choice quizzes</h1>
+                    <p class="hero-kicker">Quiz &amp; AI Setup</p>
+                    <h1>Configure lesson quizzes and train QuestAI</h1>
                     <p>
-                        Select an uploaded lesson material, tune mastery level,
-                        then accept or reject generated questions for students.
+                        Choose how each lesson's AI quiz works for students,
+                        then review the questions QuestAI wrote. Every approval,
+                        rejection and difficulty correction teaches it to write
+                        more accurate questions for your subject.
                     </p>
+                </div>
+                <div class="hero-art" aria-hidden="true">
+                    <i class="fas fa-sliders"></i>
                 </div>
             </section>
 
-            <section
-                class="validator-layout"
-                aria-label="AI generated quiz validator"
-            >
-                <aside
-                    class="materials-panel"
-                    aria-label="Uploaded materials list"
-                >
+            <section class="validator-layout" aria-label="Quiz configuration">
+                <!-- LEFT: section + lesson picker -->
+                <aside class="materials-panel" aria-label="Lessons">
                     <div class="panel-title-row">
-                        <h2>Uploaded Materials</h2>
-                        <span class="panel-kicker">Hardcoded Prototype</span>
+                        <h2>Lessons</h2>
                     </div>
+                    <label class="field-label" for="sectionSelect"
+                        >Section</label
+                    >
+                    <select id="sectionSelect" class="field-select"></select>
                     <p class="panel-subtext">
-                        Click a material to proceed to multiple-choice
-                        validator.
+                        Lessons with a PDF attachment get an AI quiz.
                     </p>
                     <ul
                         id="materialsList"
                         class="materials-list"
                         role="list"
-                    ></ul>
+                    >
+                        <li class="list-empty">Loading your lessons…</li>
+                    </ul>
                 </aside>
 
-                <article
-                    id="validatorPanel"
-                    class="validator-panel"
-                    aria-live="polite"
-                >
-                    <div class="panel-title-row">
-                        <h2 id="selectedMaterialTitle">Select a material</h2>
-                        <span
-                            id="validatorStatus"
-                            class="status-chip status-pending"
-                            >Not Checked</span
-                        >
-                    </div>
-                    <p id="selectedMaterialMeta" class="panel-subtext">
-                        Pick from the left panel to start validating generated
-                        quiz items.
-                    </p>
+                <div class="studio-main">
+                    <article id="emptyState" class="validator-panel empty-panel">
+                        <i class="fas fa-hand-pointer" aria-hidden="true"></i>
+                        <p>Select a lesson to set up its quiz.</p>
+                    </article>
 
-                    <div class="mastery-box">
-                        <div class="mastery-header">
-                            <span>Mastery Slider</span>
-                            <strong id="masteryValue">50%</strong>
-                        </div>
-                        <label for="masterySlider" class="mastery-label"
-                            >Mastery level</label
-                        >
-                        <input
-                            id="masterySlider"
-                            class="mastery-slider"
-                            type="range"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value="50"
-                            disabled
-                        />
-                        <div class="mastery-scale" aria-hidden="true">
-                            <span>0% easier questions</span>
-                            <span>100% harder questions</span>
-                        </div>
-                    </div>
-
-                    <div class="preview-box">
-                        <div class="preview-header">
-                            <h3>Generated Multiple-Choice Preview</h3>
-                            <span id="difficultyLabel" class="difficulty-label"
-                                >Balanced</span
+                    <!-- QUIZ SETTINGS -->
+                    <article
+                        id="settingsCard"
+                        class="validator-panel is-hidden"
+                        aria-labelledby="settingsTitle"
+                    >
+                        <div class="panel-title-row">
+                            <div>
+                                <h2 id="settingsTitle">Quiz settings</h2>
+                                <p id="lessonTitle" class="panel-meta"></p>
+                            </div>
+                            <span id="settingsStatus" class="status-chip status-pending"
+                                >Not saved</span
                             >
                         </div>
-                        <div
-                            id="questionPreviewCard"
-                            class="question-preview-card"
-                        >
-                            <p id="mcqQuestionText" class="mcq-question-text">
-                                Select a material to preview a generated
-                                question.
-                            </p>
-                            <ul
-                                id="mcqOptionsList"
-                                class="mcq-options-list"
-                                aria-label="Multiple-choice options"
-                            >
-                                <li class="mcq-option-item">
-                                    Option preview will appear here.
-                                </li>
-                            </ul>
+
+                        <form id="settingsForm" class="settings-grid" novalidate>
+                            <div class="setting-field">
+                                <label class="field-label" for="questionCount"
+                                    >Number of questions</label
+                                >
+                                <div class="stepper">
+                                    <button type="button" class="stepper-btn" data-step="-1" aria-label="Fewer questions">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input id="questionCount" type="number" inputmode="numeric" />
+                                    <button type="button" class="stepper-btn" data-step="1" aria-label="More questions">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="setting-field">
+                                <span class="field-label">Time limit</span>
+                                <div class="inline-control">
+                                    <label class="switch">
+                                        <input id="timerEnabled" type="checkbox" />
+                                        <span class="switch-track" aria-hidden="true"></span>
+                                        <span class="switch-text">Timer</span>
+                                    </label>
+                                    <input
+                                        id="timeLimit"
+                                        type="number"
+                                        class="field-input minutes-input"
+                                        inputmode="numeric"
+                                        aria-label="Time limit in minutes"
+                                    />
+                                    <span class="field-suffix">min</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-field">
+                                <label class="field-label" for="maxAttempts"
+                                    >Attempts allowed</label
+                                >
+                                <select id="maxAttempts" class="field-select">
+                                    <option value="1">1 attempt</option>
+                                    <option value="2">2 attempts</option>
+                                    <option value="3">3 attempts</option>
+                                    <option value="5">5 attempts</option>
+                                    <option value="">Unlimited</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-field setting-wide">
+                                <div class="mix-header">
+                                    <span class="field-label">Difficulty mix</span>
+                                    <div class="preset-row" role="group" aria-label="Difficulty presets">
+                                        <button type="button" class="preset-btn" data-preset="30,40,30">Balanced</button>
+                                        <button type="button" class="preset-btn" data-preset="50,35,15">Easier</button>
+                                        <button type="button" class="preset-btn" data-preset="15,35,50">Harder</button>
+                                    </div>
+                                </div>
+                                <div class="mix-sliders">
+                                    <div class="mix-row" data-level="easy">
+                                        <span class="difficulty-badge diff-easy">Easy</span>
+                                        <input type="range" min="0" max="100" step="5" class="mix-slider" data-level="easy" aria-label="Easy percent" />
+                                        <span class="mix-value" data-value="easy"></span>
+                                    </div>
+                                    <div class="mix-row" data-level="medium">
+                                        <span class="difficulty-badge diff-medium">Medium</span>
+                                        <input type="range" min="0" max="100" step="5" class="mix-slider" data-level="medium" aria-label="Medium percent" />
+                                        <span class="mix-value" data-value="medium"></span>
+                                    </div>
+                                    <div class="mix-row" data-level="hard">
+                                        <span class="difficulty-badge diff-hard">Hard</span>
+                                        <input type="range" min="0" max="100" step="5" class="mix-slider" data-level="hard" aria-label="Hard percent" />
+                                        <span class="mix-value" data-value="hard"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-field setting-wide toggle-row">
+                                <label class="switch">
+                                    <input id="shuffleQuestions" type="checkbox" />
+                                    <span class="switch-track" aria-hidden="true"></span>
+                                    <span class="switch-text">Shuffle question order</span>
+                                </label>
+                                <label class="switch">
+                                    <input id="shuffleChoices" type="checkbox" />
+                                    <span class="switch-track" aria-hidden="true"></span>
+                                    <span class="switch-text">Shuffle answer choices</span>
+                                </label>
+                                <label class="switch">
+                                    <input id="showAnswers" type="checkbox" />
+                                    <span class="switch-track" aria-hidden="true"></span>
+                                    <span class="switch-text">Show correct answers after submitting</span>
+                                </label>
+                            </div>
+
+                            <div class="setting-field setting-wide adaptive-box">
+                                <label class="switch">
+                                    <input id="adaptive" type="checkbox" />
+                                    <span class="switch-track" aria-hidden="true"></span>
+                                    <span class="switch-text"><strong>Adapt difficulty to each student's mastery</strong></span>
+                                </label>
+                                <div id="adaptivePreview" class="adaptive-preview"></div>
+                            </div>
+                        </form>
+
+                        <p class="validator-hint">
+                            <i class="fas fa-circle-info"></i>
+                            Timer, attempts, shuffling, answer visibility and
+                            adapting to mastery apply the next time a student
+                            opens the quiz. If the question bank needs more
+                            questions for a new count, mix or adaptivity, use
+                            <em>Generate more questions</em> below or regenerate.
+                        </p>
+
+                        <div class="validator-actions">
+                            <button id="saveSettingsBtn" type="button" class="action-btn primary-btn">
+                                <i class="fas fa-floppy-disk"></i> Save settings
+                            </button>
+                            <button id="generateBtn" type="button" class="action-btn secondary-btn">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                <span id="generateBtnText">Generate quiz</span>
+                            </button>
                         </div>
-                    </div>
+                    </article>
 
-                    <div class="validator-actions">
-                        <button
-                            id="checkBtn"
-                            type="button"
-                            class="action-btn check-btn"
-                            title="Accept generated question"
-                            aria-label="Accept generated question"
-                            disabled
-                        >
-                            ✓
-                        </button>
-                        <button
-                            id="rejectBtn"
-                            type="button"
-                            class="action-btn reject-btn"
-                            title="Reject this generated quiz"
-                            aria-label="Reject this generated quiz"
-                            disabled
-                        >
-                            X
-                        </button>
-                    </div>
+                    <!-- STUDENT FEEDBACK -->
+                    <article
+                        id="feedbackCard"
+                        class="validator-panel feedback-card is-hidden"
+                        aria-labelledby="feedbackTitle"
+                    >
+                        <div class="panel-title-row">
+                            <div>
+                                <h2 id="feedbackTitle">Student feedback</h2>
+                                <p class="panel-meta">
+                                    What students said after submitting this
+                                    version of the quiz
+                                </p>
+                            </div>
+                        </div>
+                        <div id="feedbackBody"></div>
+                    </article>
 
-                    <p id="validatorHint" class="validator-hint">
-                        Use ✓ to accept and publish to student chemistry
-                        classwork, or X to reject and hide it.
-                    </p>
-                </article>
+                    <!-- QUESTION REVIEW -->
+                    <article
+                        id="reviewCard"
+                        class="validator-panel is-hidden"
+                        aria-labelledby="reviewTitle"
+                    >
+                        <div class="panel-title-row">
+                            <div>
+                                <h2 id="reviewTitle">Review AI questions</h2>
+                                <p id="reviewMeta" class="panel-meta"></p>
+                            </div>
+                            <span class="panel-kicker">Optional</span>
+                        </div>
+                        <p class="panel-subtext">
+                            Students already see these questions. Reject any
+                            that are wrong or unclear (they're hidden from
+                            students right away) and correct difficulty labels —
+                            QuestAI learns from every review.
+                        </p>
+
+                        <div id="topUpBar" class="topup-bar is-hidden">
+                            <span id="topUpText"></span>
+                            <button id="topUpBtn" type="button" class="action-btn secondary-btn">
+                                <i class="fas fa-rotate"></i> Generate more questions
+                            </button>
+                        </div>
+
+                        <div class="filter-row" role="group" aria-label="Filter questions">
+                            <button type="button" class="filter-chip active" data-filter="all">All</button>
+                            <button type="button" class="filter-chip" data-filter="unreviewed">Unreviewed</button>
+                            <button type="button" class="filter-chip" data-filter="rejected">Rejected</button>
+                            <button type="button" class="filter-chip" data-filter="flagged">Flagged by results</button>
+                        </div>
+
+                        <div id="questionList" class="question-list"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- AI TRAINING -->
+            <section
+                id="trainingCard"
+                class="validator-panel training-card is-hidden"
+                aria-labelledby="trainingTitle"
+            >
+                <div class="panel-title-row">
+                    <div>
+                        <h2 id="trainingTitle">QuestAI training</h2>
+                        <p id="trainingSubtitle" class="panel-meta"></p>
+                    </div>
+                    <span class="panel-kicker"><i class="fas fa-brain"></i> Learns from your reviews</span>
+                </div>
+                <p class="panel-subtext">
+                    When QuestAI writes a quiz for this subject, it is shown
+                    questions you approved, the reasons you rejected others,
+                    your difficulty corrections, and how students actually
+                    scored on each difficulty level.
+                </p>
+                <div id="trainingBody" class="training-grid"></div>
             </section>
         </main>
 

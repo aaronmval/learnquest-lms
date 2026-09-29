@@ -24,6 +24,11 @@ class QuizGenerationTest extends TestCase
     {
         parent::setUp();
 
+        // These tests cover generation, validation and regeneration with a
+        // single-request quiz; adaptive question banks are covered in
+        // AdaptiveQuizTest / QuizStudioTest.
+        config(['quiz.default_settings.adaptive' => false]);
+
         $extractor = Mockery::mock(PdfTextExtractorService::class);
         $extractor->shouldReceive('extractText')->andReturn('Lesson content about atomic structure.');
         $this->app->instance(PdfTextExtractorService::class, $extractor);
@@ -220,18 +225,24 @@ class QuizGenerationTest extends TestCase
         }
 
         $orders = [];
+        $served = null;
         foreach (range(1, 10) as $_) {
             $ids = $this->actingAs($student)
                 ->getJson("/student/classes/{$classId}/posts/{$post->id}/quiz")
                 ->assertOk()
                 ->json('questions.*.id');
 
-            // Every open serves the same questions, just reordered.
-            $this->assertEqualsCanonicalizing($storedIds, $ids);
+            // The student is served the teacher's question count (6 by
+            // default) from the 8-question bank, and every reopen serves the
+            // same questions, just reordered.
+            $served ??= $ids;
+            $this->assertCount(6, $ids);
+            $this->assertEqualsCanonicalizing($served, $ids);
+            $this->assertEmpty(array_diff($ids, $storedIds));
             $orders[] = implode(',', $ids);
         }
 
-        // With 8 questions (40,320 orders), 10 identical opens would be vanishingly unlikely.
+        // With 6 questions (720 orders), 10 identical opens would be vanishingly unlikely.
         $this->assertGreaterThan(1, count(array_unique($orders)));
     }
 }

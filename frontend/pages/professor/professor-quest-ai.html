@@ -143,18 +143,18 @@
                                 </select>
                             </div>
                             <div class="qai-option-field">
-                                <label class="qai-option-label" for="pptTone"
-                                    >Style</label
+                                <label class="qai-option-label" for="pptTheme"
+                                    >Theme</label
                                 >
-                                <select id="pptTone" class="qai-select">
-                                    <option value="lecture" selected>
-                                        Lecture deck
+                                <select id="pptTheme" class="qai-select">
+                                    <option value="learnquest" selected>
+                                        LearnQuest Blue
                                     </option>
-                                    <option value="visual">
-                                        Visual / diagram-heavy
+                                    <option value="emerald">
+                                        Emerald Green
                                     </option>
-                                    <option value="review">
-                                        Review &amp; recap
+                                    <option value="charcoal">
+                                        Classic Charcoal
                                     </option>
                                 </select>
                             </div>
@@ -226,16 +226,11 @@
                             aria-label="Select subject context"
                         >
                             <button
+                                type="button"
                                 class="subject-chip active"
-                                data-subject="All Classes"
+                                data-class-id=""
                             >
                                 <i class="fas fa-layer-group"></i> All Classes
-                            </button>
-                            <button
-                                class="subject-chip"
-                                data-subject="Chemistry"
-                            >
-                                <span class="dot dot-cyan"></span> Chemistry
                             </button>
                         </div>
 
@@ -249,17 +244,19 @@
                                     class="fas fa-chart-line personalization-icon"
                                 ></i>
                                 <span id="personalizationText">
-                                    <strong>8 submissions</strong> are pending
-                                    review in Chemistry. QuestAI can help you
-                                    draft feedback faster.
+                                    Loading your class overview…
                                 </span>
                             </div>
 
                             <div id="chatMessages" class="chat-messages">
                                 <div class="chat-bubble-row row-ai">
-                                    <div class="chat-bubble chat-bubble-ai">
-                                        Hello Ma'am Mila! I'm your QuestAI
-                                        Coach.
+                                    <div
+                                        id="chatGreeting"
+                                        class="chat-bubble chat-bubble-ai"
+                                    >
+                                        Hello! I'm your QuestAI Coach. Ask me
+                                        about your lessons, your class's
+                                        mastery, or teaching ideas.
                                     </div>
                                 </div>
                             </div>
@@ -268,22 +265,25 @@
                         <!-- Quick-ask prompt chips -->
                         <div id="quickAskChips" class="quick-ask-chips">
                             <button
+                                type="button"
                                 class="quick-ask-chip"
-                                data-prompt="Suggest a warm-up activity"
+                                data-prompt="Suggest a warm-up activity for my next lesson"
                             >
                                 <i class="fas fa-lightbulb"></i> Suggest a
                                 warm-up activity
                             </button>
                             <button
+                                type="button"
                                 class="quick-ask-chip"
-                                data-prompt="Explain this topic simply"
+                                data-prompt="Explain the competency my class is weakest in, in simple terms I can use in class"
                             >
                                 <i class="fas fa-pencil"></i> Explain this topic
                                 simply
                             </button>
                             <button
+                                type="button"
                                 class="quick-ask-chip"
-                                data-prompt="Draft feedback for a quiz"
+                                data-prompt="Draft feedback I can give students on their latest lesson quiz"
                             >
                                 <i class="fas fa-list-check"></i> Draft feedback
                                 for a quiz

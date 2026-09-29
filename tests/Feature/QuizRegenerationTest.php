@@ -22,6 +22,11 @@ class QuizRegenerationTest extends TestCase
     {
         parent::setUp();
 
+        // These tests cover generation, validation and regeneration with a
+        // single-request quiz; adaptive question banks are covered in
+        // AdaptiveQuizTest / QuizStudioTest.
+        config(['quiz.default_settings.adaptive' => false]);
+
         $extractor = Mockery::mock(PdfTextExtractorService::class);
         $extractor->shouldReceive('extractText')->andReturn('Lesson content about atomic structure.');
         $this->app->instance(PdfTextExtractorService::class, $extractor);

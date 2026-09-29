@@ -52,6 +52,7 @@ class StudentAnalyticsService
                 'start' => $start?->toDateString(),
                 'end' => $end?->toDateString(),
             ],
+            'overall' => $this->overallPayload($finalMastery, $observations),
             'subjects' => $classes->map(fn (ClassRoom $class) => $this->subjectPayload($class, $finalMastery, $observations))->values()->all(),
             'quiz_scores' => $this->quizScores($student, $classes, $quarter, $start, $end),
             'mastery_trend' => $trend,
@@ -149,6 +150,26 @@ class StudentAnalyticsService
         }
 
         return [$mastery, $observations, $trend];
+    }
+
+    /**
+     * Average mastery across every in-scope competency (the same figure the
+     * trend's last point shows), classified with the configured thresholds.
+     * Null when there are no competencies to average.
+     */
+    private function overallPayload(array $finalMastery, array $observations): ?array
+    {
+        if (empty($finalMastery)) {
+            return null;
+        }
+
+        $mastery = array_sum($finalMastery) / count($finalMastery);
+
+        return [
+            'mastery' => $this->percent($mastery),
+            'level' => $this->adaptive->classify($mastery),
+            'assessed' => array_sum($observations) > 0,
+        ];
     }
 
     private function subjectPayload(ClassRoom $class, array $finalMastery, array $observations): array

@@ -33,6 +33,12 @@ class Quiz extends Model
         return $this->hasMany(QuizQuestion::class)->orderBy('order_index');
     }
 
+    /** Questions not rejected by a teacher — what students see and are graded on. */
+    public function activeQuestions(): HasMany
+    {
+        return $this->questions()->active();
+    }
+
     public function attempts(): HasMany
     {
         return $this->hasMany(QuizAttempt::class);

@@ -1,10 +1,20 @@
+/* QUESTAI COACH (professor) — chat answered by Llama via Laravel, grounded in
+   the professor's lesson materials and the class-level BKT mastery; plus a
+   PDF → .pptx slide-deck generator. */
+
 /* INIT — runs when page loads */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     hidePageLoader();
     wireMyClassesDropdown();
     wirePptGenerator();
     wireChatPanel();
+
+    // Sequential on purpose: the local dev server handles one request at a
+    // time, and the chips/banner are what the professor needs first.
+    await loadContext();
+    await loadConversations();
+    loadSideInsights();
 
 });
 
@@ -64,7 +74,61 @@ function wireMyClassesDropdown() {
 }
 
 
-/* LEFT PANEL — PDF → PPT GENERATOR (mock flow) */
+/* HTTP */
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+/* `body` may be a plain object (sent as JSON) or FormData (multipart). */
+async function apiRequest(url, { method = 'GET', body = null } = {}) {
+    const headers = { Accept: 'application/json' };
+    const isForm = body instanceof FormData;
+
+    if (body !== null) {
+        headers['X-XSRF-TOKEN'] = getCsrfToken();
+        if (!isForm) headers['Content-Type'] = 'application/json';
+    }
+
+    const res = await fetch(url, {
+        method,
+        credentials: 'same-origin',
+        headers,
+        body: body === null ? null : isForm ? body : JSON.stringify(body),
+    });
+
+    let data = null;
+    try {
+        data = await res.json();
+    } catch (e) {
+        /* Non-JSON error page — leave data null. */
+    }
+
+    return { ok: res.ok, status: res.status, data };
+}
+
+function errorMessageFor(status, data, fallback) {
+    if (status === 419) return 'Your session expired. Please reload the page and try again.';
+    if (status === 429) return 'You\'re sending requests quickly — please wait a moment and try again.';
+    if (status === 413) return 'That file is too large to upload.';
+    if (status === 422) {
+        const first = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+        return first || data?.message || fallback;
+    }
+    return data?.message || fallback;
+}
+
+function esc(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+
+/* LEFT PANEL — PDF → PPT GENERATOR */
 function wirePptGenerator() {
     const dropzone      = document.getElementById('pptDropzone');
     const fileInput      = document.getElementById('pptFileInput');
@@ -76,7 +140,7 @@ function wirePptGenerator() {
     const fileRemoveBtn      = document.getElementById('pptFileRemoveBtn');
 
     const slideCountSelect    = document.getElementById('pptSlideCount');
-    const toneSelect           = document.getElementById('pptTone');
+    const themeSelect          = document.getElementById('pptTheme');
 
     const generateBtn           = document.getElementById('pptGenerateBtn');
 
@@ -92,21 +156,29 @@ function wirePptGenerator() {
 
     if (!dropzone || !fileInput || !generateBtn) return;
 
-    let selectedFile = null;
-    let lastGeneratedName = '';
+    const MAX_BYTES = 25 * 1024 * 1024;
 
-    const TONE_LABELS = {
-        lecture: 'Lecture deck',
-        visual: 'Visual / diagram-heavy',
-        review: 'Review & recap'
+    let selectedFile = null;
+    let downloadUrl = null;
+    let isGenerating = false;
+
+    const THEME_LABELS = {
+        learnquest: 'LearnQuest Blue',
+        emerald: 'Emerald Green',
+        charcoal: 'Classic Charcoal'
     };
 
     /* File selection  */
     function setSelectedFile(file) {
-        if (!file) return;
+        if (!file || isGenerating) return;
 
         if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
             showToast('Please upload a PDF file.');
+            return;
+        }
+
+        if (file.size > MAX_BYTES) {
+            showToast('The PDF must be 25MB or smaller.');
             return;
         }
 
@@ -124,6 +196,7 @@ function wirePptGenerator() {
 
     function clearSelectedFile() {
         selectedFile = null;
+        downloadUrl = null;
         fileInput.value = '';
         fileChip.classList.add('hidden');
         dropzone.style.display = 'flex';
@@ -137,7 +210,10 @@ function wirePptGenerator() {
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    browseBtn.addEventListener('click', () => fileInput.click());
+    browseBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        fileInput.click();
+    });
     dropzone.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', () => {
@@ -148,7 +224,7 @@ function wirePptGenerator() {
 
     fileRemoveBtn.addEventListener('click', e => {
         e.stopPropagation();
-        clearSelectedFile();
+        if (!isGenerating) clearSelectedFile();
     });
 
     /* Drag & drop */
@@ -171,14 +247,16 @@ function wirePptGenerator() {
         if (dropped) setSelectedFile(dropped);
     });
 
-    /*Generate (mock progress sequence) */
+    /* Generate — the labels advance while the server works, then hold at
+       the last step until the response arrives. */
     const PROGRESS_STEPS = [
-        { pct: 18,  label: 'Reading your PDF…' },
-        { pct: 42,  label: 'Pulling out key concepts…' },
-        { pct: 66,  label: 'Drafting slide outline…' },
-        { pct: 86,  label: 'Designing slides…' },
-        { pct: 100, label: 'Finishing touches…' }
+        { pct: 12, label: 'Uploading your PDF…' },
+        { pct: 30, label: 'Reading your PDF…' },
+        { pct: 52, label: 'Pulling out key concepts…' },
+        { pct: 72, label: 'Drafting slide outline…' },
+        { pct: 90, label: 'Designing slides…' }
     ];
+    const STEP_MS = 4000;
 
     function resetProgressAndResult() {
         progressWrap.classList.add('hidden');
@@ -187,65 +265,94 @@ function wirePptGenerator() {
         generateBtn.classList.remove('hidden');
     }
 
-    function runGenerateSequence() {
-        if (!selectedFile) return;
+    function startProgress() {
+        let stepIndex = 0;
 
+        const apply = () => {
+            const step = PROGRESS_STEPS[stepIndex];
+            progressBar.style.width = step.pct + '%';
+            progressLabel.textContent = step.label;
+        };
+
+        apply();
+        const timer = setInterval(() => {
+            if (stepIndex < PROGRESS_STEPS.length - 1) {
+                stepIndex++;
+                apply();
+            }
+        }, STEP_MS);
+
+        return () => clearInterval(timer);
+    }
+
+    async function generate() {
+        if (!selectedFile || isGenerating) return;
+
+        isGenerating = true;
         generateBtn.disabled = true;
         generateBtn.classList.add('hidden');
         resultWrap.classList.add('hidden');
         progressWrap.classList.remove('hidden');
-        progressBar.style.width = '0%';
+        slideCountSelect.disabled = true;
+        themeSelect.disabled = true;
 
-        let stepIndex = 0;
+        const stopProgress = startProgress();
 
-        function nextStep() {
-            if (stepIndex >= PROGRESS_STEPS.length) {
-                onGenerateComplete();
+        const form = new FormData();
+        form.append('file', selectedFile);
+        form.append('slide_count', slideCountSelect.value);
+        form.append('theme', themeSelect.value);
+
+        try {
+            const { ok, status, data } = await apiRequest('/professor/questai/decks', { method: 'POST', body: form });
+            stopProgress();
+
+            if (!ok) {
+                resetProgressAndResult();
+                generateBtn.disabled = false;
+                showToast(errorMessageFor(status, data, 'Could not generate the presentation. Please try again.'));
                 return;
             }
-            const step = PROGRESS_STEPS[stepIndex];
-            progressBar.style.width = step.pct + '%';
-            progressLabel.textContent = step.label;
-            stepIndex++;
-            setTimeout(nextStep, 550);
-        }
 
-        nextStep();
+            progressBar.style.width = '100%';
+            progressLabel.textContent = 'Finishing touches…';
+            onGenerateComplete(data);
+        } catch (e) {
+            stopProgress();
+            resetProgressAndResult();
+            generateBtn.disabled = false;
+            showToast('Could not reach QuestAI. Check your connection and try again.');
+        } finally {
+            isGenerating = false;
+            slideCountSelect.disabled = false;
+            themeSelect.disabled = false;
+        }
     }
 
-    function onGenerateComplete() {
+    function onGenerateComplete(data) {
         progressWrap.classList.add('hidden');
         resultWrap.classList.remove('hidden');
 
-        const slideCount = slideCountSelect.value;
-        const toneLabel = TONE_LABELS[toneSelect.value] || 'Lecture deck';
-        const baseName = selectedFile.name.replace(/\.pdf$/i, '');
-        lastGeneratedName = baseName + '-slides.pptx';
+        const themeLabel = THEME_LABELS[data.theme] || 'LearnQuest Blue';
+        downloadUrl = data.download_url;
 
-        resultTitle.textContent = 'Your deck is ready';
-        resultMeta.textContent = `~${slideCount} slides · ${toneLabel}`;
+        resultTitle.textContent = data.title || 'Your deck is ready';
+        resultMeta.textContent = `${data.slide_count} slides + title · ${themeLabel}`;
 
         showToast('Presentation generated!');
     }
 
-    generateBtn.addEventListener('click', runGenerateSequence);
+    generateBtn.addEventListener('click', generate);
 
-    /* Download (mock) pdf and ppt */
+    /* Download the generated .pptx (served as an attachment) */
     downloadBtn.addEventListener('click', () => {
-        const placeholderNote =
-            'This is a placeholder file generated by the QuestAI Coach demo.\n' +
-            'In the full version, this would be your generated .pptx presentation.';
-
-        const blob = new Blob([placeholderNote], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
+        if (!downloadUrl) return;
 
         const a = document.createElement('a');
-        a.href = url;
-        a.download = lastGeneratedName || 'presentation.pptx';
+        a.href = downloadUrl;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
 
         showToast('Download started.');
     });
@@ -259,82 +366,236 @@ function wirePptGenerator() {
 
 /*  RIGHT PANEL — ASK QUESTAI */
 
-/* Subject/class context state */
-let activeSubject = 'All Classes';
+/* STATE */
+let coachClasses = [];
+let professorName = '';
+let activeClassId = null; // null = All Classes
+let conversationId = null;
+let isSending = false;
+let greetingHtml = '';
 
-const PERSONALIZATION_BY_SUBJECT = {
-    'All Classes': {
-        icon: 'fa-chart-line',
-        html: '<strong>8 submissions</strong> are pending review in Chemistry. QuestAI can help you draft feedback faster.'
-    },
-    'Chemistry': {
-        icon: 'fa-flask',
-        html: 'Class average on <strong>stoichiometry</strong> questions is lower than usual this week. QuestAI can suggest a quick re-teach activity.'
-    }
-};
+const DOT_CLASSES = ['dot-cyan', 'dot-orange', 'dot-purple', 'dot-green'];
 
-/* Simulated AI response pool */
-const QUESTAI_RESPONSE_BANK = [
-    {
-        keywords: ['warm-up', 'warm up', 'activity', 'icebreaker'],
-        reply: "Try a 5-minute 'predict and explain' warm-up: show a quick reaction (like mixing baking soda and vinegar) and ask students to predict what will happen and why, before revealing the result. It gets them reasoning before you teach the concept."
-    },
-    {
-        keywords: ['feedback', 'quiz', 'grade', 'grading'],
-        reply: "Here's a quick feedback template you can adapt: \"Good work on [strength] — your explanation of [concept] was clear. To strengthen this further, revisit [specific gap] and try [concrete next step].\" Want me to tailor it to a specific question?"
-    },
-    {
-        keywords: ['explain', 'simple', 'simpler', 'concept'],
-        reply: "Sure — tell me the topic and I'll break it down into a short, plain-language explanation plus a relatable analogy your students can hold onto."
-    },
-    {
-        keywords: ['hello', 'hi', 'kumusta'],
-        reply: "Hello, Ma'am Mila! What would you like help with today — lesson ideas, feedback drafting, or something about your class?"
-    }
-];
-
-const QUESTAI_FALLBACK_REPLIES = [
-    "Got it — could you tell me a bit more about what you need (e.g. the topic, the student, or the activity type)?",
-    "I can help with that. Could you give me a little more detail so I can tailor my suggestion?",
-    "Noted! To give you something useful, can you share more context — which class or lesson is this for?"
-];
-
-function getSimulatedReply(question) {
-    const lower = question.toLowerCase();
-    for (const entry of QUESTAI_RESPONSE_BANK) {
-        if (entry.keywords.some(k => lower.includes(k))) {
-            return entry.reply;
-        }
-    }
-    return QUESTAI_FALLBACK_REPLIES[Math.floor(Math.random() * QUESTAI_FALLBACK_REPLIES.length)];
+function findClass(classId) {
+    return coachClasses.find(c => c.id === classId) || null;
 }
 
-/* Subject chips */
-function setActiveSubject(subject) {
-    activeSubject = subject;
+function classLabel(cls) {
+    return cls ? cls.label : 'All Classes';
+}
 
-    document.querySelectorAll('.subject-chip').forEach(chip => {
-        chip.classList.toggle('active', chip.dataset.subject === subject);
+/* CLASS CONTEXT (greeting, chips, banner) */
+async function loadContext() {
+    try {
+        const { ok, data } = await apiRequest('/professor/questai/context');
+        if (!ok) throw new Error('failed to load context');
+        coachClasses = data.classes || [];
+        professorName = data.professor?.name || '';
+    } catch (e) {
+        coachClasses = [];
+    }
+
+    renderGreeting();
+    renderClassChips();
+    updatePersonalizationBanner();
+}
+
+function renderGreeting() {
+    const greeting = document.getElementById('chatGreeting');
+    if (greeting && professorName) {
+        greeting.textContent =
+            `Hello ${professorName}! I'm your QuestAI Coach. Ask me about your lessons, ` +
+            'your class\'s mastery, or teaching ideas.';
+    }
+
+    greetingHtml = document.getElementById('chatMessages')?.innerHTML || '';
+}
+
+function renderClassChips() {
+    const container = document.getElementById('subjectChips');
+    if (!container) return;
+
+    container.querySelectorAll('.subject-chip:not([data-class-id=""])').forEach(chip => chip.remove());
+
+    coachClasses.forEach((cls, i) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'subject-chip';
+        chip.dataset.classId = String(cls.id);
+        chip.title = cls.label;
+        chip.innerHTML = `<span class="dot ${DOT_CLASSES[i % DOT_CLASSES.length]}"></span> ${esc(cls.label)}`;
+        container.appendChild(chip);
     });
 
-    updatePersonalizationBanner(subject);
+    container.querySelectorAll('.subject-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            if (isSending) return;
+            const id = chip.dataset.classId ? Number(chip.dataset.classId) : null;
+            setActiveClass(id);
+        });
+    });
+
+    highlightActiveChip();
 }
 
-function updatePersonalizationBanner(subject) {
+function highlightActiveChip() {
+    document.querySelectorAll('.subject-chip').forEach(chip => {
+        const id = chip.dataset.classId ? Number(chip.dataset.classId) : null;
+        chip.classList.toggle('active', id === activeClassId);
+    });
+}
+
+/* Switching class starts a fresh chat scoped to that class. */
+function setActiveClass(classId, { startNew = true } = {}) {
+    const changed = classId !== activeClassId;
+
+    activeClassId = classId;
+    highlightActiveChip();
+    updatePersonalizationBanner();
+    if (changed) loadSideInsights();
+    if (startNew) startNewChat();
+}
+
+/* Banner reflects real class BKT data in the selected scope. */
+function updatePersonalizationBanner() {
     const banner = document.getElementById('personalizationBanner');
     const text = document.getElementById('personalizationText');
     if (!banner || !text) return;
 
-    const data = PERSONALIZATION_BY_SUBJECT[subject] || PERSONALIZATION_BY_SUBJECT['All Classes'];
-
     const icon = banner.querySelector('.personalization-icon');
-    if (icon) icon.className = `fas ${data.icon} personalization-icon`;
+    const setIcon = name => {
+        if (icon) icon.className = `fas ${name} personalization-icon`;
+    };
 
-    text.innerHTML = data.html;
+    if (!coachClasses.length) {
+        setIcon('fa-circle-info');
+        text.innerHTML = 'Create a class and post a lesson so QuestAI can coach you with your own materials and class data.';
+        return;
+    }
+
+    const scope = activeClassId ? [findClass(activeClassId)].filter(Boolean) : coachClasses;
+
+    const weaknesses = scope.flatMap(cls => (cls.weaknesses || []).map(w => ({ ...w, cls })));
+    weaknesses.sort((a, b) => a.mastery - b.mastery);
+    const low = scope.reduce((sum, cls) => sum + (cls.low || 0), 0);
+    const assessed = scope.reduce((sum, cls) => sum + (cls.assessed || 0), 0);
+
+    if (weaknesses.length) {
+        const w = weaknesses[0];
+        const lowText = low > 0
+            ? ` <strong>${low} student${low === 1 ? ' is' : 's are'}</strong> at low overall mastery.`
+            : '';
+        setIcon('fa-chart-line');
+        text.innerHTML =
+            `Class mastery in <strong>${esc(w.name)}</strong> is ${Math.round(w.mastery)}% ` +
+            `(${esc(classLabel(w.cls))}).${lowText} QuestAI can suggest a quick re-teach activity.`;
+        return;
+    }
+
+    if (assessed > 0) {
+        setIcon('fa-trophy');
+        text.innerHTML =
+            'Your class is at <strong>high mastery</strong> in every competency assessed so far. ' +
+            'Ask QuestAI for enrichment or challenge activities.';
+        return;
+    }
+
+    setIcon('fa-circle-info');
+    text.innerHTML = 'No quiz data yet — once students take lesson quizzes, QuestAI will point out where your class needs support.';
 }
 
-/* Chat rendering */
-function appendChatBubble(text, sender) {
+
+/* AI INSIGHTS CARD — class analysis from BKT mastery (same source as the dashboard) */
+const INSIGHT_LABELS = {
+    strength: 'Strength',
+    weakness: 'Needs attention',
+    intervention: 'Intervention'
+};
+
+let insightsController = null;
+
+async function loadSideInsights(refresh = false) {
+    const list = document.getElementById('insightsList');
+    const btn = document.getElementById('insightsRefreshBtn');
+    if (!list) return;
+
+    insightsController?.abort();
+    insightsController = new AbortController();
+    const { signal } = insightsController;
+
+    if (btn) btn.disabled = true;
+    list.innerHTML = '<div class="insight-item">Analyzing your class data…</div>';
+
+    const params = new URLSearchParams();
+    if (activeClassId) params.set('class_id', String(activeClassId));
+    if (refresh) params.set('refresh', '1');
+
+    try {
+        const res = await fetch(`/professor/analytics/insights?${params.toString()}`, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            signal,
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.message || 'failed');
+
+        if (!data.insights?.length) {
+            list.innerHTML = '<div class="insight-item">No quiz data yet. Insights will appear once students take lesson quizzes.</div>';
+        } else {
+            list.innerHTML = data.insights
+                .map(insight => {
+                    const label = INSIGHT_LABELS[insight.type] || 'Insight';
+                    return `<div class="insight-item"><strong>${esc(label)}:</strong> ${esc(insight.text)}</div>`;
+                })
+                .join('');
+        }
+
+        if (refresh) showToast('Insights refreshed');
+    } catch (e) {
+        if (e.name === 'AbortError') return;
+        list.innerHTML = '<div class="insight-item">Could not load insights right now. Try refreshing in a moment.</div>';
+    } finally {
+        if (!signal.aborted && btn) btn.disabled = false;
+    }
+}
+
+
+/* CHAT RENDERING */
+
+/* Safe mini-formatter for AI replies: escape everything first, then allow
+   **bold**, "- " bullet lists and line breaks. */
+function formatAiText(text) {
+    const lines = esc(text).split(/\r?\n/);
+    let html = '';
+    let inList = false;
+
+    lines.forEach(raw => {
+        const line = raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        const bullet = line.match(/^\s*[-*•]\s+(.*)$/);
+
+        if (bullet) {
+            if (!inList) {
+                html += '<ul>';
+                inList = true;
+            }
+            html += `<li>${bullet[1]}</li>`;
+            return;
+        }
+
+        if (inList) {
+            html += '</ul>';
+            inList = false;
+        }
+
+        html += line.trim() === '' ? '<br>' : `<p>${line}</p>`;
+    });
+
+    if (inList) html += '</ul>';
+
+    return html.replace(/(<br>)+$/, '');
+}
+
+function appendChatBubble(text, sender, { messageId = null, feedback = null, error = false } = {}) {
     const messages = document.getElementById('chatMessages');
     if (!messages) return null;
 
@@ -343,11 +604,20 @@ function appendChatBubble(text, sender) {
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
-    bubble.textContent = text;
+
+    if (sender === 'user') {
+        bubble.textContent = text;
+    } else if (error) {
+        bubble.classList.add('chat-bubble-error');
+        bubble.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${esc(text)}`;
+    } else {
+        bubble.innerHTML = formatAiText(text);
+    }
+
     row.appendChild(bubble);
 
-    if (sender === 'ai') {
-        row.appendChild(buildFeedbackRow());
+    if (sender === 'ai' && messageId) {
+        row.appendChild(buildFeedbackRow(messageId, feedback));
     }
 
     messages.appendChild(row);
@@ -356,7 +626,7 @@ function appendChatBubble(text, sender) {
     return row;
 }
 
-function buildFeedbackRow() {
+function buildFeedbackRow(messageId, existingFeedback) {
     const feedback = document.createElement('div');
     feedback.className = 'chat-feedback';
     feedback.innerHTML = `
@@ -372,17 +642,38 @@ function buildFeedbackRow() {
     const upBtn = feedback.querySelector('.feedback-up');
     const downBtn = feedback.querySelector('.feedback-down');
 
-    const handleFeedback = (selected) => {
+    const markSelected = selected => {
         upBtn.disabled = true;
         downBtn.disabled = true;
         upBtn.classList.toggle('selected-up', selected === 'up');
         downBtn.classList.toggle('selected-down', selected === 'down');
-
-        const thanks = document.createElement('span');
-        thanks.className = 'chat-feedback-thanks';
-        thanks.textContent = 'Thanks for the feedback!';
-        feedback.appendChild(thanks);
     };
+
+    const handleFeedback = async selected => {
+        markSelected(selected);
+
+        try {
+            const { ok } = await apiRequest(`/professor/questai/messages/${messageId}/feedback`, {
+                method: 'POST',
+                body: { helpful: selected === 'up' },
+            });
+            if (!ok) throw new Error('feedback failed');
+
+            const thanks = document.createElement('span');
+            thanks.className = 'chat-feedback-thanks';
+            thanks.textContent = 'Thanks for the feedback!';
+            feedback.appendChild(thanks);
+        } catch (e) {
+            upBtn.disabled = false;
+            downBtn.disabled = false;
+            upBtn.classList.remove('selected-up');
+            downBtn.classList.remove('selected-down');
+            showToast('Could not save your feedback. Please try again.');
+        }
+    };
+
+    if (existingFeedback === 1) markSelected('up');
+    else if (existingFeedback === -1) markSelected('down');
 
     upBtn.addEventListener('click', () => handleFeedback('up'));
     downBtn.addEventListener('click', () => handleFeedback('down'));
@@ -422,52 +713,145 @@ function scrollChatToBottom() {
     if (chatWindow) chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-/* Session history */
-function logSessionHistory(question) {
+function resetChatMessages() {
+    const messages = document.getElementById('chatMessages');
+    if (messages) messages.innerHTML = greetingHtml;
+}
+
+function startNewChat() {
+    conversationId = null;
+    resetChatMessages();
+    highlightActiveConversation();
+}
+
+
+/* SESSION HISTORY — saved conversations from the server */
+async function loadConversations() {
     const list = document.getElementById('sessionHistoryList');
     if (!list) return;
 
-    const empty = list.querySelector('.session-history-empty');
-    if (empty) empty.remove();
+    let conversations = [];
+    try {
+        const { ok, data } = await apiRequest('/professor/questai/conversations');
+        if (!ok) throw new Error('failed to load conversations');
+        conversations = data || [];
+    } catch (e) {
+        list.innerHTML = '<p class="session-history-empty">Could not load your past chats.</p>';
+        return;
+    }
 
-    const item = document.createElement('div');
-    item.className = 'session-history-item';
-    item.innerHTML = `
-        <i class="fas fa-comment-dots"></i>
-        <div>
-            <span class="history-subject-tag">${activeSubject}</span>
-            ${question}
-        </div>
-    `;
+    if (!conversations.length) {
+        list.innerHTML = '<p class="session-history-empty">Your recent questions will appear here.</p>';
+        return;
+    }
 
-    list.insertBefore(item, list.firstChild);
+    list.innerHTML = conversations
+        .map(c => {
+            const cls = c.class_id ? findClass(c.class_id) : null;
+            const tag = c.class_id ? (cls ? cls.label : 'Class') : 'All Classes';
+            return `
+                <div class="session-history-item" role="button" tabindex="0" data-conversation-id="${c.id}">
+                    <i class="fas fa-comment-dots"></i>
+                    <div>
+                        <span class="history-subject-tag">${esc(tag)}</span>
+                        ${esc(c.title)}
+                    </div>
+                </div>`;
+        })
+        .join('');
 
-    /* Keep only the 5 most recent entries */
-    const items = list.querySelectorAll('.session-history-item');
-    if (items.length > 5) items[items.length - 1].remove();
+    list.querySelectorAll('.session-history-item').forEach(item => {
+        const open = () => openConversation(Number(item.dataset.conversationId));
+        item.addEventListener('click', open);
+        item.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open();
+            }
+        });
+    });
+
+    highlightActiveConversation();
 }
 
-/* Send / ask handler */
-function sendQuestion(question) {
+function highlightActiveConversation() {
+    document.querySelectorAll('.session-history-item[data-conversation-id]').forEach(item => {
+        item.classList.toggle('active', Number(item.dataset.conversationId) === conversationId);
+    });
+}
+
+async function openConversation(id) {
+    if (isSending || id === conversationId) return;
+
+    try {
+        const { ok, data } = await apiRequest(`/professor/questai/conversations/${id}`);
+        if (!ok) throw new Error('failed to load conversation');
+
+        setActiveClass(data.conversation.class_id, { startNew: false });
+
+        conversationId = data.conversation.id;
+        resetChatMessages();
+        data.messages.forEach(m => {
+            if (m.role === 'user') appendChatBubble(m.content, 'user');
+            else appendChatBubble(m.content, 'ai', { messageId: m.id, feedback: m.feedback });
+        });
+        highlightActiveConversation();
+    } catch (e) {
+        showToast('Could not open that chat. Please try again.');
+    }
+}
+
+
+/* SEND / ASK HANDLER */
+function setInputEnabled(enabled) {
     const input = document.getElementById('chatInput');
     const askBtn = document.getElementById('chatAskBtn');
-    if (!question) return;
+    if (input) input.disabled = !enabled;
+    if (askBtn) askBtn.disabled = !enabled;
+    document.querySelectorAll('.quick-ask-chip').forEach(chip => {
+        chip.disabled = !enabled;
+    });
+    if (enabled && input) input.focus();
+}
 
+async function sendQuestion(question) {
+    const input = document.getElementById('chatInput');
+    if (!question || isSending) return;
+
+    isSending = true;
     appendChatBubble(question, 'user');
-    logSessionHistory(question);
-
     if (input) input.value = '';
-    if (input) input.disabled = true;
-    if (askBtn) askBtn.disabled = true;
-
+    setInputEnabled(false);
     appendTypingIndicator();
 
-    setTimeout(() => {
+    try {
+        const { ok, status, data } = await apiRequest('/professor/questai/messages', {
+            method: 'POST',
+            body: { message: question, class_id: activeClassId, conversation_id: conversationId },
+        });
+
         removeTypingIndicator();
-        appendChatBubble(getSimulatedReply(question), 'ai');
-        if (input) { input.disabled = false; input.focus(); }
-        if (askBtn) askBtn.disabled = false;
-    }, 900);
+
+        // The question is saved even when the AI fails, so keep the thread.
+        if (data?.conversation?.id) conversationId = data.conversation.id;
+
+        if (ok) {
+            appendChatBubble(data.reply.content, 'ai', { messageId: data.reply.id });
+        } else {
+            appendChatBubble(
+                errorMessageFor(status, data, 'QuestAI couldn\'t answer that right now. Please try again.'),
+                'ai',
+                { error: true }
+            );
+        }
+    } catch (e) {
+        removeTypingIndicator();
+        appendChatBubble('Could not reach QuestAI. Check your connection and try again.', 'ai', { error: true });
+    } finally {
+        isSending = false;
+        setInputEnabled(true);
+        loadConversations();
+    }
 }
 
 function handleChatSubmit(e) {
@@ -481,49 +865,14 @@ function handleChatSubmit(e) {
     sendQuestion(question);
 }
 
-/* AI Insights panel */
-const INSIGHT_POOL = [
-    { label: 'Tip', text: 'Three students have pending submissions older than a week — consider a gentle reminder.' },
-    { label: 'Class Insight', text: 'Average quiz scores dipped slightly on stoichiometry items this cycle.' },
-    { label: 'Tip', text: 'Posting a short recap announcement after each module tends to boost completion rates.' },
-    { label: 'Class Insight', text: 'Engagement is highest right after you post a new activity — good time to share materials.' },
-    { label: 'Tip', text: 'A few students haven\'t opened this week\'s lesson material yet.' }
-];
-
-let insightIndexes = [0, 1];
-
-function renderInsights() {
-    const list = document.getElementById('insightsList');
-    if (!list) return;
-
-    list.innerHTML = insightIndexes.map(i => {
-        const insight = INSIGHT_POOL[i];
-        return `<div class="insight-item"><strong>${insight.label}:</strong> ${insight.text}</div>`;
-    }).join('');
-}
-
-function refreshInsights() {
-    const a = Math.floor(Math.random() * INSIGHT_POOL.length);
-    let b = Math.floor(Math.random() * INSIGHT_POOL.length);
-    if (b === a) b = (b + 1) % INSIGHT_POOL.length;
-    insightIndexes = [a, b];
-    renderInsights();
-    showToast('Insights refreshed');
-}
-
 function wireChatPanel() {
-    renderInsights();
-    updatePersonalizationBanner(activeSubject);
+    greetingHtml = document.getElementById('chatMessages')?.innerHTML || '';
 
     const chatForm = document.getElementById('chatInputBar');
     if (chatForm) chatForm.addEventListener('submit', handleChatSubmit);
 
     const refreshBtn = document.getElementById('insightsRefreshBtn');
-    if (refreshBtn) refreshBtn.addEventListener('click', refreshInsights);
-
-    document.querySelectorAll('.subject-chip').forEach(chip => {
-        chip.addEventListener('click', () => setActiveSubject(chip.dataset.subject));
-    });
+    if (refreshBtn) refreshBtn.addEventListener('click', () => loadSideInsights(true));
 
     document.querySelectorAll('.quick-ask-chip').forEach(chip => {
         chip.addEventListener('click', () => sendQuestion(chip.dataset.prompt));
@@ -531,8 +880,18 @@ function wireChatPanel() {
 }
 
 
-/*  TOAST*/
+/*  TOAST — uses the shell's toast (this page runs inside its iframe),
+    falling back to a local #toast element if one exists. */
 function showToast(text) {
+    try {
+        if (window.parent !== window && typeof window.parent.showToast === 'function') {
+            window.parent.showToast(text);
+            return;
+        }
+    } catch (e) {
+        /* Cross-origin parent — fall through to the local toast. */
+    }
+
     const toast        = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
     if (!toast || !toastMessage) return;

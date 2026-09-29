@@ -31,11 +31,6 @@ class QuestAiService
 
     private const MAX_CLASS_POSTS = 10;
 
-    private const POST_BODY_CHARS = 400;
-
-    /** Fallback context for a lesson with no stored AI summary yet. */
-    private const LESSON_EXCERPT_CHARS = 800;
-
     public function __construct(
         private LlamaService $llama,
         private PromptService $prompts,
@@ -79,8 +74,8 @@ class QuestAiService
 
         $messages = $this->prompts->questAiTutorMessages(
             $this->scopeLabel($conversation, $classes),
-            $this->lessonSummaries($lessonPosts),
-            $this->recentClassPosts($classes),
+            $this->lessonContent->lessonSummaries($lessonPosts, self::MAX_LESSONS_IN_CONTEXT),
+            $this->lessonContent->recentClassPosts($classes, self::MAX_CLASS_POSTS),
             $excerpts,
             $overall,
             $profile,
@@ -186,54 +181,6 @@ class QuestAiService
         $mastery = (float) $this->bkt->averageMasteryForCompetencies($student, $competencies);
 
         return ['mastery' => $mastery, 'level' => $this->adaptive->classify($mastery)];
-    }
-
-    private function lessonSummaries(Collection $lessonPosts): array
-    {
-        return $lessonPosts
-            ->take(self::MAX_LESSONS_IN_CONTEXT)
-            ->map(function (ClassPost $post) {
-                $excerpt = null;
-
-                if (! $post->summary) {
-                    $text = $this->lessonContent->textFor($post);
-                    $excerpt = $text !== null ? Str::limit($text, self::LESSON_EXCERPT_CHARS) : null;
-                }
-
-                return [
-                    'title' => $post->title,
-                    'overview' => $post->summary?->overview,
-                    'key_points' => $post->summary?->key_points ?? [],
-                    'excerpt' => $excerpt,
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    /**
-     * Newest posts of every type (announcements included) in scope, so
-     * QuestAI can summarize the class notes rather than only lessons.
-     *
-     * @return array<int, array{class:string, type:string, date:string, title:string, body:?string, checklist:array<int, string>}>
-     */
-    private function recentClassPosts(Collection $classes): array
-    {
-        $labels = $classes->mapWithKeys(fn (ClassRoom $c) => [$c->id => $c->subject ?: $c->name]);
-
-        return ClassPost::whereIn('class_id', $classes->pluck('id'))
-            ->latest('id')
-            ->take(self::MAX_CLASS_POSTS)
-            ->get()
-            ->map(fn (ClassPost $post) => [
-                'class' => (string) ($labels[$post->class_id] ?? ''),
-                'type' => $post->type,
-                'date' => $post->created_at?->format('M j, Y') ?? '',
-                'title' => $post->title,
-                'body' => filled($post->body) ? Str::limit(trim($post->body), self::POST_BODY_CHARS) : null,
-                'checklist' => array_values(array_filter((array) ($post->checklist ?? []), 'is_string')),
-            ])
-            ->all();
     }
 
     private function scopeLabel(AiConversation $conversation, Collection $classes): string

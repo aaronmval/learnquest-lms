@@ -11,8 +11,12 @@ use App\Models\User;
 use App\Services\AI\LlamaService;
 use App\Services\AI\PromptService;
 use App\Services\AI\QuizGenerationService;
+use App\Services\Documents\LessonContentService;
 use App\Services\Documents\PdfTextExtractorService;
+use App\Services\Learning\AdaptiveQuizService;
 use App\Services\Quiz\QuizFeedbackService;
+use App\Services\Quiz\QuizSettingsService;
+use App\Services\Quiz\QuizTrainingService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -25,6 +29,16 @@ use Tests\TestCase;
 class QuizGenerationServiceTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // These tests cover generation, validation and regeneration with a
+        // single-request quiz; adaptive question banks are covered in
+        // AdaptiveQuizTest / QuizStudioTest.
+        config(['quiz.default_settings.adaptive' => false]);
+    }
 
     private function makeLessonPostWithCompetencies(int $competencyCount = 2): array
     {
@@ -62,7 +76,7 @@ class QuizGenerationServiceTest extends TestCase
         $extractor->shouldReceive('extractText')->once()
             ->andReturn('Some lesson content about atomic structure.');
 
-        return new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService);
+        return new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService, new QuizSettingsService, new QuizTrainingService, new LessonContentService($extractor), app(AdaptiveQuizService::class));
     }
 
     private function questionPayload(int $competencyId, array $overrides = []): array
@@ -208,7 +222,7 @@ class QuizGenerationServiceTest extends TestCase
         $extractor = Mockery::mock(PdfTextExtractorService::class);
         $extractor->shouldNotReceive('extractText');
 
-        $service = new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService);
+        $service = new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService, new QuizSettingsService, new QuizTrainingService, new LessonContentService($extractor), app(AdaptiveQuizService::class));
 
         $this->expectException(RuntimeException::class);
         $service->generateForPost($post);
@@ -238,9 +252,8 @@ class QuizGenerationServiceTest extends TestCase
         ]);
 
         $stack = HandlerStack::create(new MockHandler([
-            // Primary model (llama) exhausts all 3 attempts.
-            new Response(502, [], 'error code: 502'),
-            new Response(502, [], 'error code: 502'),
+            // Primary model (llama) gets one quick attempt for quiz generation
+            // (services.routeway.quiz limits), then hands over.
             new Response(502, [], 'error code: 502'),
             // Fallback model (deepseek) succeeds on its first attempt.
             new Response(200, [], json_encode([
@@ -254,7 +267,7 @@ class QuizGenerationServiceTest extends TestCase
         $extractor->shouldReceive('extractText')->once()
             ->andReturn('Some lesson content about atomic structure.');
 
-        $service = new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService);
+        $service = new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService, new QuizSettingsService, new QuizTrainingService, new LessonContentService($extractor), app(AdaptiveQuizService::class));
 
         $quiz = $service->generateForPost($post);
 
@@ -273,7 +286,7 @@ class QuizGenerationServiceTest extends TestCase
         $extractor = Mockery::mock(PdfTextExtractorService::class);
         $extractor->shouldNotReceive('extractText');
 
-        $service = new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService);
+        $service = new QuizGenerationService($llama, new PromptService, $extractor, new QuizFeedbackService, new QuizSettingsService, new QuizTrainingService, new LessonContentService($extractor), app(AdaptiveQuizService::class));
 
         $this->expectException(RuntimeException::class);
         $service->regenerateForPost($post);
@@ -385,7 +398,7 @@ class QuizGenerationServiceTest extends TestCase
             })
             ->andReturn([['role' => 'system', 'content' => 'x'], ['role' => 'user', 'content' => 'y']]);
 
-        $service = new QuizGenerationService($llama, $prompts, $extractor, new QuizFeedbackService);
+        $service = new QuizGenerationService($llama, $prompts, $extractor, new QuizFeedbackService, new QuizSettingsService, new QuizTrainingService, new LessonContentService($extractor), app(AdaptiveQuizService::class));
 
         $service->regenerateForPost($post->fresh());
     }
@@ -425,7 +438,7 @@ class QuizGenerationServiceTest extends TestCase
             ->withArgs(fn (...$args) => count($args) < 6 || $args[5] === null)
             ->andReturn([['role' => 'system', 'content' => 'x'], ['role' => 'user', 'content' => 'y']]);
 
-        $service = new QuizGenerationService($llama, $prompts, $extractor, new QuizFeedbackService);
+        $service = new QuizGenerationService($llama, $prompts, $extractor, new QuizFeedbackService, new QuizSettingsService, new QuizTrainingService, new LessonContentService($extractor), app(AdaptiveQuizService::class));
 
         $newQuiz = $service->regenerateForPost($post->fresh());
 

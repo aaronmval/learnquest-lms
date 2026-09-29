@@ -7,10 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassPost;
 use App\Models\ClassRoom;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
+use App\Models\User;
 use App\Services\AI\QuizGenerationService;
+use App\Services\Learning\AdaptiveQuizService;
 use App\Services\Quiz\QuizFeedbackService;
+use App\Services\Quiz\QuizSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
@@ -24,11 +29,12 @@ class QuizGenerationController extends Controller
      * includes correct_answer, explanation, competency_id, or difficulty —
      * only what's needed to render and answer the questions.
      */
-    public function show(Request $request, ClassRoom $class, ClassPost $post, QuizGenerationService $generator): JsonResponse
+    public function show(Request $request, ClassRoom $class, ClassPost $post, QuizGenerationService $generator, QuizSettingsService $settingsService, AdaptiveQuizService $adaptiveQuiz): JsonResponse
     {
         $requestId = (string) Str::uuid();
         $log = Log::channel('ai');
         $startedAt = microtime(true);
+        $student = $request->user();
 
         $this->authorizeEnrolled($request, $class);
         $this->authorizePostBelongsToClass($class, $post);
@@ -40,36 +46,93 @@ class QuizGenerationController extends Controller
             'request_id' => $requestId,
             'class_id' => $class->id,
             'class_post_id' => $post->id,
-            'user_id' => $request->user()->id,
+            'user_id' => $student->id,
         ]);
 
-        $existing = $post->quiz;
+        $settings = $settingsService->for($post);
+        $attemptsUsed = $settingsService->attemptsUsed($post, $student);
 
-        if ($existing) {
+        if ($settings['max_attempts'] !== null && $attemptsUsed >= $settings['max_attempts']) {
+            return response()->json([
+                'message' => "You've used all {$settings['max_attempts']} attempt(s) allowed for this quiz.",
+                'attempts_used' => $attemptsUsed,
+                'max_attempts' => $settings['max_attempts'],
+            ], 403);
+        }
+
+        $quiz = $post->quiz;
+        $cached = $quiz !== null;
+
+        if ($cached) {
             $log->info('[controller] Serving cached quiz.', [
                 'request_id' => $requestId,
                 'class_post_id' => $post->id,
-                'quiz_id' => $existing->id,
+                'quiz_id' => $quiz->id,
             ]);
+        } else {
+            try {
+                $quiz = $generator->generateForPost($post);
+            } catch (Throwable $e) {
+                return $this->generationErrorResponse($e, $post, $requestId, $startedAt, $log, "We couldn't generate a quiz for this lesson.");
+            }
 
-            $existing->loadMissing('questions');
-
-            return response()->json($this->present($existing, $post, cached: true, requestId: $requestId));
+            $log->info('[controller] Quiz generated successfully.', [
+                'request_id' => $requestId,
+                'class_post_id' => $post->id,
+                'duration_ms' => $this->durationMs($startedAt),
+            ]);
         }
 
-        try {
-            $quiz = $generator->generateForPost($post);
-        } catch (Throwable $e) {
-            return $this->generationErrorResponse($e, $post, $requestId, $startedAt, $log, "We couldn't generate a quiz for this lesson.");
+        $active = $quiz->activeQuestions()->with('competency')->get();
+        $attempt = $this->openAttempt($quiz, $student, $settings, $active, $adaptiveQuiz);
+
+        return response()->json(
+            $this->present($quiz, $post, $settings, $attemptsUsed, $attempt, $active, cached: $cached, requestId: $requestId),
+            $cached ? 200 : 201,
+        );
+    }
+
+    /**
+     * Opening a quiz starts (or resumes) an in-progress attempt that records
+     * which questions this student is served — chosen for their BKT mastery
+     * when the quiz is adaptive — and, for timed quizzes, the deadline. A
+     * reload resumes the same questions and clock.
+     */
+    private function openAttempt(Quiz $quiz, User $student, array $settings, Collection $active, AdaptiveQuizService $adaptiveQuiz): QuizAttempt
+    {
+        $open = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('student_id', $student->id)
+            ->where('status', 'in_progress')
+            ->latest('id')
+            ->first();
+
+        if ($open) {
+            return $open;
         }
 
-        $log->info('[controller] Quiz generated successfully.', [
-            'request_id' => $requestId,
-            'class_post_id' => $post->id,
-            'duration_ms' => $this->durationMs($startedAt),
+        $mastery = $settings['adaptive'] ? $adaptiveQuiz->masteryFor($student, $active) : null;
+        $mix = $adaptiveQuiz->mixFor($settings['difficulty_mix'], $mastery['level'] ?? null);
+        $questions = $adaptiveQuiz->select($active, $settings['question_count'], $mix);
+
+        Log::channel('ai')->info('[quiz] Served quiz questions.', [
+            'quiz_id' => $quiz->id,
+            'student_id' => $student->id,
+            'adaptive' => $settings['adaptive'],
+            'mastery' => $mastery ? round($mastery['mastery'], 3) : null,
+            'mastery_level' => $mastery['level'] ?? null,
+            'mix' => $mix,
+            'served' => $questions->countBy('difficulty'),
         ]);
 
-        return response()->json($this->present($quiz, $post, cached: false, requestId: $requestId), 201);
+        return QuizAttempt::create([
+            'quiz_id' => $quiz->id,
+            'student_id' => $student->id,
+            'started_at' => now(),
+            'deadline_at' => $settings['time_limit_minutes'] !== null ? now()->addMinutes($settings['time_limit_minutes']) : null,
+            'question_ids' => $questions->pluck('id')->all(),
+            'mastery_level' => $mastery['level'] ?? null,
+            'status' => 'in_progress',
+        ]);
     }
 
     /**
@@ -194,21 +257,53 @@ class QuizGenerationController extends Controller
      * Shape the response payload. Structurally excludes every answer-bearing
      * field — this is the one place in the feature that must never leak
      * correct_answer/explanation/competency_id/difficulty before submission.
+     * Only questions a teacher hasn't rejected are included.
      */
-    private function present(Quiz $quiz, ClassPost $post, bool $cached, string $requestId): array
+    private function present(Quiz $quiz, ClassPost $post, array $settings, int $attemptsUsed, QuizAttempt $attempt, Collection $active, bool $cached, string $requestId): array
     {
+        // The attempt's served questions (attempts opened before adaptive
+        // quizzes existed have none recorded — they get every active question).
+        $questions = $attempt->question_ids !== null
+            ? $active->whereIn('id', $attempt->question_ids)->values()
+            : $active;
+
+        // Random order per the teacher's setting. Safe because the quiz page,
+        // grading and review all key answers by question id, not position.
+        if ($settings['shuffle_questions']) {
+            $questions = $questions->shuffle();
+        }
+
         return [
             'quiz_id' => $quiz->id,
             'lesson_title' => $post->title,
             'subject' => $post->classRoom?->subject ?? $post->classRoom?->name ?? 'Science',
             'section' => $post->classRoom?->section,
-            // Fresh random order on every open. Safe because the quiz page,
-            // grading and review all key answers by question id, not position.
-            'questions' => $quiz->questions->shuffle()->map(fn ($q) => [
-                'id' => $q->id,
-                'text' => $q->question_text,
-                'choices' => $q->choices,
-            ])->values(),
+            'questions' => $questions->map(function ($q) use ($settings) {
+                $order = array_keys($q->choices);
+
+                if ($settings['shuffle_choices']) {
+                    shuffle($order);
+                }
+
+                // choice_indexes[i] = original index of the i-th displayed
+                // choice; the page submits original indexes, so grading
+                // never depends on the display order.
+                return [
+                    'id' => $q->id,
+                    'text' => $q->question_text,
+                    'choices' => array_map(fn ($i) => $q->choices[$i], $order),
+                    'choice_indexes' => $order,
+                ];
+            })->values(),
+            'settings' => [
+                'time_limit_seconds' => $settings['time_limit_minutes'] !== null ? $settings['time_limit_minutes'] * 60 : null,
+                'remaining_seconds' => $attempt->deadline_at ? (int) max(0, ceil(now()->diffInSeconds($attempt->deadline_at, false))) : null,
+                // BKT mastery level that chose the questions (null = teacher's mix).
+                'mastery_level' => $attempt->mastery_level,
+                'max_attempts' => $settings['max_attempts'],
+                'attempts_used' => $attemptsUsed,
+                'show_answers' => $settings['show_answers'],
+            ],
             'generated_at' => $quiz->generated_at,
             'model' => $quiz->model,
             'cached' => $cached,

@@ -13,6 +13,9 @@ class QuizAttempt extends Model
         'quiz_id',
         'student_id',
         'started_at',
+        'deadline_at',
+        'question_ids',
+        'mastery_level',
         'submitted_at',
         'score_correct',
         'score_total',
@@ -23,6 +26,8 @@ class QuizAttempt extends Model
     {
         return [
             'started_at' => 'datetime',
+            'deadline_at' => 'datetime',
+            'question_ids' => 'array',
             'submitted_at' => 'datetime',
         ];
     }

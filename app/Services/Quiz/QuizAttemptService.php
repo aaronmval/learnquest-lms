@@ -20,14 +20,26 @@ class QuizAttemptService
     public function __construct(private BayesianKnowledgeTracingService $bkt) {}
 
     /**
+     * Grades only questions a teacher hasn't rejected. When the student
+     * opened a timed quiz, $openAttempt is the in-progress attempt created
+     * then; it is completed here (and marked "late" when submitted past its
+     * deadline plus the grace period — late answers are still graded, so
+     * BKT keeps the evidence).
+     *
      * @param  array<int, array{question_id:int, selected_index:int|null}>  $submittedAnswers
-     * @return array{attempt_id:int, score:array, review:array, mastery_deltas:array, lesson_mastery:array{before:?float, after:?float}, subject_mastery:array{before:?float, after:?float}}
+     * @return array{attempt_id:int, status:string, score:array, review:array, mastery_deltas:array, lesson_mastery:array{before:?float, after:?float}, subject_mastery:array{before:?float, after:?float}}
      */
-    public function submit(Quiz $quiz, User $student, array $submittedAnswers): array
+    public function submit(Quiz $quiz, User $student, array $submittedAnswers, ?QuizAttempt $openAttempt = null): array
     {
-        return DB::transaction(function () use ($quiz, $student, $submittedAnswers) {
+        return DB::transaction(function () use ($quiz, $student, $submittedAnswers, $openAttempt) {
             $byQuestionId = collect($submittedAnswers)->keyBy('question_id');
-            $questions = $quiz->questions()->with('competency')->orderBy('order_index')->get();
+            $questions = $quiz->activeQuestions()->with('competency')->orderBy('order_index')->get();
+
+            // Grade only what this student was served (adaptive quizzes give
+            // each student a subset of the lesson's question bank).
+            if ($openAttempt?->question_ids !== null) {
+                $questions = $questions->whereIn('id', $openAttempt->question_ids)->values();
+            }
 
             // Lesson mastery = average mastery across just this lesson's
             // tested competencies. Subject mastery = average across every
@@ -40,13 +52,22 @@ class QuizAttemptService
             $lessonMasteryBefore = $this->bkt->averageMasteryForCompetencies($student, $lessonCompetencies);
             $subjectMasteryBefore = $this->bkt->averageMasteryForCompetencies($student, $subjectCompetencies);
 
-            $attempt = QuizAttempt::create([
-                'quiz_id' => $quiz->id,
-                'student_id' => $student->id,
-                'started_at' => now(),
-                'submitted_at' => now(),
-                'status' => 'submitted',
-            ]);
+            $graceSeconds = (int) config('quiz.time_limit_grace_seconds', 60);
+            $isLate = $openAttempt?->deadline_at !== null
+                && now()->greaterThan($openAttempt->deadline_at->copy()->addSeconds($graceSeconds));
+
+            if ($openAttempt) {
+                $openAttempt->update(['submitted_at' => now(), 'status' => $isLate ? 'late' : 'submitted']);
+                $attempt = $openAttempt;
+            } else {
+                $attempt = QuizAttempt::create([
+                    'quiz_id' => $quiz->id,
+                    'student_id' => $student->id,
+                    'started_at' => now(),
+                    'submitted_at' => now(),
+                    'status' => 'submitted',
+                ]);
+            }
 
             $correct = 0;
             $incorrect = 0;
@@ -127,6 +148,7 @@ class QuizAttemptService
 
             return [
                 'attempt_id' => $attempt->id,
+                'status' => $attempt->status,
                 'score' => [
                     'correct' => $correct,
                     'incorrect' => $incorrect,

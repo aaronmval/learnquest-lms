@@ -3,6 +3,7 @@
 namespace App\Services\Documents;
 
 use App\Models\ClassPost;
+use App\Models\ClassRoom;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +25,11 @@ class LessonContentService
     public const MAX_LESSONS = 15;
 
     private const MIN_TOKEN_LENGTH = 3;
+
+    /** Fallback context for a lesson with no stored AI summary yet. */
+    private const LESSON_EXCERPT_CHARS = 800;
+
+    private const POST_BODY_CHARS = 400;
 
     private const STOPWORDS = [
         'the', 'and', 'for', 'are', 'but', 'not', 'you', 'your', 'with', 'this', 'that', 'what',
@@ -75,7 +81,7 @@ class LessonContentService
      */
     public function chunk(string $text): array
     {
-        $pieces = preg_split('/(?<=[.!?])\s+|\n+/', trim($text), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $pieces = $this->sentences($text);
 
         $chunks = [];
         $current = '';
@@ -99,6 +105,61 @@ class LessonContentService
         }
 
         return $chunks;
+    }
+
+    /**
+     * Split text on sentence and line boundaries.
+     *
+     * @return array<int, string>
+     */
+    public function sentences(string $text): array
+    {
+        return preg_split('/(?<=[.!?])\s+|\n+/', trim($text), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    }
+
+    /**
+     * Split text into $count consecutive sections on sentence boundaries,
+     * balanced by length — so parallel AI requests (slide-deck parts, quiz
+     * batches) each work from a different part of the material.
+     *
+     * @return array<int, string>  exactly $count sections, or [] when the text has fewer sentences than that
+     */
+    public function sections(string $text, int $count): array
+    {
+        $sentences = $this->sentences($text);
+
+        if ($count <= 1) {
+            return [trim($text)];
+        }
+
+        if (count($sentences) < $count) {
+            return [];
+        }
+
+        $target = mb_strlen(implode(' ', $sentences)) / $count;
+        $sections = [];
+        $current = [];
+        $length = 0;
+
+        foreach ($sentences as $i => $sentence) {
+            $current[] = $sentence;
+            $length += mb_strlen($sentence) + 1;
+
+            $remainingSentences = count($sentences) - $i - 1;
+            $remainingSections = $count - count($sections) - 1;
+
+            // Close this section once it reaches its share, while leaving at
+            // least one sentence for every section still to fill.
+            if ($remainingSections > 0 && ($length >= $target || $remainingSentences === $remainingSections)) {
+                $sections[] = implode(' ', $current);
+                $current = [];
+                $length = 0;
+            }
+        }
+
+        $sections[] = implode(' ', $current);
+
+        return $sections;
     }
 
     /**
@@ -144,6 +205,62 @@ class LessonContentService
             fn ($c) => ['post_id' => $c['post_id'], 'post_title' => $c['post_title'], 'text' => $c['text']],
             array_slice($scored, 0, $limit),
         );
+    }
+
+    /**
+     * Prompt-ready lesson list: the stored AI summary when there is one,
+     * otherwise the opening of the lesson's PDF text.
+     *
+     * @param  Collection<int, ClassPost>  $lessonPosts  newest first, with `summary` loaded
+     * @return array<int, array{title:string, overview:?string, key_points:array<int, string>, excerpt:?string}>
+     */
+    public function lessonSummaries(Collection $lessonPosts, int $limit = 10): array
+    {
+        return $lessonPosts
+            ->take($limit)
+            ->map(function (ClassPost $post) {
+                $excerpt = null;
+
+                if (! $post->summary) {
+                    $text = $this->textFor($post);
+                    $excerpt = $text !== null ? Str::limit($text, self::LESSON_EXCERPT_CHARS) : null;
+                }
+
+                return [
+                    'title' => $post->title,
+                    'overview' => $post->summary?->overview,
+                    'key_points' => $post->summary?->key_points ?? [],
+                    'excerpt' => $excerpt,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Newest posts of every type (announcements included) in the given
+     * classes, so QuestAI can talk about the class notes, not only lessons.
+     *
+     * @param  Collection<int, ClassRoom>  $classes
+     * @return array<int, array{class:string, type:string, date:string, title:string, body:?string, checklist:array<int, string>}>
+     */
+    public function recentClassPosts(Collection $classes, int $limit = 10): array
+    {
+        $labels = $classes->mapWithKeys(fn (ClassRoom $c) => [$c->id => $c->subject ?: $c->name]);
+
+        return ClassPost::whereIn('class_id', $classes->pluck('id'))
+            ->latest('id')
+            ->take($limit)
+            ->get()
+            ->map(fn (ClassPost $post) => [
+                'class' => (string) ($labels[$post->class_id] ?? ''),
+                'type' => $post->type,
+                'date' => $post->created_at?->format('M j, Y') ?? '',
+                'title' => $post->title,
+                'body' => filled($post->body) ? Str::limit(trim($post->body), self::POST_BODY_CHARS) : null,
+                'checklist' => array_values(array_filter((array) ($post->checklist ?? []), 'is_string')),
+            ])
+            ->all();
     }
 
     /**

@@ -50,6 +50,42 @@ return [
         // the paid deepseek-v4-flash, not the ":free" tier — the free tier
         // was observed returning degenerate, repeating output.
         'fallback_model' => env('LLAMA_FALLBACK_MODEL', 'deepseek-v4-flash'),
+        // Tighter limits for the professor dashboard's class analysis, which
+        // a professor waits on: a slow Llama hands over to the fallback model
+        // (DeepSeek) after a few seconds instead of after the full default
+        // timeout x retries. Seconds; retries as above.
+        'class_insights' => [
+            'timeout' => env('LLAMA_INSIGHTS_TIMEOUT', 8),
+            'max_retries' => env('LLAMA_INSIGHTS_MAX_RETRIES', 0),
+            'fallback_timeout' => env('LLAMA_INSIGHTS_FALLBACK_TIMEOUT', 15),
+            'fallback_max_retries' => env('LLAMA_INSIGHTS_FALLBACK_MAX_RETRIES', 0),
+        ],
+        // Professor QuestAI Coach chat: the professor waits on the reply, so a
+        // slow or failing Llama hands over to the fallback model (DeepSeek)
+        // after one attempt instead of the full default timeout x retries.
+        'questai_coach' => [
+            'timeout' => env('LLAMA_COACH_TIMEOUT', 25),
+            'max_retries' => env('LLAMA_COACH_MAX_RETRIES', 0),
+            'fallback_timeout' => env('LLAMA_COACH_FALLBACK_TIMEOUT', 45),
+            'fallback_max_retries' => env('LLAMA_COACH_FALLBACK_MAX_RETRIES', 0),
+        ],
+        // AI quiz generation: one Llama attempt per batch, then the fallback
+        // model, so the worst case stays well under PHP's 120s web limit.
+        'quiz' => [
+            'timeout' => env('LLAMA_QUIZ_TIMEOUT', 40),
+            'max_retries' => env('LLAMA_QUIZ_MAX_RETRIES', 0),
+            'fallback_timeout' => env('LLAMA_QUIZ_FALLBACK_TIMEOUT', 60),
+            'fallback_max_retries' => env('LLAMA_QUIZ_FALLBACK_MAX_RETRIES', 0),
+        ],
+        // QuestAI Coach slide decks are written in parallel parts of up to 5
+        // slides. Each part gets one Llama attempt, then one fallback attempt,
+        // so the worst case (timeout + fallback_timeout) stays well under
+        // PHP's 120s max_execution_time for web requests.
+        'slide_deck' => [
+            'max_tokens' => env('LLAMA_SLIDE_DECK_MAX_TOKENS', 2500),
+            'timeout' => env('LLAMA_SLIDE_DECK_TIMEOUT', 35),
+            'fallback_timeout' => env('LLAMA_SLIDE_DECK_FALLBACK_TIMEOUT', 60),
+        ],
     ],
 
 ];

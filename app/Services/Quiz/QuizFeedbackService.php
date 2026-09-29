@@ -71,6 +71,67 @@ class QuizFeedbackService
     }
 
     /**
+     * Feedback broken down for the Quiz & AI Setup visualization: rating
+     * distribution, and perceived difficulty per BKT mastery level the
+     * student's quiz was adapted to (from the attempt), so a teacher can
+     * see whether adaptive quizzes feel right to each group. Student names
+     * are never included.
+     *
+     * @return array{
+     *     count: int,
+     *     average_rating: ?float,
+     *     ratings: array<int, int>,
+     *     groups: array<int, array{key: string, count: int, too_easy: int, just_right: int, too_hard: int, average_rating: ?float}>,
+     *     comments: array<int, array{rating: int, difficulty: string, level: string, comment: string, submitted_at: string}>
+     * }
+     */
+    public function breakdownForQuiz(Quiz $quiz): array
+    {
+        $feedback = $quiz->feedback()->with('attempt:id,mastery_level')->latest()->get();
+        $levelOf = fn ($f) => $f->attempt?->mastery_level ?? 'unassessed';
+
+        $group = function (string $key, $rows) {
+            return [
+                'key' => $key,
+                'count' => $rows->count(),
+                'too_easy' => $rows->where('difficulty', 'too_easy')->count(),
+                'just_right' => $rows->where('difficulty', 'just_right')->count(),
+                'too_hard' => $rows->where('difficulty', 'too_hard')->count(),
+                'average_rating' => $rows->isEmpty() ? null : round((float) $rows->avg('rating'), 1),
+            ];
+        };
+
+        // "all" first, then mastery levels from most to least advanced; empty
+        // levels are left out.
+        $groups = [$group('all', $feedback)];
+        foreach (['high', 'developing', 'low', 'unassessed'] as $level) {
+            $rows = $feedback->filter(fn ($f) => $levelOf($f) === $level);
+            if ($rows->isNotEmpty()) {
+                $groups[] = $group($level, $rows);
+            }
+        }
+
+        return [
+            'count' => $feedback->count(),
+            'average_rating' => $feedback->isEmpty() ? null : round((float) $feedback->avg('rating'), 1),
+            'ratings' => collect(range(1, 5))->mapWithKeys(fn ($r) => [$r => $feedback->where('rating', $r)->count()])->all(),
+            'groups' => $groups,
+            'comments' => $feedback
+                ->filter(fn ($f) => filled($f->comment))
+                ->take(10)
+                ->map(fn ($f) => [
+                    'rating' => $f->rating,
+                    'difficulty' => $f->difficulty,
+                    'level' => $levelOf($f),
+                    'comment' => $f->comment,
+                    'submitted_at' => $f->created_at->toIso8601String(),
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
      * Compact text block for prompt injection during regeneration. Null
      * when there's no feedback yet, so callers can skip injection cleanly.
      */

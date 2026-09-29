@@ -8,6 +8,7 @@ use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\StudentMastery;
 use App\Models\User;
+use App\Services\Learning\AdaptiveLearningService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -127,6 +128,13 @@ class StudentDashboardTest extends TestCase
         $this->assertSame(2, $this->subjectCompetency($json, $this->molesId)['observations']);
         $this->assertSame(5, $json['record_count']);
         $this->assertTrue($json['subjects'][0]['assessed']);
+
+        // Overall = average of every in-scope competency's stored mastery, classified by BKT thresholds.
+        $stored = StudentMastery::where('student_id', $this->student->id)->pluck('current_mastery');
+        $expected = $stored->avg() * 100;
+        $this->assertEqualsWithDelta(round($expected, 1), $json['overall']['mastery'], 0.05);
+        $this->assertTrue($json['overall']['assessed']);
+        $this->assertSame(app(AdaptiveLearningService::class)->classify($stored->avg()), $json['overall']['level']);
         $this->assertCount(1, $json['mastery_trend']);
     }
 
@@ -200,6 +208,7 @@ class StudentDashboardTest extends TestCase
         $this->assertSame($this->classId, $json['subjects'][0]['class_id']);
         $this->assertFalse($json['subjects'][0]['assessed']);
         $this->assertEquals(30.0, $json['subjects'][0]['mastery']);
+        $this->assertSame(['mastery' => 30, 'level' => 'low', 'assessed' => false], $json['overall']);
         $this->assertSame([], $json['quiz_scores']);
         $this->assertSame([], $json['mastery_trend']);
         $this->assertSame(0, $json['record_count']);

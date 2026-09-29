@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class QuizQuestion extends Model
 {
@@ -39,5 +41,20 @@ class QuizQuestion extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(QuizAnswer::class);
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(QuizQuestionReview::class);
+    }
+
+    /**
+     * Questions students can see and be graded on: everything except ones
+     * a teacher rejected. Rejected rows are kept so past attempts and the
+     * AI-training data stay intact.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('review', fn (Builder $q) => $q->where('verdict', QuizQuestionReview::REJECTED));
     }
 }

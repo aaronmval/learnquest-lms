@@ -1,542 +1,1213 @@
-const PROFESSOR_VALIDATOR_STORAGE_KEY = "lq_professor_ai_validator_v1";
-const STUDENT_GENERATED_QUIZ_STORAGE_KEY = "lq_student_generated_ai_quiz_v1";
+/* QUIZ & AI SETUP (professor) — per-lesson quiz settings for students,
+   optional review of AI-generated questions, and QuestAI training metrics.
+   Reviews (approve / reject with reason / difficulty correction) are saved
+   server-side and fed into future quiz-generation prompts for the subject. */
 
-const MATERIALS = [
-    {
-        id: "chem-week2-atoms",
-        title: "Week 2: Atomic Structure",
-        section: "STEM - Amethyst",
-        uploadedAt: "Uploaded Jul 10, 2026",
-    },
-    {
-        id: "chem-week3-bonding",
-        title: "Week 3: Chemical Bonding",
-        section: "STEM - Amethyst",
-        uploadedAt: "Uploaded Jul 11, 2026",
-    },
-    {
-        id: "chem-week4-stoich",
-        title: "Week 4: Stoichiometry",
-        section: "STEM - Amethyst",
-        uploadedAt: "Uploaded Jul 12, 2026",
-    },
-];
+const DIFFICULTIES = ['easy', 'medium', 'hard'];
+const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-const QUESTION_BANK = {
-    easy: [
-        {
-            prompt: "Which particle has a negative charge in an atom?",
-            options: ["Proton", "Neutron", "Electron", "Nucleus"],
-            correctIndex: 2,
-        },
-        {
-            prompt: "What is the atomic number based on in the periodic table?",
-            options: [
-                "Number of neutrons",
-                "Number of protons",
-                "Number of shells",
-                "Mass number",
-            ],
-            correctIndex: 1,
-        },
-        {
-            prompt: "Which bond type forms when electrons are shared?",
-            options: [
-                "Ionic bond",
-                "Covalent bond",
-                "Metallic bond",
-                "Hydrogen bond",
-            ],
-            correctIndex: 1,
-        },
-    ],
-    balanced: [
-        {
-            prompt: "How does electronegativity difference help predict bond polarity?",
-            options: [
-                "Larger difference usually increases bond polarity",
-                "Smaller difference always makes ionic bonds",
-                "Electronegativity has no effect on polarity",
-                "It only affects metallic bonds",
-            ],
-            correctIndex: 0,
-        },
-        {
-            prompt: "Which periodic trend best explains increased reactivity in alkali metals?",
-            options: [
-                "Increasing ionization energy down the group",
-                "Decreasing atomic radius down the group",
-                "Decreasing ionization energy down the group",
-                "Increasing electronegativity down the group",
-            ],
-            correctIndex: 2,
-        },
-        {
-            prompt: "How do mole ratios guide product prediction in simple reactions?",
-            options: [
-                "They compare measured masses only",
-                "They come from balanced equation coefficients",
-                "They depend only on temperature",
-                "They replace the balanced equation",
-            ],
-            correctIndex: 1,
-        },
-    ],
-    hard: [
-        {
-            prompt: "Which evidence most strongly supports identifying a limiting reagent?",
-            options: [
-                "The reagent with highest molar mass",
-                "The reagent fully consumed first by stoichiometric ratio",
-                "The reagent with lowest concentration label",
-                "The reagent added last in setup",
-            ],
-            correctIndex: 1,
-        },
-        {
-            prompt: "How does orbital hybridization influence molecular geometry?",
-            options: [
-                "It determines spatial arrangement and typical bond angles",
-                "It only changes atomic mass",
-                "It removes lone pair effects",
-                "It is unrelated to molecular shape",
-            ],
-            correctIndex: 0,
-        },
-        {
-            prompt: "Which approach best isolates percent-yield error in a stoichiometry workflow?",
-            options: [
-                "Skip balancing and compare masses directly",
-                "Track units and theoretical yield before comparing with actual yield",
-                "Use only volume conversion factors",
-                "Assume complete conversion without calculation",
-            ],
-            correctIndex: 1,
-        },
-    ],
+const state = {
+    classes: [],
+    activeClassId: null,
+    activePostId: null,
+    studio: null, // GET …/quiz/studio payload for the active lesson
+    filter: 'all',
+    mix: { easy: 30, medium: 40, hard: 30 },
+    rejectingId: null, // question whose reject form is open
 };
 
-const dom = {
-    materialsList: document.getElementById("materialsList"),
-    selectedMaterialTitle: document.getElementById("selectedMaterialTitle"),
-    selectedMaterialMeta: document.getElementById("selectedMaterialMeta"),
-    masterySlider: document.getElementById("masterySlider"),
-    masteryValue: document.getElementById("masteryValue"),
-    difficultyLabel: document.getElementById("difficultyLabel"),
-    questionPreviewCard: document.getElementById("questionPreviewCard"),
-    mcqQuestionText: document.getElementById("mcqQuestionText"),
-    mcqOptionsList: document.getElementById("mcqOptionsList"),
-    checkBtn: document.getElementById("checkBtn"),
-    rejectBtn: document.getElementById("rejectBtn"),
-    validatorStatus: document.getElementById("validatorStatus"),
-    validatorHint: document.getElementById("validatorHint"),
-};
+const dom = {};
 
-const state = loadState();
+/* HTTP */
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
 
-function loadState() {
+async function apiRequest(url, { method = 'GET', body = null } = {}) {
+    const headers = { Accept: 'application/json' };
+    if (method !== 'GET') {
+        headers['X-XSRF-TOKEN'] = getCsrfToken();
+        if (body !== null) headers['Content-Type'] = 'application/json';
+    }
+
+    const res = await fetch(url, {
+        method,
+        credentials: 'same-origin',
+        headers,
+        body: body !== null ? JSON.stringify(body) : null,
+    });
+
+    let data = null;
     try {
-        const parsed = JSON.parse(
-            localStorage.getItem(PROFESSOR_VALIDATOR_STORAGE_KEY) || "{}",
-        );
-        return {
-            selectedMaterialId: parsed.selectedMaterialId || null,
-            materialStates: parsed.materialStates || {},
-            questionIndexByMaterial: parsed.questionIndexByMaterial || {},
-        };
+        data = await res.json();
     } catch (e) {
-        return {
-            selectedMaterialId: null,
-            materialStates: {},
-            questionIndexByMaterial: {},
-        };
+        /* Non-JSON error page — leave data null. */
+    }
+
+    return { ok: res.ok, status: res.status, data };
+}
+
+function errorMessageFor(status, data, fallback) {
+    if (status === 419) return 'Your session expired. Please reload the page and try again.';
+    if (status === 429) return 'Too many requests — please wait a moment and try again.';
+    if (status === 422 && data?.errors) {
+        return Object.values(data.errors)[0]?.[0] || data.message || fallback;
+    }
+    return data?.message || fallback;
+}
+
+function esc(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function capitalize(text) {
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
+
+function lessonUrl(path = '') {
+    return `/professor/classes/${state.activeClassId}/posts/${state.activePostId}/quiz${path}`;
+}
+
+function setBusy(button, busy, busyHtml = null) {
+    if (!button) return;
+    if (busy) {
+        button.dataset.idleHtml = button.innerHTML;
+        button.disabled = true;
+        if (busyHtml) button.innerHTML = busyHtml;
+    } else {
+        button.disabled = false;
+        if (button.dataset.idleHtml) button.innerHTML = button.dataset.idleHtml;
     }
 }
 
-function persistState() {
-    localStorage.setItem(
-        PROFESSOR_VALIDATOR_STORAGE_KEY,
-        JSON.stringify(state),
-    );
-}
+/* INIT */
+document.addEventListener('DOMContentLoaded', () => {
+    [
+        'sectionSelect', 'materialsList', 'emptyState', 'settingsCard', 'lessonTitle', 'settingsStatus',
+        'settingsForm', 'questionCount', 'timerEnabled', 'timeLimit', 'maxAttempts', 'shuffleQuestions',
+        'shuffleChoices', 'showAnswers', 'adaptive', 'adaptivePreview', 'saveSettingsBtn', 'generateBtn', 'generateBtnText', 'reviewCard',
+        'feedbackCard', 'feedbackBody', 'reviewMeta', 'topUpBar', 'topUpText', 'topUpBtn', 'questionList', 'trainingCard', 'trainingSubtitle',
+        'trainingBody',
+    ].forEach(id => {
+        dom[id] = document.getElementById(id);
+    });
 
-function ensureMaterialState(materialId) {
-    if (!state.materialStates[materialId]) {
-        state.materialStates[materialId] = {
-            mastery: 50,
-            checked: false,
-            rejected: false,
-        };
-    }
+    wireSettingsForm();
+    wireReviewCard();
 
-    return state.materialStates[materialId];
-}
+    dom.sectionSelect.addEventListener('change', () => selectClass(Number(dom.sectionSelect.value)));
 
-function getSelectedMaterial() {
-    return (
-        MATERIALS.find(
-            (material) => material.id === state.selectedMaterialId,
-        ) || null
-    );
-}
+    loadLessons();
+});
 
-function difficultyForMastery(mastery) {
-    if (mastery <= 33) {
-        return "easy";
-    }
-    if (mastery >= 67) {
-        return "hard";
-    }
-
-    return "balanced";
-}
-
-function difficultyLabelText(level) {
-    if (level === "easy") {
-        return "Easy Focus";
-    }
-    if (level === "hard") {
-        return "Hard Focus";
-    }
-
-    return "Balanced";
-}
-
-function clearStudentGeneratedQuiz(materialId) {
+/* LESSONS */
+async function loadLessons({ keepSelection = false } = {}) {
     try {
-        const parsed = JSON.parse(
-            localStorage.getItem(STUDENT_GENERATED_QUIZ_STORAGE_KEY) || "{}",
-        );
-
-        if (!parsed || typeof parsed !== "object") {
-            return;
-        }
-
-        if (parsed.materialId && parsed.materialId !== materialId) {
-            return;
-        }
-
-        localStorage.removeItem(STUDENT_GENERATED_QUIZ_STORAGE_KEY);
+        const { ok, data } = await apiRequest('/professor/quiz-studio/lessons');
+        if (!ok) throw new Error('failed');
+        state.classes = data.classes || [];
     } catch (e) {
-        localStorage.removeItem(STUDENT_GENERATED_QUIZ_STORAGE_KEY);
-    }
-}
-
-function saveStudentGeneratedQuiz(material, materialState) {
-    const payload = {
-        visible: true,
-        source: "ai-validator",
-        subject: "CHEMISTRY",
-        materialId: material.id,
-        materialTitle: material.title,
-        mastery: materialState.mastery,
-        quizId: `ai-mcq-${material.id}`,
-        quizUrl: "student-quiz.html",
-        label: `AI Generated MCQ - ${material.title}`,
-        updatedAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(
-        STUDENT_GENERATED_QUIZ_STORAGE_KEY,
-        JSON.stringify(payload),
-    );
-}
-
-function statusInfoForMaterial(materialState) {
-    if (materialState.rejected) {
-        return {
-            text: "Rejected",
-            className: "status-rejected",
-            hint: "Rejected. This generated question will not appear on student side.",
-        };
-    }
-
-    if (materialState.checked) {
-        return {
-            text: "Accepted",
-            className: "status-saved",
-            hint: "Accepted and published to student chemistry classwork.",
-        };
-    }
-
-    return {
-        text: "Not Checked",
-        className: "status-pending",
-        hint: "Use ✓ to accept and publish, or X to reject and hide this generated question.",
-    };
-}
-
-function materialChipText(materialState) {
-    if (materialState.rejected) {
-        return "Rejected";
-    }
-
-    if (materialState.checked) {
-        return "Checked";
-    }
-
-    return "Pending";
-}
-
-function materialChipClass(materialState) {
-    if (materialState.rejected) {
-        return "status-rejected";
-    }
-    if (materialState.checked) {
-        return "status-checked";
-    }
-
-    return "status-pending";
-}
-
-function renderMaterials() {
-    if (!dom.materialsList) {
+        dom.materialsList.innerHTML = '<li class="list-empty">Could not load your lessons. Please reload the page.</li>';
         return;
     }
 
-    dom.materialsList.innerHTML = MATERIALS.map((material) => {
-        const materialState = ensureMaterialState(material.id);
-        const chipText = materialChipText(materialState);
-        const chipClass = materialChipClass(materialState);
-        const isActive = material.id === state.selectedMaterialId;
+    if (!state.classes.length) {
+        dom.sectionSelect.innerHTML = '<option>No active sections</option>';
+        dom.sectionSelect.disabled = true;
+        dom.materialsList.innerHTML = '<li class="list-empty">Create a class and post a lesson with a PDF to set up its quiz.</li>';
+        return;
+    }
 
-        return `
-            <li>
-                <button type="button" class="material-item${isActive ? " active" : ""}" data-material-id="${material.id}">
-                    <div class="material-title-row">
-                        <span class="material-title">${material.title}</span>
-                        <span class="status-chip ${chipClass}">${chipText}</span>
-                    </div>
-                    <span class="material-meta">${material.section}</span>
-                    <span class="material-meta">${material.uploadedAt}</span>
-                </button>
-            </li>
-        `;
-    }).join("");
+    dom.sectionSelect.disabled = false;
+    dom.sectionSelect.innerHTML = state.classes
+        .map(c => `<option value="${c.id}">${esc(c.label)}</option>`)
+        .join('');
 
-    dom.materialsList.querySelectorAll(".material-item").forEach((button) => {
-        button.addEventListener("click", () => {
-            state.selectedMaterialId = button.dataset.materialId;
-            ensureMaterialState(state.selectedMaterialId);
-            persistState();
-            renderAll();
+    const classId = keepSelection && findClass(state.activeClassId) ? state.activeClassId : state.classes[0].id;
+    dom.sectionSelect.value = String(classId);
+
+    if (keepSelection && classId === state.activeClassId) {
+        renderLessons();
+    } else {
+        selectClass(classId);
+    }
+}
+
+function findClass(id) {
+    return state.classes.find(c => c.id === id) || null;
+}
+
+function activeLesson() {
+    return findClass(state.activeClassId)?.lessons.find(l => l.id === state.activePostId) || null;
+}
+
+function selectClass(classId) {
+    state.activeClassId = classId;
+    state.activePostId = null;
+    state.studio = null;
+    showLessonPanels(false);
+    renderLessons();
+    loadTraining();
+}
+
+function lessonStatus(lesson) {
+    if (!lesson.has_quiz) return { text: 'No quiz yet', cls: 'status-pending' };
+    if (lesson.rejected > 0 && lesson.question_count < lesson.target_count) {
+        return { text: `${lesson.target_count - lesson.question_count} to replace`, cls: 'status-rejected' };
+    }
+    const total = lesson.question_count + lesson.rejected;
+    if (lesson.reviewed >= total && total > 0) return { text: 'Reviewed', cls: 'status-saved' };
+    return { text: 'Needs review', cls: 'status-checked' };
+}
+
+function renderLessons() {
+    const cls = findClass(state.activeClassId);
+    const lessons = cls?.lessons || [];
+
+    if (cls && !cls.has_subject) {
+        dom.materialsList.innerHTML =
+            '<li class="list-empty">This section isn\'t linked to a subject, so QuestAI has no competencies to write questions for.</li>';
+        return;
+    }
+
+    if (!lessons.length) {
+        dom.materialsList.innerHTML = '<li class="list-empty">No lessons with a PDF in this section yet.</li>';
+        return;
+    }
+
+    dom.materialsList.innerHTML = lessons
+        .map(lesson => {
+            const status = lessonStatus(lesson);
+            const meta = lesson.has_quiz
+                ? `${lesson.question_count}/${lesson.target_count} questions · ${lesson.reviewed} reviewed`
+                : `${lesson.target_count} questions planned`;
+            return `
+                <li>
+                    <button type="button" class="material-item${lesson.id === state.activePostId ? ' active' : ''}" data-post-id="${lesson.id}">
+                        <span class="material-title-row">
+                            <span class="material-title">${esc(lesson.title)}</span>
+                            <span class="status-chip ${status.cls}">${esc(status.text)}</span>
+                        </span>
+                        <span class="material-meta">${esc(lesson.quarter || '')}${lesson.quarter ? ' · ' : ''}${esc(meta)}</span>
+                    </button>
+                </li>`;
+        })
+        .join('');
+
+    dom.materialsList.querySelectorAll('.material-item').forEach(btn => {
+        btn.addEventListener('click', () => selectLesson(Number(btn.dataset.postId)));
+    });
+}
+
+async function selectLesson(postId) {
+    state.activePostId = postId;
+    state.filter = 'all';
+    state.rejectingId = null;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === 'all'));
+    renderLessons();
+    await loadStudio();
+}
+
+function showLessonPanels(show) {
+    dom.emptyState.classList.toggle('is-hidden', show);
+    dom.settingsCard.classList.toggle('is-hidden', !show);
+    dom.reviewCard.classList.toggle('is-hidden', !show || !state.studio?.quiz);
+    dom.feedbackCard.classList.toggle('is-hidden', !show || !state.studio?.quiz);
+}
+
+async function loadStudio() {
+    const postId = state.activePostId;
+
+    try {
+        const { ok, data } = await apiRequest(lessonUrl('/studio'));
+        if (!ok) throw new Error('failed');
+        if (postId !== state.activePostId) return; // a different lesson was picked meanwhile
+        state.studio = data;
+    } catch (e) {
+        showToast('Could not load this lesson\'s quiz. Please try again.');
+        return;
+    }
+
+    renderSettings();
+    renderReview();
+    showLessonPanels(true);
+    renderFeedback(); // after the card is visible, so segment widths can be measured
+}
+
+/* SETTINGS */
+function wireSettingsForm() {
+    dom.settingsForm.querySelectorAll('.stepper-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            dom.questionCount.value = clampCount(Number(dom.questionCount.value) + Number(btn.dataset.step));
+            renderMix();
         });
     });
+
+    dom.questionCount.addEventListener('change', () => {
+        dom.questionCount.value = clampCount(Number(dom.questionCount.value));
+        renderMix();
+    });
+
+    dom.timerEnabled.addEventListener('change', () => {
+        dom.timeLimit.disabled = !dom.timerEnabled.checked;
+        if (dom.timerEnabled.checked && !dom.timeLimit.value) dom.timeLimit.value = 15;
+    });
+
+    document.querySelectorAll('.mix-slider').forEach(slider => {
+        slider.addEventListener('input', () => rebalanceMix(slider.dataset.level, Number(slider.value)));
+    });
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const [easy, medium, hard] = btn.dataset.preset.split(',').map(Number);
+            state.mix = { easy, medium, hard };
+            renderMix();
+        });
+    });
+
+    dom.adaptive.addEventListener('change', renderMix);
+
+    dom.saveSettingsBtn.addEventListener('click', () => saveSettings());
+    dom.generateBtn.addEventListener('click', generateQuiz);
+    dom.settingsForm.addEventListener('submit', e => e.preventDefault());
 }
 
-function updateSliderColor(masteryValue) {
-    if (!dom.masterySlider) {
+function clampCount(value) {
+    const limits = state.studio?.limits || { min_question_count: 5, max_question_count: 15 };
+    if (!Number.isFinite(value)) return limits.min_question_count;
+    return Math.min(limits.max_question_count, Math.max(limits.min_question_count, Math.round(value)));
+}
+
+function renderSettings() {
+    const { settings, lesson, quiz, limits } = state.studio;
+
+    dom.lessonTitle.textContent = `${lesson.title} · ${lesson.class_label}`;
+    dom.settingsStatus.textContent = settings.saved ? 'Saved' : 'Using your last settings';
+    dom.settingsStatus.className = `status-chip ${settings.saved ? 'status-saved' : 'status-pending'}`;
+
+    dom.questionCount.min = limits.min_question_count;
+    dom.questionCount.max = limits.max_question_count;
+    dom.questionCount.value = settings.question_count;
+
+    dom.timerEnabled.checked = settings.time_limit_minutes !== null;
+    dom.timeLimit.max = limits.max_time_limit_minutes;
+    dom.timeLimit.value = settings.time_limit_minutes ?? '';
+    dom.timeLimit.disabled = !dom.timerEnabled.checked;
+
+    dom.maxAttempts.value = settings.max_attempts === null ? '' : String(settings.max_attempts);
+    if (dom.maxAttempts.value !== (settings.max_attempts === null ? '' : String(settings.max_attempts))) {
+        // A saved value outside the dropdown's presets (e.g. 4).
+        const option = new Option(`${settings.max_attempts} attempts`, String(settings.max_attempts));
+        dom.maxAttempts.add(option, dom.maxAttempts.options.length - 1);
+        dom.maxAttempts.value = String(settings.max_attempts);
+    }
+
+    dom.shuffleQuestions.checked = settings.shuffle_questions;
+    dom.shuffleChoices.checked = settings.shuffle_choices;
+    dom.showAnswers.checked = settings.show_answers;
+    dom.adaptive.checked = settings.adaptive;
+
+    state.mix = { ...settings.difficulty_mix };
+    renderMix();
+
+    dom.generateBtnText.textContent = quiz ? 'Regenerate with these settings' : 'Generate quiz';
+}
+
+/* Moving one slider shares the remaining percent between the other two in
+   proportion to their current values, so the mix always totals 100%. */
+function rebalanceMix(level, value) {
+    const others = DIFFICULTIES.filter(d => d !== level);
+    const remaining = 100 - value;
+    const otherTotal = others.reduce((sum, d) => sum + state.mix[d], 0);
+
+    state.mix[level] = value;
+
+    if (otherTotal === 0) {
+        state.mix[others[0]] = Math.round(remaining / 2 / 5) * 5;
+        state.mix[others[1]] = remaining - state.mix[others[0]];
+    } else {
+        state.mix[others[0]] = Math.round((remaining * state.mix[others[0]]) / otherTotal / 5) * 5;
+        state.mix[others[1]] = remaining - state.mix[others[0]];
+    }
+
+    renderMix();
+}
+
+/* Same largest-remainder rounding as the server, for the count preview. */
+function allocate(count, mix) {
+    const total = DIFFICULTIES.reduce((sum, d) => sum + mix[d], 0) || 1;
+    const exact = DIFFICULTIES.map(d => (count * mix[d]) / total);
+    const result = exact.map(Math.floor);
+    const order = exact
+        .map((value, i) => ({ i, remainder: value - Math.floor(value) }))
+        .sort((a, b) => b.remainder - a.remainder);
+
+    for (let k = 0; k < count - result.reduce((a, b) => a + b, 0); k++) {
+        result[order[k].i]++;
+    }
+
+    return Object.fromEntries(DIFFICULTIES.map((d, i) => [d, result[i]]));
+}
+
+function sumCounts(counts) {
+    return counts ? DIFFICULTIES.reduce((sum, d) => sum + (counts[d] || 0), 0) : 0;
+}
+
+/* Same rule as AdaptiveQuizService::mixFor — high BKT mastery moves points
+   toward "hard" (from easy, then medium); low mastery toward "easy". */
+function mixFor(mix, level) {
+    const result = { ...mix };
+    let shift = state.studio?.limits?.adaptive_shift ?? 20;
+    const [target, sources] =
+        level === 'high' ? ['hard', ['easy', 'medium']] : level === 'low' ? ['easy', ['hard', 'medium']] : [null, []];
+
+    sources.forEach(source => {
+        const moved = Math.min(shift, result[source]);
+        result[source] -= moved;
+        result[target] += moved;
+        shift -= moved;
+    });
+
+    return result;
+}
+
+function renderAdaptivePreview(count) {
+    if (!dom.adaptivePreview) return;
+
+    const badges = counts =>
+        DIFFICULTIES.map(d => `<span class="difficulty-badge diff-${d}">${counts[d]} ${d}</span>`).join('');
+
+    if (!dom.adaptive.checked) {
+        dom.adaptivePreview.innerHTML =
+            `<p class="bank-note">Every student gets the same ${count} questions: ${badges(allocate(count, state.mix))}</p>`;
         return;
     }
 
-    const hue = 120 - (120 * masteryValue) / 100;
-    const sliderColor = `hsl(${hue}, 72%, 44%)`;
-    dom.masterySlider.style.setProperty("--slider-track-color", sliderColor);
-    dom.masterySlider.style.setProperty("--slider-stop", `${masteryValue}%`);
-}
+    const levels = [
+        ['high', 'High mastery', 'harder'],
+        ['developing', 'Developing / new', 'your mix'],
+        ['low', 'Low mastery', 'easier'],
+    ];
+    const pool = { easy: 0, medium: 0, hard: 0 };
 
-function getCurrentQuestion(materialId, level) {
-    const bank = QUESTION_BANK[level] || [];
-    if (!bank.length) {
-        return null;
-    }
-
-    const index =
-        Number(state.questionIndexByMaterial[materialId] || 0) % bank.length;
-    return bank[index];
-}
-
-function renderQuestionPreview(materialId, mastery) {
-    const level = difficultyForMastery(mastery);
-    const currentQuestion = getCurrentQuestion(materialId, level);
-
-    if (!currentQuestion) {
-        dom.mcqQuestionText.textContent = "No generated question available.";
-        dom.mcqOptionsList.innerHTML =
-            '<li class="mcq-option-item">No options available.</li>';
-        return;
-    }
-
-    dom.difficultyLabel.textContent = difficultyLabelText(level);
-    dom.mcqQuestionText.textContent = currentQuestion.prompt;
-    dom.mcqOptionsList.innerHTML = currentQuestion.options
-        .map((option, index) => {
-            const classes =
-                index === currentQuestion.correctIndex
-                    ? "mcq-option-item correct-answer"
-                    : "mcq-option-item";
-            return `<li class=\"${classes}\">${String.fromCharCode(65 + index)}. ${option}</li>`;
+    const rows = levels
+        .map(([level, name, note]) => {
+            const counts = allocate(count, mixFor(state.mix, level));
+            DIFFICULTIES.forEach(d => {
+                pool[d] = Math.max(pool[d], counts[d]);
+            });
+            return `
+                <div class="level-row">
+                    <span class="level-name">${name} <span class="material-meta">(${note})</span></span>
+                    <span class="level-counts">${badges(counts)}</span>
+                </div>`;
         })
-        .join("");
+        .join('');
+
+    dom.adaptivePreview.innerHTML = `
+        ${rows}
+        <p class="bank-note">
+            Each student gets ${count} questions picked for their BKT mastery of this lesson's
+            competencies (students without quiz results yet get your mix). QuestAI keeps a bank of
+            ${sumCounts(pool)} questions so every level has enough.
+        </p>`;
 }
 
-function showQuestionIntro() {
-    if (!dom.questionPreviewCard) {
-        return;
-    }
+function renderMix() {
+    const count = clampCount(Number(dom.questionCount.value));
+    const counts = allocate(count, state.mix);
 
-    dom.questionPreviewCard.classList.remove("is-fading-out", "is-visible");
-    dom.questionPreviewCard.classList.add("is-fading-in");
+    DIFFICULTIES.forEach(level => {
+        const slider = document.querySelector(`.mix-slider[data-level="${level}"]`);
+        if (slider) slider.value = state.mix[level];
+        const valueEl = document.querySelector(`.mix-value[data-value="${level}"]`);
+        if (valueEl) {
+            valueEl.innerHTML = `<strong>${state.mix[level]}%</strong> · ${counts[level]} question${counts[level] === 1 ? '' : 's'}`;
+        }
+    });
 
-    requestAnimationFrame(() => {
-        dom.questionPreviewCard.classList.add("is-visible");
+    renderAdaptivePreview(count);
+
+    const presetKey = `${state.mix.easy},${state.mix.medium},${state.mix.hard}`;
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.preset === presetKey);
     });
 }
 
-function renderEmptyPreview() {
-    dom.difficultyLabel.textContent = "Balanced";
-    dom.mcqQuestionText.textContent =
-        "Select a material to preview a generated question.";
-    dom.mcqOptionsList.innerHTML =
-        '<li class="mcq-option-item">Option preview will appear here.</li>';
+function readSettingsForm() {
+    const timeLimit = Number(dom.timeLimit.value);
+
+    return {
+        question_count: clampCount(Number(dom.questionCount.value)),
+        time_limit_minutes: dom.timerEnabled.checked && timeLimit > 0 ? Math.round(timeLimit) : null,
+        difficulty_mix: { ...state.mix },
+        max_attempts: dom.maxAttempts.value === '' ? null : Number(dom.maxAttempts.value),
+        shuffle_questions: dom.shuffleQuestions.checked,
+        shuffle_choices: dom.shuffleChoices.checked,
+        show_answers: dom.showAnswers.checked,
+        adaptive: dom.adaptive.checked,
+    };
 }
 
-function cycleToNextQuestion(materialId, mastery) {
-    if (!dom.questionPreviewCard) {
+async function saveSettings({ quiet = false } = {}) {
+    setBusy(dom.saveSettingsBtn, true, '<i class="fas fa-spinner fa-spin"></i> Saving…');
+
+    try {
+        const { ok, status, data } = await apiRequest(lessonUrl('/settings'), { method: 'PUT', body: readSettingsForm() });
+        if (!ok) {
+            showToast(errorMessageFor(status, data, 'Could not save the settings.'));
+            return false;
+        }
+
+        state.studio.settings = data.settings;
+        state.studio.allocation = data.allocation;
+        state.studio.pool = data.pool;
+        renderSettings();
+        updateLessonInList({ target_count: sumCounts(data.pool) });
+        if (!quiet) showToast('Quiz settings saved');
+        return true;
+    } catch (e) {
+        showToast('Could not reach the server. Please try again.');
+        return false;
+    } finally {
+        setBusy(dom.saveSettingsBtn, false);
+    }
+}
+
+async function generateQuiz() {
+    const hasQuiz = Boolean(state.studio?.quiz);
+
+    if (
+        hasQuiz &&
+        !window.confirm(
+            'Generate a new version of this quiz with these settings?\n\n' +
+                'Students will get the new questions. Past attempts, scores and mastery are kept.',
+        )
+    ) {
         return;
     }
 
-    const level = difficultyForMastery(mastery);
-    const bankSize = (QUESTION_BANK[level] || []).length;
+    if (!(await saveSettings({ quiet: true }))) return;
 
-    if (!bankSize) {
-        renderQuestionPreview(materialId, mastery);
+    setBusy(dom.generateBtn, true, '<i class="fas fa-spinner fa-spin"></i> QuestAI is writing questions…');
+
+    try {
+        const { ok, status, data } = await apiRequest(lessonUrl('/generate'), { method: 'POST', body: {} });
+        if (!ok) {
+            showToast(errorMessageFor(status, data, 'Could not generate the quiz.'));
+            return;
+        }
+
+        showToast(`Quiz ready — ${data.question_count} questions`);
+        await refreshAfterChange();
+    } catch (e) {
+        showToast('Could not reach the server. Please try again.');
+    } finally {
+        setBusy(dom.generateBtn, false);
+    }
+}
+
+/* REVIEW */
+function wireReviewCard() {
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            state.filter = chip.dataset.filter;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c === chip));
+            renderQuestions();
+        });
+    });
+
+    dom.topUpBtn.addEventListener('click', topUp);
+
+    // One delegated handler for every question card's controls.
+    dom.questionList.addEventListener('click', event => {
+        const button = event.target.closest('[data-action]');
+        if (!button || button.tagName === 'SELECT') return;
+
+        const card = button.closest('.question-card');
+        const id = Number(card?.dataset.questionId);
+        if (!id) return;
+
+        const action = button.dataset.action;
+        if (action === 'approve') submitReview(id, 'approved', card);
+        else if (action === 'reject') toggleRejectForm(id);
+        else if (action === 'confirm-reject') submitReview(id, 'rejected', card);
+        else if (action === 'cancel-reject') toggleRejectForm(null);
+        else if (action === 'undo') clearReview(id, card);
+        else if (action === 'use-suggestion') {
+            const select = card.querySelector('select[data-action="difficulty"]');
+            if (select) select.value = button.dataset.value;
+        }
+    });
+
+    // Changing the label of an already-reviewed question saves right away.
+    dom.questionList.addEventListener('change', event => {
+        const select = event.target.closest('select[data-action="difficulty"]');
+        if (!select) return;
+        const card = select.closest('.question-card');
+        const question = findQuestion(Number(card.dataset.questionId));
+        if (question?.review) submitReview(question.id, question.review.verdict, card, { keepReason: true });
+    });
+}
+
+function findQuestion(id) {
+    return state.studio?.questions.find(q => q.id === id) || null;
+}
+
+function renderReview() {
+    const { quiz, questions } = state.studio;
+    dom.reviewCard.classList.toggle('is-hidden', !quiz);
+    if (!quiz) return;
+
+    const rejected = questions.filter(q => q.review?.verdict === 'rejected').length;
+    const active = questions.length - rejected;
+    const reviewed = questions.filter(q => q.review).length;
+    // The bank the quiz should hold (larger than each student's count when adaptive).
+    const target = sumCounts(state.studio.pool);
+    const feedback = quiz.feedback;
+
+    const parts = [
+        `${active} active question${active === 1 ? '' : 's'}`,
+        `${reviewed} reviewed`,
+        `${quiz.attempts} student attempt${quiz.attempts === 1 ? '' : 's'}`,
+    ];
+    if (feedback?.count) parts.push(`student rating ${feedback.average_rating}/5`);
+    dom.reviewMeta.textContent = parts.join(' · ');
+
+    const missing = target - active;
+    dom.topUpBar.classList.toggle('is-hidden', missing <= 0);
+    dom.topUpText.textContent =
+        missing > 0
+            ? `The question bank has ${active} of the ${target} questions your settings need` +
+              `${rejected ? ` (${rejected} rejected)` : ''}. QuestAI can write ${missing} more using your reviews.`
+            : '';
+
+    renderQuestions();
+}
+
+function questionMatchesFilter(q) {
+    switch (state.filter) {
+        case 'unreviewed':
+            return !q.review;
+        case 'rejected':
+            return q.review?.verdict === 'rejected';
+        case 'flagged':
+            return Boolean(q.stats?.flagged);
+        default:
+            return true;
+    }
+}
+
+function renderQuestions() {
+    const { questions, limits } = state.studio;
+    const visible = questions.filter(questionMatchesFilter);
+
+    if (!visible.length) {
+        const empty = {
+            all: 'This quiz has no questions yet.',
+            unreviewed: 'Every question has been reviewed. 🎉',
+            rejected: 'No rejected questions.',
+            flagged: `No questions flagged yet — a question needs at least ${limits.min_responses} student answers before its results are compared with its difficulty label.`,
+        }[state.filter];
+        dom.questionList.innerHTML = `<p class="list-empty">${esc(empty)}</p>`;
         return;
     }
 
-    dom.questionPreviewCard.classList.remove("is-fading-in", "is-visible");
-    dom.questionPreviewCard.classList.add("is-fading-out");
-
-    setTimeout(() => {
-        const currentIndex = Number(
-            state.questionIndexByMaterial[materialId] || 0,
-        );
-        state.questionIndexByMaterial[materialId] =
-            (currentIndex + 1) % bankSize;
-
-        renderQuestionPreview(materialId, mastery);
-        persistState();
-
-        dom.questionPreviewCard.classList.remove("is-fading-out");
-        showQuestionIntro();
-    }, 300);
+    dom.questionList.innerHTML = visible
+        .map(q => renderQuestionCard(q, questions.indexOf(q) + 1, limits))
+        .join('');
 }
 
-function renderValidator() {
-    const selectedMaterial = getSelectedMaterial();
+function renderQuestionCard(q, number, limits) {
+    const review = q.review;
+    const cardClass = review ? (review.verdict === 'approved' ? 'is-approved' : 'is-rejected') : '';
 
-    if (!selectedMaterial) {
-        dom.selectedMaterialTitle.textContent = "Select a material";
-        dom.selectedMaterialMeta.textContent =
-            "Pick from the left panel to start validating generated quiz items.";
-        dom.masteryValue.textContent = "50%";
-        dom.masterySlider.value = "50";
-        updateSliderColor(50);
-        dom.masterySlider.disabled = true;
-        dom.checkBtn.disabled = true;
-        dom.rejectBtn.disabled = true;
-        renderEmptyPreview();
-        dom.validatorStatus.textContent = "Not Checked";
-        dom.validatorStatus.className = "status-chip status-pending";
-        dom.validatorHint.textContent =
-            "Use ✓ to accept and publish to student chemistry classwork, or X to reject and hide it.";
+    let reviewChip = '';
+    if (review?.verdict === 'approved') {
+        reviewChip = '<span class="status-chip status-saved review-chip"><i class="fas fa-check"></i> Approved</span>';
+    } else if (review?.verdict === 'rejected') {
+        const reason = limits.reasons[review.reason] || 'Rejected';
+        reviewChip = `<span class="status-chip status-rejected review-chip"><i class="fas fa-xmark"></i> Rejected · ${esc(reason)}</span>`;
+    }
+
+    const relabel =
+        review?.teacher_difficulty && review.teacher_difficulty !== q.ai_difficulty
+            ? ` <span class="material-meta">(AI said ${esc(q.ai_difficulty)})</span>`
+            : '';
+
+    const choices = (q.choices || [])
+        .map(
+            (choice, i) =>
+                `<li class="mcq-option-item${i === q.correct_index ? ' correct-answer' : ''}">` +
+                `<span class="option-letter">${OPTION_LETTERS[i] || i + 1}</span><span>${esc(choice)}</span></li>`,
+        )
+        .join('');
+
+    const options = DIFFICULTIES.map(
+        d => `<option value="${d}"${d === q.difficulty ? ' selected' : ''}>${capitalize(d)}</option>`,
+    ).join('');
+
+    const isRejecting = state.rejectingId === q.id;
+    const reasonOptions = Object.entries(limits.reasons)
+        .map(([value, label]) => `<option value="${value}"${review?.reason === value ? ' selected' : ''}>${esc(capitalize(label))}</option>`)
+        .join('');
+
+    return `
+        <div class="question-card ${cardClass}" data-question-id="${q.id}">
+            <div class="question-card-head">
+                <span class="q-number">Q${number}</span>
+                <span class="difficulty-badge diff-${esc(q.difficulty)}">${esc(q.difficulty)}</span>${relabel}
+                ${q.competency ? `<span class="competency-tag">${esc(q.competency)}</span>` : ''}
+                ${reviewChip}
+            </div>
+            <p class="mcq-question-text">${esc(q.text)}</p>
+            <ul class="mcq-options-list">${choices}</ul>
+            <details class="explanation">
+                <summary>Explanation</summary>
+                <p>${esc(q.explanation)}</p>
+            </details>
+            ${renderStats(q)}
+            ${review?.comment ? `<p class="review-note"><i class="fas fa-comment"></i> ${esc(review.comment)}</p>` : ''}
+            <div class="question-actions">
+                <label>Difficulty
+                    <select class="field-select" data-action="difficulty" aria-label="Difficulty for question ${number}">${options}</select>
+                </label>
+                <span class="actions-spacer"></span>
+                ${review ? '<button type="button" class="link-btn" data-action="undo">Undo review</button>' : ''}
+                <button type="button" class="action-btn check-btn" data-action="approve"${review?.verdict === 'approved' ? ' disabled' : ''}>
+                    <i class="fas fa-check"></i> Approve
+                </button>
+                <button type="button" class="action-btn reject-btn" data-action="reject">
+                    <i class="fas fa-xmark"></i> ${review?.verdict === 'rejected' ? 'Edit reason' : 'Reject'}
+                </button>
+            </div>
+            <div class="reject-form${isRejecting ? '' : ' is-hidden'}">
+                <select class="field-select" data-field="reason" aria-label="Rejection reason">${reasonOptions}</select>
+                <input type="text" class="field-input" data-field="comment" maxlength="500"
+                    placeholder="Optional note for QuestAI (what should it do differently?)"
+                    value="${esc(review?.comment || '')}" />
+                <button type="button" class="action-btn reject-btn" data-action="confirm-reject">Reject</button>
+                <button type="button" class="link-btn" data-action="cancel-reject">Cancel</button>
+            </div>
+        </div>`;
+}
+
+function renderStats(q) {
+    const stats = q.stats;
+    if (!stats || !stats.responses) {
+        return '<div class="question-stats"><i class="fas fa-chart-simple"></i> No student answers yet</div>';
+    }
+
+    let suggestion = '';
+    if (stats.suggested_difficulty && stats.suggested_difficulty !== q.difficulty) {
+        suggestion =
+            `<span class="${stats.flagged ? 'flag' : ''}"><i class="fas fa-triangle-exclamation"></i> ` +
+            `Results suggest <strong>${esc(stats.suggested_difficulty)}</strong></span>` +
+            `<button type="button" class="link-btn" data-action="use-suggestion" data-value="${esc(stats.suggested_difficulty)}">Use suggestion</button>`;
+    } else if (stats.suggested_difficulty) {
+        suggestion = '<span><i class="fas fa-circle-check"></i> Results match the label</span>';
+    }
+
+    return `
+        <div class="question-stats">
+            <span><i class="fas fa-chart-simple"></i> ${stats.responses} answer${stats.responses === 1 ? '' : 's'} · ${stats.percent_correct}% correct</span>
+            ${suggestion}
+        </div>`;
+}
+
+function toggleRejectForm(id) {
+    state.rejectingId = state.rejectingId === id ? null : id;
+    renderQuestions();
+    if (state.rejectingId) {
+        document.querySelector(`.question-card[data-question-id="${id}"] [data-field="comment"]`)?.focus();
+    }
+}
+
+async function submitReview(id, verdict, card, { keepReason = false } = {}) {
+    const question = findQuestion(id);
+    const body = {
+        verdict,
+        teacher_difficulty: card.querySelector('select[data-action="difficulty"]')?.value || null,
+    };
+
+    if (verdict === 'rejected') {
+        const reasonEl = card.querySelector('[data-field="reason"]');
+        const commentEl = card.querySelector('[data-field="comment"]');
+        body.reason = keepReason ? question?.review?.reason : reasonEl?.value || 'other';
+        body.comment = keepReason ? question?.review?.comment : commentEl?.value.trim() || null;
+    } else if (keepReason) {
+        body.comment = question?.review?.comment || null;
+    }
+
+    card.classList.add('is-busy');
+
+    try {
+        const { ok, status, data } = await apiRequest(lessonUrl(`/questions/${id}/review`), { method: 'PUT', body });
+        if (!ok) {
+            showToast(errorMessageFor(status, data, 'Could not save the review.'));
+            card.classList.remove('is-busy');
+            return;
+        }
+
+        replaceQuestion(data.question);
+        state.rejectingId = null;
+        renderReview();
+        syncLessonCounts();
+        loadTraining();
+    } catch (e) {
+        card.classList.remove('is-busy');
+        showToast('Could not reach the server. Please try again.');
+    }
+}
+
+async function clearReview(id, card) {
+    card.classList.add('is-busy');
+
+    try {
+        const { ok, data } = await apiRequest(lessonUrl(`/questions/${id}/review`), { method: 'DELETE' });
+        if (!ok) throw new Error('failed');
+
+        replaceQuestion(data.question);
+        renderReview();
+        syncLessonCounts();
+        loadTraining();
+    } catch (e) {
+        card.classList.remove('is-busy');
+        showToast('Could not undo the review. Please try again.');
+    }
+}
+
+function replaceQuestion(updated) {
+    const index = state.studio.questions.findIndex(q => q.id === updated.id);
+    if (index >= 0) state.studio.questions[index] = updated;
+}
+
+async function topUp() {
+    setBusy(dom.topUpBtn, true, '<i class="fas fa-spinner fa-spin"></i> Writing replacements…');
+
+    try {
+        const { ok, status, data } = await apiRequest(lessonUrl('/top-up'), { method: 'POST', body: {} });
+        if (!ok) {
+            showToast(errorMessageFor(status, data, 'Could not generate replacement questions.'));
+            return;
+        }
+
+        showToast(`${data.added} new question${data.added === 1 ? '' : 's'} added`);
+        await refreshAfterChange();
+    } catch (e) {
+        showToast('Could not reach the server. Please try again.');
+    } finally {
+        setBusy(dom.topUpBtn, false);
+    }
+}
+
+async function refreshAfterChange() {
+    await loadStudio();
+    await loadLessons({ keepSelection: true });
+    loadTraining();
+}
+
+/* Keep the lesson list's counts in step with local review changes. */
+function syncLessonCounts() {
+    const questions = state.studio.questions;
+    const rejected = questions.filter(q => q.review?.verdict === 'rejected').length;
+
+    updateLessonInList({
+        has_quiz: true,
+        question_count: questions.length - rejected,
+        reviewed: questions.filter(q => q.review).length,
+        rejected,
+    });
+}
+
+function updateLessonInList(changes) {
+    const lesson = activeLesson();
+    if (!lesson) return;
+    Object.assign(lesson, changes);
+    renderLessons();
+}
+
+/* STUDENT FEEDBACK — perceived difficulty as a diverging stacked bar per
+   mastery group (too easy ← just right → too hard, centered on "just right"),
+   rating distribution, comments, and a table view with every value. */
+const FEEDBACK_KINDS = [
+    { key: 'too_easy', label: 'Too easy' },
+    { key: 'just_right', label: 'Just right' },
+    { key: 'too_hard', label: 'Too hard' },
+];
+
+const FEEDBACK_GROUPS = {
+    all: { label: 'All students', note: '' },
+    high: { label: 'High mastery', note: 'got a harder mix' },
+    developing: { label: 'Developing', note: 'got your mix' },
+    low: { label: 'Low mastery', note: 'got an easier mix' },
+    unassessed: { label: 'Not adapted', note: 'new students or adaptivity off' },
+};
+
+function percent(part, whole) {
+    return whole ? Math.round((part / whole) * 100) : 0;
+}
+
+function stars(rating) {
+    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+}
+
+function renderFeedback() {
+    const data = state.studio?.quiz?.feedback_breakdown;
+    if (!dom.feedbackBody || !data) return;
+
+    if (!data.count) {
+        dom.feedbackBody.innerHTML =
+            '<p class="list-empty">No student feedback yet. Students can rate the quiz and say how difficult it felt after they submit it.</p>';
         return;
     }
 
-    const materialState = ensureMaterialState(selectedMaterial.id);
-    const mastery = Number(materialState.mastery) || 50;
-    const statusInfo = statusInfoForMaterial(materialState);
+    const all = data.groups.find(g => g.key === 'all');
+    const levelGroups = data.groups.filter(g => g.key !== 'all');
 
-    dom.selectedMaterialTitle.textContent = selectedMaterial.title;
-    dom.selectedMaterialMeta.textContent = `${selectedMaterial.section} | ${selectedMaterial.uploadedAt}`;
+    dom.feedbackBody.innerHTML = `
+        <div class="fb-kpis">
+            <div class="fb-kpi">
+                <div class="fb-kpi-label">Responses</div>
+                <div class="fb-kpi-value">${data.count}</div>
+            </div>
+            <div class="fb-kpi">
+                <div class="fb-kpi-label">Average rating</div>
+                <div class="fb-kpi-value">${data.average_rating ?? '—'} <small>/ 5</small></div>
+            </div>
+            <div class="fb-kpi">
+                <div class="fb-kpi-label">Felt "just right"</div>
+                <div class="fb-kpi-value">${percent(all.just_right, all.count)}%</div>
+            </div>
+        </div>
 
-    dom.masterySlider.disabled = false;
-    dom.masterySlider.value = String(mastery);
-    dom.masteryValue.textContent = `${mastery}%`;
-    updateSliderColor(mastery);
+        <section class="fb-section" aria-labelledby="fbDifficultyTitle">
+            <h3 id="fbDifficultyTitle" class="fb-section-title">How difficult did the quiz feel?</h3>
+            <p class="fb-section-note">
+                Grouped by the BKT mastery level each student's quiz was adapted to.
+                Bars are centered on "just right": blue leans too easy, red leans too hard.
+            </p>
+            <div class="fb-legend" aria-hidden="true">
+                ${FEEDBACK_KINDS.map(k => `<span><i class="fb-swatch" style="background:var(--fb-${k.key === 'too_easy' ? 'easy' : k.key === 'too_hard' ? 'hard' : 'right'})"></i>${k.label}</span>`).join('')}
+            </div>
+            ${renderDivergingBars([all, ...levelGroups])}
+        </section>
 
-    renderQuestionPreview(selectedMaterial.id, mastery);
+        <div class="fb-two-col">
+            <section class="fb-section" aria-labelledby="fbRatingTitle">
+                <h3 id="fbRatingTitle" class="fb-section-title">Ratings</h3>
+                <p class="fb-section-note">How many students gave each star rating.</p>
+                ${renderRatingBars(data.ratings, data.count)}
+            </section>
+            <section class="fb-section" aria-labelledby="fbCommentsTitle">
+                <h3 id="fbCommentsTitle" class="fb-section-title">Recent comments</h3>
+                <p class="fb-section-note">Anonymous — shown with the student's rating and mastery group.</p>
+                ${renderFeedbackComments(data.comments)}
+            </section>
+        </div>
 
-    dom.checkBtn.disabled = false;
-    dom.rejectBtn.disabled = false;
+        ${renderFeedbackTable(data)}`;
 
-    dom.validatorStatus.textContent = statusInfo.text;
-    dom.validatorStatus.className = `status-chip ${statusInfo.className}`;
-    dom.validatorHint.textContent = statusInfo.hint;
+    fitSegmentLabels();
+    wireChartTooltips(dom.feedbackBody);
 }
 
-function handleMasteryInput(event) {
-    const selectedMaterial = getSelectedMaterial();
-    if (!selectedMaterial) {
-        return;
-    }
+function renderDivergingBars(groups) {
+    const rows = groups.filter(g => g.count > 0);
 
-    const materialState = ensureMaterialState(selectedMaterial.id);
-    materialState.mastery = Number(event.target.value);
-    materialState.checked = false;
-    materialState.rejected = false;
+    // Shared scale so every row's "just right" midpoint sits on one center line.
+    const extent = rows.map(g => {
+        const easy = g.too_easy / g.count;
+        const right = g.just_right / g.count;
+        const hard = g.too_hard / g.count;
+        return { g, easy, right, hard, left: easy + right / 2, rightSide: hard + right / 2 };
+    });
+    const maxLeft = Math.max(...extent.map(e => e.left), 0.01);
+    const maxRight = Math.max(...extent.map(e => e.rightSide), 0.01);
+    const span = maxLeft + maxRight;
+    const center = (maxLeft / span) * 100;
 
-    clearStudentGeneratedQuiz(selectedMaterial.id);
-    persistState();
-    renderValidator();
-    renderMaterials();
+    const bars = extent
+        .map(({ g, easy, right, hard, left }) => {
+            const info = FEEDBACK_GROUPS[g.key] || { label: g.key, note: '' };
+            const segments = [
+                ['too_easy', easy, g.too_easy],
+                ['just_right', right, g.just_right],
+                ['too_hard', hard, g.too_hard],
+            ]
+                .filter(([, share]) => share > 0)
+                .map(([kind, share, count]) => {
+                    const label = FEEDBACK_KINDS.find(k => k.key === kind).label;
+                    const pct = percent(count, g.count);
+                    const tip = `${info.label}: ${label} — ${count} of ${g.count} (${pct}%)`;
+                    return `<span class="fb-seg" data-kind="${kind}" data-label="${pct}%" data-tip="${esc(tip)}"
+                        tabindex="0" role="img" aria-label="${esc(tip)}" style="flex:${share} 1 0"></span>`;
+                })
+                .join('');
+
+            return `
+                <div class="fb-row${g.key === 'all' ? ' is-all' : ''}">
+                    <div class="fb-row-label">
+                        <strong>${esc(info.label)}</strong> <span class="fb-n">(${g.count})</span>
+                        ${info.note ? `<br><span class="fb-n">${esc(info.note)}</span>` : ''}
+                    </div>
+                    <div class="fb-track">
+                        <span class="fb-center" style="left:${center}%" aria-hidden="true"></span>
+                        <div class="fb-stack" style="left:${((maxLeft - left) / span) * 100}%; width:${(1 / span) * 100}%">
+                            ${segments}
+                        </div>
+                    </div>
+                </div>`;
+        })
+        .join('');
+
+    return `
+        <div class="fb-diverging">${bars}</div>
+        <div class="fb-axis-labels" aria-hidden="true">
+            <span></span>
+            <span class="fb-axis-track"><span>← Too easy</span><span>Too hard →</span></span>
+        </div>`;
 }
 
-function handleCheck() {
-    const selectedMaterial = getSelectedMaterial();
-    if (!selectedMaterial) {
-        return;
-    }
-
-    const materialState = ensureMaterialState(selectedMaterial.id);
-    materialState.checked = true;
-    materialState.rejected = false;
-
-    saveStudentGeneratedQuiz(selectedMaterial, materialState);
-    persistState();
-    renderMaterials();
-    renderValidator();
-    cycleToNextQuestion(selectedMaterial.id, materialState.mastery);
+/* Percent labels go inside a segment only when they fit; otherwise the
+   legend, tooltip and table view carry the value. */
+function fitSegmentLabels() {
+    dom.feedbackBody.querySelectorAll('.fb-seg').forEach(seg => {
+        seg.textContent = seg.offsetWidth >= 34 ? seg.dataset.label : '';
+    });
 }
 
-function handleReject() {
-    const selectedMaterial = getSelectedMaterial();
-    if (!selectedMaterial) {
-        return;
-    }
+function renderRatingBars(ratings, total) {
+    const max = Math.max(...Object.values(ratings), 1);
 
-    const materialState = ensureMaterialState(selectedMaterial.id);
-    materialState.checked = false;
-    materialState.rejected = true;
-
-    clearStudentGeneratedQuiz(selectedMaterial.id);
-    persistState();
-    renderMaterials();
-    renderValidator();
-    cycleToNextQuestion(selectedMaterial.id, materialState.mastery);
+    return `<div class="fb-ratings">${[5, 4, 3, 2, 1]
+        .map(r => {
+            const count = ratings[r] || 0;
+            const tip = `${r} star${r === 1 ? '' : 's'}: ${count} of ${total} (${percent(count, total)}%)`;
+            return `
+                <div class="fb-rating-row">
+                    <span class="fb-stars" aria-hidden="true">${r} ★</span>
+                    <span class="fb-rating-track">
+                        ${count ? `<span class="fb-rating-bar" style="width:${(count / max) * 100}%" data-tip="${esc(tip)}" tabindex="0" role="img" aria-label="${esc(tip)}"></span>` : ''}
+                    </span>
+                    <span class="fb-rating-count">${count}</span>
+                </div>`;
+        })
+        .join('')}</div>`;
 }
 
-function bindEvents() {
-    if (dom.masterySlider) {
-        dom.masterySlider.addEventListener("input", handleMasteryInput);
-    }
+function renderFeedbackComments(comments) {
+    if (!comments.length) return '<p class="list-empty">No written comments yet.</p>';
 
-    if (dom.checkBtn) {
-        dom.checkBtn.addEventListener("click", handleCheck);
-    }
+    const swatchVar = { too_easy: 'easy', just_right: 'right', too_hard: 'hard' };
 
-    if (dom.rejectBtn) {
-        dom.rejectBtn.addEventListener("click", handleReject);
-    }
+    return `<ul class="fb-comments">${comments
+        .map(c => {
+            const kind = FEEDBACK_KINDS.find(k => k.key === c.difficulty)?.label || c.difficulty;
+            const group = FEEDBACK_GROUPS[c.level]?.label || c.level;
+            return `
+                <li class="fb-comment">
+                    <div class="fb-comment-meta">
+                        <span aria-label="${c.rating} out of 5 stars">${stars(c.rating)}</span>
+                        <span><i class="fb-swatch" style="background:var(--fb-${swatchVar[c.difficulty] || 'right'})"></i> ${esc(kind)}</span>
+                        <span>· ${esc(group)}</span>
+                        <span>· ${esc(new Date(c.submitted_at).toLocaleDateString())}</span>
+                    </div>
+                    ${esc(c.comment)}
+                </li>`;
+        })
+        .join('')}</ul>`;
 }
 
-function renderAll() {
-    renderMaterials();
-    renderValidator();
-    showQuestionIntro();
+function renderFeedbackTable(data) {
+    const groupRows = data.groups
+        .map(g => {
+            const cell = n => `<td class="num">${n} (${percent(n, g.count)}%)</td>`;
+            return `<tr><th scope="row">${esc(FEEDBACK_GROUPS[g.key]?.label || g.key)}</th>
+                <td class="num">${g.count}</td>${cell(g.too_easy)}${cell(g.just_right)}${cell(g.too_hard)}
+                <td class="num">${g.average_rating ?? '—'}</td></tr>`;
+        })
+        .join('');
+
+    const ratingRows = [5, 4, 3, 2, 1]
+        .map(r => `<tr><th scope="row">${r} ★</th><td class="num">${data.ratings[r] || 0}</td><td class="num">${percent(data.ratings[r] || 0, data.count)}%</td></tr>`)
+        .join('');
+
+    return `
+        <details class="fb-table-toggle">
+            <summary>View as table</summary>
+            <table class="fb-table">
+                <caption class="fb-section-note">Perceived difficulty by mastery group</caption>
+                <thead><tr><th>Group</th><th class="num">Responses</th><th class="num">Too easy</th>
+                    <th class="num">Just right</th><th class="num">Too hard</th><th class="num">Avg rating</th></tr></thead>
+                <tbody>${groupRows}</tbody>
+            </table>
+            <table class="fb-table">
+                <caption class="fb-section-note">Ratings</caption>
+                <thead><tr><th>Rating</th><th class="num">Students</th><th class="num">Share</th></tr></thead>
+                <tbody>${ratingRows}</tbody>
+            </table>
+        </details>`;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    bindEvents();
-    renderAll();
+/* One shared tooltip for chart marks: follows hover and keyboard focus. */
+let chartTooltip = null;
+
+function wireChartTooltips(root) {
+    if (!chartTooltip) {
+        chartTooltip = document.createElement('div');
+        chartTooltip.className = 'fb-tooltip is-hidden';
+        chartTooltip.setAttribute('role', 'presentation');
+        document.body.appendChild(chartTooltip);
+    }
+
+    const show = (el, x, y) => {
+        chartTooltip.textContent = el.dataset.tip;
+        chartTooltip.classList.remove('is-hidden');
+        const rect = chartTooltip.getBoundingClientRect();
+        const left = Math.min(window.innerWidth - rect.width - 8, Math.max(8, x - rect.width / 2));
+        chartTooltip.style.left = `${left}px`;
+        chartTooltip.style.top = `${Math.max(8, y - rect.height - 12)}px`;
+    };
+    const hide = () => chartTooltip.classList.add('is-hidden');
+
+    root.querySelectorAll('[data-tip]').forEach(el => {
+        el.addEventListener('mousemove', e => show(el, e.clientX, e.clientY));
+        el.addEventListener('mouseleave', hide);
+        el.addEventListener('focus', () => {
+            const r = el.getBoundingClientRect();
+            show(el, r.left + r.width / 2, r.top);
+        });
+        el.addEventListener('blur', hide);
+    });
+}
+
+window.addEventListener('resize', () => {
+    if (state.studio?.quiz?.feedback_breakdown?.count) fitSegmentLabels();
 });
+
+/* TRAINING METRICS */
+let trainingRequest = 0;
+
+async function loadTraining() {
+    const classId = state.activeClassId;
+    const requestId = ++trainingRequest;
+    if (!classId) return;
+
+    try {
+        const { ok, data } = await apiRequest(`/professor/quiz-studio/training?class_id=${classId}`);
+        if (!ok) throw new Error('failed');
+        if (requestId !== trainingRequest) return;
+        renderTraining(data);
+    } catch (e) {
+        if (requestId === trainingRequest) dom.trainingCard.classList.add('is-hidden');
+    }
+}
+
+function renderTraining(data) {
+    if (!data.subject || !data.metrics) {
+        dom.trainingCard.classList.add('is-hidden');
+        return;
+    }
+
+    const m = data.metrics;
+    dom.trainingCard.classList.remove('is-hidden');
+    dom.trainingSubtitle.textContent = `${data.subject.name} · all lessons in this subject`;
+
+    const pct = value => (value === null || value === undefined ? '—' : `${value}%`);
+
+    const calibration = m.by_difficulty
+        .map(row => {
+            const target = Math.round(row.target * 100);
+            const actual = row.percent_correct;
+            const label =
+                row.responses >= m.min_responses && actual !== null
+                    ? `${actual}% correct · target ${target}%`
+                    : `${row.responses} answer${row.responses === 1 ? '' : 's'} so far`;
+            return `
+                <div class="calibration-row">
+                    <span class="difficulty-badge diff-${row.difficulty}">${row.difficulty}</span>
+                    <div class="calibration-bar" title="Target ${target}%">
+                        <div class="calibration-fill" style="width:${actual ?? 0}%"></div>
+                        <span class="calibration-target" style="left:calc(${target}% - 1px)"></span>
+                    </div>
+                    <span>${esc(label)}</span>
+                </div>`;
+        })
+        .join('');
+
+    const reasons = m.rejection_reasons.length
+        ? `<ul class="plain-list">${m.rejection_reasons
+              .map(r => `<li><span>${esc(capitalize(r.label))}</span><strong>${r.count}</strong></li>`)
+              .join('')}</ul>`
+        : '<p class="metric-note">No rejections yet.</p>';
+
+    const relabels = m.relabels.length
+        ? `<ul class="plain-list">${m.relabels
+              .map(r => `<li><span>AI "${esc(r.from)}" → you "${esc(r.to)}"</span><strong>${r.count}</strong></li>`)
+              .join('')}</ul>`
+        : '<p class="metric-note">No difficulty corrections yet.</p>';
+
+    const flagged = m.flagged.length
+        ? `<ul class="plain-list">${m.flagged
+              .map(
+                  f =>
+                      `<li><span>${esc(f.question)} <span class="muted">— ${esc(f.lesson || '')}</span></span>` +
+                      `<strong>${esc(f.difficulty)} → ${esc(f.suggested_difficulty)}</strong></li>`,
+              )
+              .join('')}</ul>`
+        : `<p class="metric-note">No mislabeled questions detected (needs ${m.min_responses}+ student answers per question).</p>`;
+
+    dom.trainingBody.innerHTML = `
+        <div class="metric-tile metric-half">
+            <div class="metric-label">Questions reviewed</div>
+            <div class="metric-value">${m.reviewed}</div>
+            <p class="metric-note">${m.approved} approved · ${m.rejected} rejected</p>
+        </div>
+        <div class="metric-tile metric-half">
+            <div class="metric-label">Approval rate</div>
+            <div class="metric-value">${pct(m.approval_rate)}</div>
+            <p class="metric-note">Share of reviewed AI questions you kept.</p>
+        </div>
+        <div class="metric-tile metric-half">
+            <div class="metric-label">Difficulty agreement</div>
+            <div class="metric-value">${pct(m.difficulty_agreement)}</div>
+            <p class="metric-note">Reviewed questions where you kept the AI's difficulty label.</p>
+        </div>
+        <div class="metric-tile metric-wide">
+            <div class="metric-label">Student results by difficulty label</div>
+            <p class="metric-note">Bar = share of answers correct; line = working target (configurable).</p>
+            ${calibration}
+        </div>
+        <div class="metric-tile metric-half">
+            <div class="metric-label">Why questions were rejected</div>
+            ${reasons}
+        </div>
+        <div class="metric-tile metric-half">
+            <div class="metric-label">Difficulty corrections</div>
+            ${relabels}
+        </div>
+        <div class="metric-tile metric-half">
+            <div class="metric-label">Possibly mislabeled (by student results)</div>
+            ${flagged}
+        </div>`;
+}
+
+/* TOAST — uses the shell's toast (this page runs inside its iframe). */
+function showToast(text) {
+    try {
+        if (window.parent !== window && typeof window.parent.showToast === 'function') {
+            window.parent.showToast(text);
+            return;
+        }
+    } catch (e) {
+        /* Cross-origin parent — fall through. */
+    }
+    console.info(text);
+}

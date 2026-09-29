@@ -12,8 +12,9 @@ class StoreQuestAiMessageRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Route middleware (auth + student.role) plus the controller's
-        // enrollment/ownership checks restrict this to the student's own data.
+        // Shared by the student tutor and the professor coach: route role
+        // middleware plus each controller's enrollment/management and
+        // ownership checks restrict this to the user's own data.
         return true;
     }
 

@@ -240,6 +240,120 @@ body.dark .filter-btn-reset:hover {
     background-color: #0f172a;
 }
 
+/* SUMMARY CARDS — stat tiles styled like the chart cards */
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.stat-tile {
+    background-color: #1e293b;
+    border-radius: 18px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    transition: box-shadow 0.2s;
+}
+
+.stat-tile:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #f1f5f9;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: #cbd5e1;
+    overflow-wrap: anywhere;
+}
+
+/* Meter: track is a lighter step of the fill's own hue family */
+.stat-meter {
+    height: 6px;
+    border-radius: 999px;
+    background-color: rgba(148, 163, 184, 0.2);
+    overflow: hidden;
+}
+
+.stat-meter-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background-color: #60a5fa;
+    transition: width 0.5s ease;
+}
+
+.stat-meter-fill.level-low { background-color: #f87171; }
+.stat-meter-fill.level-developing { background-color: #fbbf24; }
+.stat-meter-fill.level-high { background-color: #4ade80; }
+
+/* Mastery level chip — always icon + label, never color alone */
+.stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.stat-chip.level-low { background-color: rgba(248, 113, 113, 0.16); color: #fca5a5; }
+.stat-chip.level-developing { background-color: rgba(251, 191, 36, 0.16); color: #fcd34d; }
+.stat-chip.level-high { background-color: rgba(74, 222, 128, 0.16); color: #86efac; }
+
+.stat-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.stat-delta.up { color: #86efac; }
+.stat-delta.down { color: #fca5a5; }
+.stat-warn-icon { color: #fcd34d; }
+.stat-ok-icon { color: #86efac; }
+
+@media (min-width: 1280px) {
+    .stat-tiles { gap: 28px; }
+}
+
+@media (max-width: 1023px) {
+    .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+}
+
+@media (max-width: 768px) {
+    .stat-tiles { gap: 16px; }
+    .stat-tile { padding: 16px 18px; }
+    .stat-value { font-size: 1.6rem; }
+}
+
+@media (max-width: 360px) {
+    .stat-tiles { grid-template-columns: 1fr; }
+}
+
 /* CHARTS GRID */
 .charts-grid {
     display: grid;

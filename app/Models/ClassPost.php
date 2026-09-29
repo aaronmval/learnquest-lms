@@ -62,4 +62,10 @@ class ClassPost extends Model
     {
         return $this->hasOne(Quiz::class)->whereNull('archived_at');
     }
+
+    /** Teacher-configured quiz settings (Quiz & AI Setup); absent until saved. */
+    public function quizSetting(): HasOne
+    {
+        return $this->hasOne(QuizSetting::class);
+    }
 }
