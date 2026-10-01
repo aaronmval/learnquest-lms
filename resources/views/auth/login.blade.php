@@ -185,6 +185,7 @@
       display: block;
     }
   </style>
+  <script src="/assets/js/auth-background.js" defer></script>
 </head>
 
 <body>
@@ -386,6 +387,11 @@
   @if ($errors->getBag('register')->any() || old('name') || old('email'))
     container.classList.add('right-panel-active');
   @endif
+
+  // Landing page "Sign up" links arrive as /login#signup
+  if (location.hash === '#signup') {
+    container.classList.add('right-panel-active');
+  }
 
   // PASSWORD TOGGLE
   document.querySelectorAll(".toggle-password").forEach(icon => {

@@ -39,6 +39,7 @@
       display: block;
     }
   </style>
+  <script src="/assets/js/auth-background.js" defer></script>
 </head>
 <body>
 

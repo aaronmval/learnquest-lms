@@ -8,10 +8,7 @@
 }
 
 body {
-  background: 
-      linear-gradient(rgba(30, 60, 114, 0.5), rgba(42, 82, 152, 0.5)),
-      url("/frontend/images/LOGIN.png") no-repeat center center fixed;
-  background-size: cover;
+  background: linear-gradient(135deg, #0a0e1a 0%, #122236 55%, #1e3c72 100%) fixed;
   display: flex;
   justify-content: center;
   align-items: center;
