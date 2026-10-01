@@ -946,3 +946,69 @@ body.dark .insight-level-pill.level-high {
 body.dark .insight-focus-name {
     color: #e2e8f0;
 }
+
+/* PAGE TRANSITIONS
+   Shared entrance motion for every in-app page. Top-level sections ease in
+   when the page opens; common/page-transitions.js adds .lq-enter / .lq-fade
+   to content that is rendered, shown or updated afterwards. The keyframes
+   have no end state on purpose, so card hover transforms keep working. */
+@keyframes lqFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+}
+
+@keyframes lqFade {
+    from {
+        opacity: 0;
+    }
+}
+
+/* Sections sit either directly in #mainContent or inside one page wrapper
+   (.classroom-wrap, .quiz-wrap, ...). Modals and toasts that live in
+   #mainContent keep their own open/close motion. */
+#mainContent > :not([class*="-wrap"]):not([class*="modal"]):not([id*="Modal"]):not([id*="Toast"]),
+#mainContent > [class*="-wrap"] > * {
+    animation: lqFadeUp 0.45s ease-out backwards;
+}
+
+#mainContent > :nth-child(2),
+#mainContent > [class*="-wrap"] > :nth-child(2) { animation-delay: 0.06s; }
+#mainContent > :nth-child(3),
+#mainContent > [class*="-wrap"] > :nth-child(3) { animation-delay: 0.12s; }
+#mainContent > :nth-child(4),
+#mainContent > [class*="-wrap"] > :nth-child(4) { animation-delay: 0.18s; }
+#mainContent > :nth-child(5),
+#mainContent > [class*="-wrap"] > :nth-child(5) { animation-delay: 0.24s; }
+#mainContent > :nth-child(n + 6),
+#mainContent > [class*="-wrap"] > :nth-child(n + 6) { animation-delay: 0.3s; }
+
+.lq-enter {
+    animation: lqFadeUp 0.4s ease-out backwards;
+    animation-delay: var(--lq-delay, 0ms);
+}
+
+.lq-fade {
+    animation: lqFade 0.3s ease-out;
+}
+
+/* A page wrapper that gets un-hidden animates through its children above. */
+#mainContent > [class*="-wrap"].lq-enter {
+    animation: none;
+}
+
+/* Settings tabs switch panels with .active rather than .hidden. */
+.settings-panel.active {
+    animation: lqFadeUp 0.3s ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #mainContent > *,
+    #mainContent > [class*="-wrap"] > *,
+    .lq-enter,
+    .lq-fade,
+    .settings-panel.active {
+        animation: none !important;
+    }
+}

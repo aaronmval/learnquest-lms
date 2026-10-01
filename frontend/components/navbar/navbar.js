@@ -476,6 +476,22 @@ function syncActiveLinkFromIframe() {
     }
 }
 
+/* Remembers the page showing in the content iframe (per browser tab) so a
+   refresh of the shell reopens it instead of resetting to Home. */
+function rememberFramePage() {
+    if (!contentFrame || !contentFrame.contentWindow) return;
+    try {
+        const frameLocation = contentFrame.contentWindow.location;
+        if (!frameLocation.pathname.startsWith("/pages/")) return;
+        sessionStorage.setItem(
+            "LQ_LAST_PAGE",
+            frameLocation.pathname + frameLocation.search + frameLocation.hash,
+        );
+    } catch (e) {
+        // ignore same-origin framing / storage issues
+    }
+}
+
 function syncFrameDarkMode() {
     applyDarkModeToFrame(document.body.classList.contains("dark"));
 }
@@ -606,13 +622,22 @@ function loadDefaultFramePage() {
         pendingPage = null;
     }
 
-    const pendingMatchesRole =
-        pendingPage && pendingPage.startsWith(`/pages/${role}/`);
+    // Otherwise reopen the page that was showing before a refresh.
+    let lastPage = null;
+    try {
+        lastPage = sessionStorage.getItem("LQ_LAST_PAGE");
+    } catch (e) {
+        lastPage = null;
+    }
 
-    const target =
-        pendingMatchesRole && getIframePageUrl(pendingPage)
-            ? pendingPage
-            : getDefaultRolePage(role);
+    const restorable = [pendingPage, lastPage].find(
+        (page) =>
+            page &&
+            page.startsWith(`/pages/${role}/`) &&
+            getIframePageUrl(page),
+    );
+
+    const target = restorable || getDefaultRolePage(role);
 
     loadFramePage(target);
 }
@@ -656,6 +681,7 @@ function initHostShell() {
     if (contentFrame) {
         contentFrame.addEventListener("load", () => {
             syncActiveLinkFromIframe();
+            rememberFramePage();
             syncFrameDarkMode();
             pruneIframeSharedShell();
             if (pageLoader) pageLoader.classList.add("hidden");
@@ -1525,6 +1551,12 @@ function confirmLogout() {
     const logoutForm = logoutFormId
         ? document.getElementById(logoutFormId)
         : null;
+
+    try {
+        sessionStorage.removeItem("LQ_LAST_PAGE");
+    } catch (e) {
+        // ignore storage issues
+    }
 
     if (logoutForm) {
         logoutForm.submit();

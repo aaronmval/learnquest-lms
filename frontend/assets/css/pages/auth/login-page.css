@@ -429,4 +429,20 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   }
 }
 
+/* Card entrance, matching the other auth pages. */
+@keyframes lqFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}
 
+.container {
+    animation: lqFadeUp 0.5s ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .container {
+        animation: none;
+    }
+}
