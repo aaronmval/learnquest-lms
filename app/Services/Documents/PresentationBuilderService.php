@@ -2,7 +2,6 @@
 
 namespace App\Services\Documents;
 
-use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpPresentation\DocumentLayout;
 use PhpOffice\PhpPresentation\IOFactory;
 use PhpOffice\PhpPresentation\PhpPresentation;
@@ -37,7 +36,7 @@ class PresentationBuilderService
 
     /**
      * @param  array{title: string, slides: array<int, array{title: string, bullets: array<int, string>, notes: ?string}>}  $deck
-     * @return string path relative to the local disk
+     * @return string path relative to the default disk
      */
     public function build(array $deck, string $fileId, string $theme = 'learnquest', ?string $author = null): string
     {
@@ -55,10 +54,11 @@ class PresentationBuilderService
         }
 
         $relativePath = self::DIRECTORY."/{$fileId}.pptx";
-        $disk = Storage::disk('local');
-        $disk->makeDirectory(self::DIRECTORY);
 
-        IOFactory::createWriter($presentation, 'PowerPoint2007')->save($disk->path($relativePath));
+        StoredFile::writeFromLocalPath(
+            $relativePath,
+            fn (string $localPath) => IOFactory::createWriter($presentation, 'PowerPoint2007')->save($localPath),
+        );
 
         return $relativePath;
     }

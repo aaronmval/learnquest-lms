@@ -37,7 +37,7 @@ class ClassPostController extends Controller
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $data['attachment_path'] = $file->store("class-posts/{$class->id}", 'local');
+            $data['attachment_path'] = $file->store("class-posts/{$class->id}");
             $data['attachment_name'] = $file->getClientOriginalName();
         }
 
@@ -61,11 +61,11 @@ class ClassPostController extends Controller
 
         if ($request->hasFile('attachment')) {
             if ($post->attachment_path) {
-                Storage::disk('local')->delete($post->attachment_path);
+                Storage::disk()->delete($post->attachment_path);
             }
 
             $file = $request->file('attachment');
-            $data['attachment_path'] = $file->store("class-posts/{$class->id}", 'local');
+            $data['attachment_path'] = $file->store("class-posts/{$class->id}");
             $data['attachment_name'] = $file->getClientOriginalName();
         }
 
@@ -83,7 +83,7 @@ class ClassPostController extends Controller
         $this->authorizePostBelongsToClass($class, $post);
 
         if ($post->attachment_path) {
-            Storage::disk('local')->delete($post->attachment_path);
+            Storage::disk()->delete($post->attachment_path);
         }
 
         $post->delete();
@@ -101,18 +101,15 @@ class ClassPostController extends Controller
         $this->authorizePostBelongsToClass($class, $post);
 
         abort_unless($post->attachment_path, 404);
-        abort_unless(Storage::disk('local')->exists($post->attachment_path), 404);
+        abort_unless(Storage::disk()->exists($post->attachment_path), 404);
 
-        $path = Storage::disk('local')->path($post->attachment_path);
         $name = $post->attachment_name ?: basename($post->attachment_path);
 
         if ($request->boolean('download')) {
-            return Storage::disk('local')->download($post->attachment_path, $name);
+            return Storage::disk()->download($post->attachment_path, $name);
         }
 
-        return response()->file($path, [
-            'Content-Disposition' => 'inline; filename="'.addslashes($name).'"',
-        ]);
+        return Storage::disk()->response($post->attachment_path, $name);
     }
 
     private function authorizeOwner(Request $request, ClassRoom $class): void

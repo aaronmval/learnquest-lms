@@ -11,6 +11,7 @@ use App\Services\AI\SlideDeckFocusService;
 use App\Services\AI\SlideDeckGenerationService;
 use App\Services\Documents\PdfTextExtractorService;
 use App\Services\Documents\PresentationBuilderService;
+use App\Services\Documents\StoredFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 /**
@@ -48,8 +49,9 @@ class SlideDeckController extends Controller
             ? $focus->plan($professor, (int) $request->validated('focus_class_id'))
             : null;
 
+        $module = null;
+
         if ($file = $request->file('file')) {
-            $sourcePath = $file->getRealPath();
             $sourceName = $file->getClientOriginalName();
         } else {
             // An existing module from the Modules page, limited to subjects
@@ -57,19 +59,20 @@ class SlideDeckController extends Controller
             $module = Module::with('subject')->findOrFail($request->validated('module_id'));
             abort_unless($module->subject?->isManagedBy($professor), 404);
 
-            if (! $module->file_path || ! Storage::disk('local')->exists($module->file_path)) {
+            if (! $module->file_path || ! Storage::disk()->exists($module->file_path)) {
                 return response()->json([
                     'message' => "This module's PDF could not be found. Re-upload it on the Modules page and try again.",
                     'request_id' => $requestId,
                 ], 422);
             }
 
-            $sourcePath = Storage::disk('local')->path($module->file_path);
             $sourceName = $module->file_name ?: "{$module->title}.pdf";
         }
 
         try {
-            $text = $extractor->extractText($sourcePath);
+            $text = $module
+                ? StoredFile::withLocalPath($module->file_path, fn (string $path) => $extractor->extractText($path))
+                : $extractor->extractText($file->getRealPath());
         } catch (RuntimeException $e) {
             return response()->json([
                 'message' => $e->getMessage().' Try a PDF with selectable text.',
@@ -130,19 +133,19 @@ class SlideDeckController extends Controller
         ], 201);
     }
 
-    public function download(Request $request, string $deck): BinaryFileResponse
+    public function download(Request $request, string $deck): StreamedResponse
     {
         $entry = Str::isUuid($deck) ? Cache::get($this->cacheKey($deck)) : null;
 
         abort_unless(
             $entry
                 && $entry['professor_id'] === $request->user()->id
-                && Storage::disk('local')->exists($entry['path']),
+                && Storage::disk()->exists($entry['path']),
             404,
         );
 
-        return response()->download(
-            Storage::disk('local')->path($entry['path']),
+        return Storage::disk()->download(
+            $entry['path'],
             $entry['filename'],
             ['Content-Type' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
         );

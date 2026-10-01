@@ -8,6 +8,7 @@ use App\Models\Quiz;
 use App\Models\Subject;
 use App\Services\Documents\LessonContentService;
 use App\Services\Documents\PdfTextExtractorService;
+use App\Services\Documents\StoredFile;
 use App\Services\Learning\AdaptiveQuizService;
 use App\Services\Quiz\QuizFeedbackService;
 use App\Services\Quiz\QuizSettingsService;
@@ -15,7 +16,6 @@ use App\Services\Quiz\QuizTrainingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -179,7 +179,10 @@ class QuizGenerationService
             throw new RuntimeException('No competencies have been defined for this subject yet.');
         }
 
-        $content = $this->extractor->extractText(Storage::disk('local')->path($post->attachment_path));
+        $content = StoredFile::withLocalPath(
+            $post->attachment_path,
+            fn (string $path) => $this->extractor->extractText($path),
+        );
 
         return [$subject, $competencies, $content];
     }

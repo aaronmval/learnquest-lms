@@ -7,7 +7,6 @@ use App\Models\ClassRoom;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -60,7 +59,10 @@ class LessonContentService
         // re-parsed on every question; a replaced file gets a new key.
         $text = Cache::rememberForever($key, function () use ($post) {
             try {
-                return $this->extractor->extractText(Storage::disk('local')->path($post->attachment_path));
+                return StoredFile::withLocalPath(
+                    $post->attachment_path,
+                    fn (string $path) => $this->extractor->extractText($path),
+                );
             } catch (Throwable $e) {
                 Log::channel('ai')->warning('[lesson-content] Could not extract lesson text.', [
                     'class_post_id' => $post->id,

@@ -129,7 +129,7 @@ class ProfessorClassController extends Controller
 
         foreach ($class->posts as $post) {
             if ($post->attachment_path) {
-                Storage::disk('local')->delete($post->attachment_path);
+                Storage::disk()->delete($post->attachment_path);
             }
         }
 

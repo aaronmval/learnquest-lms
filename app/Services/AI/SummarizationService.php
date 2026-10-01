@@ -6,8 +6,8 @@ use App\Exceptions\AI\InvalidAiResponseException;
 use App\Models\ClassPost;
 use App\Models\LessonSummary;
 use App\Services\Documents\PdfTextExtractorService;
+use App\Services\Documents\StoredFile;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -34,8 +34,10 @@ class SummarizationService
             throw new RuntimeException('This lesson has no attachment to summarize.');
         }
 
-        $absolutePath = Storage::disk('local')->path($post->attachment_path);
-        $content = $this->extractor->extractText($absolutePath);
+        $content = StoredFile::withLocalPath(
+            $post->attachment_path,
+            fn (string $path) => $this->extractor->extractText($path),
+        );
 
         $fullLength = strlen($content);
         $content = mb_substr($content, 0, self::MAX_CONTENT_CHARS);

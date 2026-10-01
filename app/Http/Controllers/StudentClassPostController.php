@@ -32,18 +32,15 @@ class StudentClassPostController extends Controller
         $this->authorizePostBelongsToClass($class, $post);
 
         abort_unless($post->attachment_path, 404);
-        abort_unless(Storage::disk('local')->exists($post->attachment_path), 404);
+        abort_unless(Storage::disk()->exists($post->attachment_path), 404);
 
-        $path = Storage::disk('local')->path($post->attachment_path);
         $name = $post->attachment_name ?: basename($post->attachment_path);
 
         if ($request->boolean('download')) {
-            return Storage::disk('local')->download($post->attachment_path, $name);
+            return Storage::disk()->download($post->attachment_path, $name);
         }
 
-        return response()->file($path, [
-            'Content-Disposition' => 'inline; filename="'.addslashes($name).'"',
-        ]);
+        return Storage::disk()->response($post->attachment_path, $name);
     }
 
     private function authorizeEnrolled(Request $request, ClassRoom $class): void

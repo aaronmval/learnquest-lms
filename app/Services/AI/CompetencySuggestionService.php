@@ -8,10 +8,10 @@ use App\Exceptions\AI\NoSourceContentException;
 use App\Models\Module;
 use App\Models\Subject;
 use App\Services\Documents\PdfTextExtractorService;
+use App\Services\Documents\StoredFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -229,7 +229,10 @@ class CompetencySuggestionService
 
             // Failures cache as '' so an unreadable (e.g. scanned) PDF isn't re-parsed every time.
             try {
-                $text = $this->extractor->extractText(Storage::disk('local')->path($module->file_path));
+                $text = StoredFile::withLocalPath(
+                    $module->file_path,
+                    fn (string $path) => $this->extractor->extractText($path),
+                );
             } catch (Throwable $e) {
                 Log::channel('ai')->warning('[competency-suggestions] Could not extract module text.', [
                     'module_id' => $module->id,

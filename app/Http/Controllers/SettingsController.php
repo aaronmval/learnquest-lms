@@ -15,8 +15,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class SettingsController extends Controller
 {
-    private const AVATAR_DISK = 'local';
-
     public function show(Request $request): JsonResponse
     {
         return response()->json($this->payload($request->user()));
@@ -125,11 +123,11 @@ class SettingsController extends Controller
         $user = $request->user();
         $previous = $user->avatar_path;
 
-        $path = $request->file('photo')->store("avatars/{$user->id}", self::AVATAR_DISK);
+        $path = $request->file('photo')->store("avatars/{$user->id}");
         $user->update(['avatar_path' => $path]);
 
         if ($previous && $previous !== $path) {
-            Storage::disk(self::AVATAR_DISK)->delete($previous);
+            Storage::disk()->delete($previous);
         }
 
         return response()->json($this->payload($user));
@@ -140,7 +138,7 @@ class SettingsController extends Controller
         $user = $request->user();
 
         if ($user->avatar_path) {
-            Storage::disk(self::AVATAR_DISK)->delete($user->avatar_path);
+            Storage::disk()->delete($user->avatar_path);
             $user->update(['avatar_path' => null]);
         }
 
@@ -154,9 +152,9 @@ class SettingsController extends Controller
     {
         $path = $request->user()->avatar_path;
 
-        abort_unless($path && Storage::disk(self::AVATAR_DISK)->exists($path), 404);
+        abort_unless($path && Storage::disk()->exists($path), 404);
 
-        return Storage::disk(self::AVATAR_DISK)->response($path, null, [
+        return Storage::disk()->response($path, null, [
             'Cache-Control' => 'private, max-age=86400',
         ]);
     }

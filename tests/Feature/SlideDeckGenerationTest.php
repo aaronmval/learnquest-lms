@@ -113,6 +113,15 @@ class SlideDeckGenerationTest extends TestCase
         ], ['Accept' => 'application/json']);
     }
 
+    /** Save a streamed download to a temp file so it can be opened as a zip. */
+    private function downloadedFile(TestResponse $download): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'deck');
+        file_put_contents($path, $download->streamedContent());
+
+        return $path;
+    }
+
     public function test_generates_a_downloadable_pptx_from_parallel_parts(): void
     {
         $this->mockExtractor();
@@ -139,7 +148,7 @@ class SlideDeckGenerationTest extends TestCase
 
         // Title slide + 8 content slides, parts kept in order, emerald theme.
         $zip = new ZipArchive;
-        $this->assertTrue($zip->open($download->getFile()->getPathname()) === true);
+        $this->assertTrue($zip->open($this->downloadedFile($download)) === true);
         $this->assertNotFalse($zip->locateName('ppt/slides/slide9.xml'));
         $this->assertStringContainsString('047857', $zip->getFromName('ppt/slides/slide1.xml'));
         $this->assertStringContainsString('Part 1 point 1a', $zip->getFromName('ppt/slides/slide2.xml'));
@@ -368,7 +377,7 @@ class SlideDeckGenerationTest extends TestCase
         // Focused slides are flagged in the speaker notes of the .pptx.
         $download = $this->actingAs($this->professor)->get($res->json('download_url'))->assertOk();
         $zip = new ZipArchive;
-        $this->assertTrue($zip->open($download->getFile()->getPathname()) === true);
+        $this->assertTrue($zip->open($this->downloadedFile($download)) === true);
         $this->assertStringContainsString('Class focus: Mole Ratios', $zip->getFromName('ppt/notesSlides/notesSlide2.xml'));
         $zip->close();
     }

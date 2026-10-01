@@ -51,7 +51,7 @@ class ModuleController extends Controller
         }
 
         $file = $request->file('attachment');
-        $data['file_path'] = $file->store("subject-modules/{$subject->id}", 'local');
+        $data['file_path'] = $file->store("subject-modules/{$subject->id}");
         $data['file_name'] = $file->getClientOriginalName();
         $data['file_size'] = $file->getSize();
 
@@ -75,10 +75,10 @@ class ModuleController extends Controller
         $data = $request->safe()->except(['attachment', 'section_ids']);
 
         if ($request->hasFile('attachment')) {
-            Storage::disk('local')->delete($module->file_path);
+            Storage::disk()->delete($module->file_path);
 
             $file = $request->file('attachment');
-            $data['file_path'] = $file->store("subject-modules/{$subject->id}", 'local');
+            $data['file_path'] = $file->store("subject-modules/{$subject->id}");
             $data['file_name'] = $file->getClientOriginalName();
             $data['file_size'] = $file->getSize();
         }
@@ -99,7 +99,7 @@ class ModuleController extends Controller
         $this->authorizeManager($request, $subject);
         $this->authorizeModuleBelongsToSubject($subject, $module);
 
-        Storage::disk('local')->delete($module->file_path);
+        Storage::disk()->delete($module->file_path);
         $module->delete();
 
         return response()->noContent();
@@ -114,18 +114,15 @@ class ModuleController extends Controller
         $this->authorizeManager($request, $subject);
         $this->authorizeModuleBelongsToSubject($subject, $module);
 
-        abort_unless(Storage::disk('local')->exists($module->file_path), 404);
+        abort_unless(Storage::disk()->exists($module->file_path), 404);
 
-        $path = Storage::disk('local')->path($module->file_path);
         $name = $module->file_name ?: basename($module->file_path);
 
         if ($request->boolean('download')) {
-            return Storage::disk('local')->download($module->file_path, $name);
+            return Storage::disk()->download($module->file_path, $name);
         }
 
-        return response()->file($path, [
-            'Content-Disposition' => 'inline; filename="'.addslashes($name).'"',
-        ]);
+        return Storage::disk()->response($module->file_path, $name);
     }
 
     private function authorizeManager(Request $request, Subject $subject): void
@@ -186,10 +183,10 @@ class ModuleController extends Controller
             $attachmentPath = null;
             $attachmentName = null;
 
-            if ($module->file_path && Storage::disk('local')->exists($module->file_path)) {
+            if ($module->file_path && Storage::disk()->exists($module->file_path)) {
                 $extension = pathinfo($module->file_path, PATHINFO_EXTENSION) ?: 'pdf';
                 $attachmentPath = "class-posts/{$classId}/".Str::random(40).".{$extension}";
-                Storage::disk('local')->copy($module->file_path, $attachmentPath);
+                Storage::disk()->copy($module->file_path, $attachmentPath);
                 $attachmentName = $module->file_name;
             }
 
