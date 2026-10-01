@@ -12,7 +12,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    padding: 20px;
 }
 
 .container {
@@ -307,118 +308,93 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
     border: 1px solid green !important;
 }
 
-/* MOBILE RESPONSIVE */
-@media (max-width: 600px) {
+/* MOBILE RESPONSIVE — the card stacks in normal flow (the active form on
+   top, its switch panel underneath) so it grows with its content instead
+   of clipping it inside fixed heights. */
+@media (max-width: 768px) {
+    body {
+        padding: 16px;
+    }
+
     .container {
         width: 100%;
-        max-width: 380px;
-        min-height: 750px;
-        height: auto;
+        max-width: 420px;
+        min-height: 0;
         border-radius: 20px;
-        overflow: hidden;
-        position: relative;
     }
 
-    .form-container {
+    .form-container,
+    .container.right-panel-active .form-container {
+        position: static;
         width: 100%;
-        position: absolute;
-        top: 0;
-        left: 0;
-        padding-top: 20px;
-        height: 400px;
-        transition:
-            transform 0.6s ease-in-out,
-            opacity 0.4s;
-    }
-
-    .sign-in-container {
-        transform: translateX(0);
+        height: auto;
+        transform: none;
         opacity: 1;
-        z-index: 5;
+        animation: lqFormIn 0.35s ease-out;
     }
 
-    .sign-up-container {
-        transform: translateX(100%);
-        opacity: 0;
-        z-index: 3;
-    }
-
+    .sign-up-container,
     .container.right-panel-active .sign-in-container {
-        transform: translateX(-100%);
-        opacity: 0;
+        display: none;
     }
 
     .container.right-panel-active .sign-up-container {
-        transform: translateX(0);
-        opacity: 1;
-        z-index: 6;
+        display: block;
     }
 
     form {
-        padding: 0 35px;
+        height: auto;
+        padding: 32px 24px;
+    }
+
+    h1 {
+        font-size: 26px;
+        line-height: 1.25;
+    }
+
+    /* 16px keeps iOS from zooming the page when a field is focused. */
+    input {
+        font-size: 16px;
+    }
+
+    button {
+        max-width: 100%;
+        padding: 12px 32px;
     }
 
     /* --- Overlay --- */
-    .overlay-container {
-        position: absolute;
-        top: 400px;
-        left: 0;
-        width: 100%;
-        height: calc(100% - 400px);
-        overflow: hidden;
-        transition: transform 0.6s ease-in-out;
-        z-index: 100;
-    }
-
+    .overlay-container,
     .container.right-panel-active .overlay-container {
-        transform: translateX(0);
+        position: static;
+        width: 100%;
+        height: auto;
+        transform: none;
     }
 
-    .overlay {
-        background: linear-gradient(to right, #1e3c72, #2a5298);
-        color: #fff;
-        position: absolute;
-        left: -100%;
-        top: 0;
-        width: 200%;
-        height: 100%;
-        transform: translateX(0);
-        transition: transform 0.6s ease-in-out;
-    }
-
+    .overlay,
     .container.right-panel-active .overlay {
-        transform: translateX(50%);
+        position: static;
+        width: 100%;
+        height: auto;
+        transform: none;
     }
 
-    .overlay-panel {
-        position: absolute;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        top: 0;
-        width: 50%;
-        height: 100%;
-        padding: 20px;
-        transition: transform 0.6s ease-in-out;
+    .overlay-panel,
+    .container.right-panel-active .overlay-panel {
+        position: static;
+        width: 100%;
+        height: auto;
+        padding: 28px 24px;
+        transform: none;
     }
 
-    .overlay-left {
-        left: 0;
-        transform: translateX(-20%);
+    .overlay-left,
+    .container.right-panel-active .overlay-right {
+        display: none;
     }
 
     .container.right-panel-active .overlay-left {
-        transform: translateX(0);
-    }
-
-    .overlay-right {
-        right: 0;
-        transform: translateX(0);
-    }
-
-    .container.right-panel-active .overlay-right {
-        transform: translateX(20%);
+        display: flex;
     }
 
     .overlay h1 {
@@ -428,12 +404,19 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 
     .overlay p {
         font-size: 13px;
-        max-width: 220px;
+        max-width: 280px;
+        margin-bottom: 0;
     }
 
     .ghost {
         padding: 10px 25px;
         font-size: 14px;
+    }
+}
+
+@keyframes lqFormIn {
+    from {
+        opacity: 0;
     }
 }
 
@@ -450,7 +433,9 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .container {
+    .container,
+    .form-container,
+    .container.right-panel-active .form-container {
         animation: none;
     }
 }

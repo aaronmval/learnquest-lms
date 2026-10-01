@@ -35,9 +35,24 @@
       padding: 40px;
       border-radius: 15px;
       text-align: center;
+      width: calc(100% - 32px);
       max-width: 400px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
       animation: slideUp 0.3s ease-out;
+    }
+
+    @media (max-width: 480px) {
+      .role-modal-content {
+        padding: 28px 20px;
+      }
+
+      .role-button,
+      .role-modal-buttons button {
+        padding: 12px 10px;
+        letter-spacing: 0;
+      }
     }
 
     .role-modal-content h2 {
