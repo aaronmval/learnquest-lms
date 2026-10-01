@@ -11,9 +11,10 @@ body {
     color: #0f172a;
 }
 
+/* Fills the content frame — no fixed max width. */
 #mainContent {
-    max-width: 1180px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     display: grid;
     gap: 1.5rem;
 }
@@ -59,7 +60,7 @@ body {
 /* LAYOUT */
 .validator-layout {
     display: grid;
-    grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+    grid-template-columns: clamp(260px, 22vw, 380px) minmax(0, 1fr);
     gap: 1.25rem;
     align-items: start;
 }
@@ -503,6 +504,10 @@ body.dark .adaptive-preview {
     accent-color: #16a34a;
 }
 
+.mix-row[data-level="medium"] .mix-slider {
+    accent-color: #eab308;
+}
+
 .mix-row[data-level="hard"] .mix-slider {
     accent-color: #dc2626;
 }
@@ -652,6 +657,18 @@ body.dark .adaptive-preview {
 .question-list {
     display: grid;
     gap: 0.85rem;
+    align-items: start;
+}
+
+/* Two question cards per row once the page is wide enough for both. */
+@media (min-width: 1500px) {
+    .question-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .question-list > .list-empty {
+        grid-column: 1 / -1;
+    }
 }
 
 .question-card {
@@ -697,6 +714,22 @@ body.dark .adaptive-preview {
     background: #f1f5f9;
     border-radius: 999px;
     padding: 0.16rem 0.6rem;
+}
+
+.competency-tag i {
+    font-size: 0.65rem;
+    margin-right: 0.15rem;
+}
+
+/* A tag the teacher corrected. */
+.competency-tag.is-retagged {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+body.dark .competency-tag.is-retagged {
+    background: #2e2356;
+    color: #ddd6fe;
 }
 
 .review-chip {
@@ -795,13 +828,157 @@ body.dark .adaptive-preview {
     padding: 0.35rem 0.5rem;
 }
 
+.question-actions .competency-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+body.dark .question-actions .competency-field {
+    color: #cbd5e1;
+}
+
+/* Button that opens the searchable competency list. */
+.competency-picker-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: auto;
+    max-width: min(22rem, 60vw);
+    padding: 0.35rem 0.6rem;
+    font-family: inherit;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+}
+
+.competency-picker-btn:focus-visible,
+.competency-picker-btn[aria-expanded="true"] {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+}
+
+.competency-picker-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.competency-picker-btn i {
+    font-size: 0.65rem;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+/* SEARCHABLE COMPETENCY DROPDOWN */
+.competency-popover {
+    position: fixed;
+    z-index: 1200;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
+    padding: 0.5rem;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.competency-search {
+    position: relative;
+}
+
+.competency-search i {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.competency-search input {
+    width: 100%;
+    box-sizing: border-box;
+    padding-left: 2rem;
+}
+
+.competency-options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: min(16rem, 45vh);
+    overflow-y: auto;
+}
+
+.competency-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    color: #0f172a;
+    cursor: pointer;
+}
+
+.competency-option.is-active {
+    background: #eff6ff;
+}
+
+.competency-option.is-current {
+    font-weight: 700;
+}
+
+.competency-option i {
+    font-size: 0.7rem;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.competency-option-empty {
+    padding: 0.6rem;
+    font-size: 0.83rem;
+    color: #64748b;
+}
+
+body.dark .competency-popover {
+    background: #1e293b;
+    border-color: #475569;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .competency-option {
+    color: #f1f5f9;
+}
+
+body.dark .competency-option.is-active {
+    background: #27405f;
+}
+
+body.dark .competency-option i {
+    color: #93c5fd;
+}
+
+body.dark .competency-option-empty,
+body.dark .competency-picker-btn i {
+    color: #94a3b8;
+}
+
 .question-actions .actions-spacer {
     flex: 1;
 }
 
 .reject-form {
-    display: grid;
-    grid-template-columns: minmax(0, 12rem) minmax(0, 1fr) auto auto;
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
     background: #fef2f2;
@@ -1232,6 +1409,16 @@ body.dark .fb-kpi {
     grid-column: span 3;
 }
 
+.reject-form [data-field="reason"] {
+    flex: 0 1 12rem;
+    width: auto;
+}
+
+.reject-form [data-field="comment"] {
+    flex: 1 1 14rem;
+    width: auto;
+}
+
 .calibration-row {
     display: grid;
     grid-template-columns: 5.2rem minmax(0, 1fr) 8.5rem;
@@ -1348,7 +1535,25 @@ body.dark .fb-kpi {
     }
 
     .reject-form {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .reject-form [data-field="reason"],
+    .reject-form [data-field="comment"] {
+        flex: 0 0 auto;
+    }
+}
+
+/* Wide screens: quiz settings beside student feedback, and the training
+   tiles four across, so the page uses its full width. */
+@media (min-width: 1500px) {
+    .training-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metric-wide {
+        grid-column: span 2;
     }
 }
 

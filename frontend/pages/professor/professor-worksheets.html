@@ -247,7 +247,10 @@
                             Students already see these questions. Reject any
                             that are wrong or unclear (they're hidden from
                             students right away) and correct difficulty labels —
-                            QuestAI learns from every review.
+                            QuestAI learns from every review. Check each
+                            question's <strong>competency</strong> too: it
+                            decides which skill a student's answer counts
+                            toward.
                         </p>
 
                         <div id="topUpBar" class="topup-bar is-hidden">
@@ -262,6 +265,7 @@
                             <button type="button" class="filter-chip" data-filter="unreviewed">Unreviewed</button>
                             <button type="button" class="filter-chip" data-filter="rejected">Rejected</button>
                             <button type="button" class="filter-chip" data-filter="flagged">Flagged by results</button>
+                            <button type="button" class="filter-chip" data-filter="retagged">Competency changed</button>
                         </div>
 
                         <div id="questionList" class="question-list"></div>

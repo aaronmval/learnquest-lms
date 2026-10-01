@@ -23,7 +23,8 @@ const EMPTY_MESSAGES = {
 /* STATE */
 let dashboardData = null;
 let currentStudents = [];
-let sectionsLoaded = false;
+let allSections = [];
+let filterOptionsLoaded = false;
 let loadController = null;
 let insightController = null;
 
@@ -44,6 +45,7 @@ function bindById(id, event, handler) {
 }
 
 function initDashboard() {
+    bindById("subjectSelect", "change", onSubjectChange);
     bindById("sectionSelect", "change", onFilterChange);
     bindById("quarterSelect", "change", onFilterChange);
     bindById("startDate", "change", onFilterChange);
@@ -69,6 +71,7 @@ document.addEventListener("DOMContentLoaded", initDashboard);
 /* DATA LOADING */
 function currentFilters() {
     return {
+        subjectId: document.getElementById("subjectSelect")?.value || "",
         classId: document.getElementById("sectionSelect")?.value || "",
         quarter: document.getElementById("quarterSelect")?.value || "",
         start: document.getElementById("startDate")?.value || "",
@@ -77,8 +80,9 @@ function currentFilters() {
 }
 
 function filterParams() {
-    const { classId, quarter, start, end } = currentFilters();
+    const { subjectId, classId, quarter, start, end } = currentFilters();
     const params = new URLSearchParams();
+    if (subjectId) params.set("subject_id", subjectId);
     if (classId) params.set("class_id", classId);
     if (quarter) params.set("quarter", quarter);
     if (start) params.set("start", start);
@@ -111,7 +115,7 @@ async function loadDashboard() {
         if (!res.ok) throw new Error("failed to load analytics");
 
         dashboardData = await res.json();
-        populateSections(dashboardData.sections);
+        populateFilterOptions(dashboardData);
         refreshDashboard();
         loadAiAnalysis(params);
     } catch (e) {
@@ -158,18 +162,48 @@ async function loadAiAnalysis(params) {
     }
 }
 
-/* Fill the Section filter with the professor's real sections (once). */
-function populateSections(sections) {
-    const select = document.getElementById("sectionSelect");
-    if (!select || sectionsLoaded) return;
-    sectionsLoaded = true;
+/* Fill the Subject and Section filters with the professor's real ones (once). */
+function populateFilterOptions(data) {
+    if (filterOptionsLoaded) return;
+    filterOptionsLoaded = true;
 
-    (sections || []).forEach((section) => {
+    allSections = data.sections || [];
+
+    const subjectSelect = document.getElementById("subjectSelect");
+    (data.subjects || []).forEach((subject) => {
+        const option = document.createElement("option");
+        option.value = String(subject.id);
+        option.textContent = subject.name;
+        subjectSelect?.appendChild(option);
+    });
+
+    renderSectionOptions();
+}
+
+/* The Section filter only lists sections of the chosen subject. */
+function renderSectionOptions() {
+    const select = document.getElementById("sectionSelect");
+    if (!select) return;
+
+    const subjectId = document.getElementById("subjectSelect")?.value || "";
+    const previous = select.value;
+    const sections = allSections.filter((s) => !subjectId || String(s.subject_id) === subjectId);
+
+    select.innerHTML = '<option value="">All Sections</option>';
+    sections.forEach((section) => {
         const option = document.createElement("option");
         option.value = String(section.id);
         option.textContent = section.label;
         select.appendChild(option);
     });
+
+    // Keep the chosen section only if it belongs to the chosen subject.
+    select.value = sections.some((s) => String(s.id) === previous) ? previous : "";
+}
+
+function selectedLabel(selectId) {
+    const select = document.getElementById(selectId);
+    return select?.value ? select.selectedOptions[0]?.textContent || "" : "";
 }
 
 /* DERIVED VIEW DATA */
@@ -694,18 +728,25 @@ function escapeHtml(value) {
 }
 
 /* FILTERS */
-function onFilterChange() {
-    const { quarter, start, end } = currentFilters();
-    const sectionSelect = document.getElementById("sectionSelect");
-    const sectionLabel = sectionSelect?.value ? sectionSelect.selectedOptions[0]?.textContent : "";
-
-    loadDashboard();
-    updateFilterBadges(buildBadgeText(sectionLabel, quarter, start, end));
+function onSubjectChange() {
+    renderSectionOptions();
+    onFilterChange();
 }
 
-function buildBadgeText(sectionLabel, quarter, startDate, endDate) {
+function onFilterChange() {
+    const { quarter, start, end } = currentFilters();
+
+    loadDashboard();
+    updateFilterBadges(
+        buildBadgeText(selectedLabel("subjectSelect"), selectedLabel("sectionSelect"), quarter, start, end),
+    );
+}
+
+function buildBadgeText(subjectLabel, sectionLabel, quarter, startDate, endDate) {
     const parts = [];
+    // A section label already starts with its subject.
     if (sectionLabel) parts.push(sectionLabel);
+    else if (subjectLabel) parts.push(subjectLabel);
     if (quarter) parts.push(QUARTER_NAMES[quarter]);
     if (startDate && endDate) parts.push(startDate + " to " + endDate);
     else if (startDate) parts.push("From " + startDate);
@@ -736,10 +777,11 @@ function updateFilterBadges(text) {
 }
 
 function resetFilters() {
-    ["sectionSelect", "startDate", "endDate", "quarterSelect"].forEach((id) => {
+    ["subjectSelect", "sectionSelect", "startDate", "endDate", "quarterSelect"].forEach((id) => {
         const node = document.getElementById(id);
         if (node) node.value = "";
     });
+    renderSectionOptions();
 
     loadDashboard();
     updateFilterBadges("");
@@ -759,12 +801,12 @@ function exportCsv() {
     }
 
     const { quarter, start, end } = currentFilters();
-    const sectionSelect = document.getElementById("sectionSelect");
     const rows = [];
     const add = (...cells) => rows.push(cells.map(csvCell).join(","));
 
     add("LearnQuest Professor Dashboard Export");
-    add("Section", sectionSelect?.value ? sectionSelect.selectedOptions[0]?.textContent : "All Sections");
+    add("Subject", selectedLabel("subjectSelect") || "All Subjects");
+    add("Section", selectedLabel("sectionSelect") || "All Sections");
     add("Quarter", QUARTER_NAMES[quarter] || "All Quarters");
     add("Date range", start || "Any", end || "Any");
     add("Quiz responses counted", dashboardData.record_count);

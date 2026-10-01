@@ -540,6 +540,7 @@ function wireReviewCard() {
         else if (action === 'confirm-reject') submitReview(id, 'rejected', card);
         else if (action === 'cancel-reject') toggleRejectForm(null);
         else if (action === 'undo') clearReview(id, card);
+        else if (action === 'pick-competency') toggleCompetencyPicker(button, id);
         else if (action === 'use-suggestion') {
             const select = card.querySelector('select[data-action="difficulty"]');
             if (select) select.value = button.dataset.value;
@@ -599,12 +600,16 @@ function questionMatchesFilter(q) {
             return q.review?.verdict === 'rejected';
         case 'flagged':
             return Boolean(q.stats?.flagged);
+        case 'retagged':
+            return Boolean(q.ai_competency);
         default:
             return true;
     }
 }
 
 function renderQuestions() {
+    closeCompetencyPicker();
+
     const { questions, limits } = state.studio;
     const visible = questions.filter(questionMatchesFilter);
 
@@ -613,6 +618,7 @@ function renderQuestions() {
             all: 'This quiz has no questions yet.',
             unreviewed: 'Every question has been reviewed. 🎉',
             rejected: 'No rejected questions.',
+            retagged: 'You have not changed any competency tags.',
             flagged: `No questions flagged yet — a question needs at least ${limits.min_responses} student answers before its results are compared with its difficulty label.`,
         }[state.filter];
         dom.questionList.innerHTML = `<p class="list-empty">${esc(empty)}</p>`;
@@ -653,6 +659,11 @@ function renderQuestionCard(q, number, limits) {
         d => `<option value="${d}"${d === q.difficulty ? ' selected' : ''}>${capitalize(d)}</option>`,
     ).join('');
 
+    const competencies = state.studio.competencies || [];
+    const retagged = q.ai_competency
+        ? ` <span class="material-meta">(AI tagged ${esc(q.ai_competency)})</span>`
+        : '';
+
     const isRejecting = state.rejectingId === q.id;
     const reasonOptions = Object.entries(limits.reasons)
         .map(([value, label]) => `<option value="${value}"${review?.reason === value ? ' selected' : ''}>${esc(capitalize(label))}</option>`)
@@ -663,7 +674,7 @@ function renderQuestionCard(q, number, limits) {
             <div class="question-card-head">
                 <span class="q-number">Q${number}</span>
                 <span class="difficulty-badge diff-${esc(q.difficulty)}">${esc(q.difficulty)}</span>${relabel}
-                ${q.competency ? `<span class="competency-tag">${esc(q.competency)}</span>` : ''}
+                ${q.competency ? `<span class="competency-tag${q.ai_competency ? ' is-retagged' : ''}"><i class="fas fa-tag"></i> ${esc(q.competency)}</span>${retagged}` : ''}
                 ${reviewChip}
             </div>
             <p class="mcq-question-text">${esc(q.text)}</p>
@@ -678,6 +689,14 @@ function renderQuestionCard(q, number, limits) {
                 <label>Difficulty
                     <select class="field-select" data-action="difficulty" aria-label="Difficulty for question ${number}">${options}</select>
                 </label>
+                ${competencies.length ? `<span class="competency-field">Competency
+                    <button type="button" class="field-select competency-picker-btn" data-action="pick-competency"
+                        aria-haspopup="listbox" aria-expanded="false"
+                        aria-label="Competency for question ${number}: ${esc(q.competency || 'none')}. Change">
+                        <span class="competency-picker-value">${esc(q.competency || 'Choose…')}</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                </span>` : ''}
                 <span class="actions-spacer"></span>
                 ${review ? '<button type="button" class="link-btn" data-action="undo">Undo review</button>' : ''}
                 <button type="button" class="action-btn check-btn" data-action="approve"${review?.verdict === 'approved' ? ' disabled' : ''}>
@@ -762,6 +781,185 @@ async function submitReview(id, verdict, card, { keepReason = false } = {}) {
         loadTraining();
     } catch (e) {
         card.classList.remove('is-busy');
+        showToast('Could not reach the server. Please try again.');
+    }
+}
+
+/* COMPETENCY PICKER — one shared searchable dropdown, opened from a
+   question card's Competency button. Type to filter, arrows + Enter or a
+   click to choose, Escape to close. */
+const competencyPicker = { el: null, input: null, list: null, anchor: null, questionId: null, options: [], active: 0 };
+
+function buildCompetencyPicker() {
+    const el = document.createElement('div');
+    el.className = 'competency-popover is-hidden';
+    el.innerHTML = `
+        <div class="competency-search">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="text" class="field-input" placeholder="Search competencies…" autocomplete="off"
+                spellcheck="false" role="combobox" aria-expanded="true" aria-controls="competencyOptions"
+                aria-label="Search competencies" />
+        </div>
+        <ul id="competencyOptions" class="competency-options" role="listbox"></ul>`;
+    document.body.appendChild(el);
+
+    competencyPicker.el = el;
+    competencyPicker.input = el.querySelector('input');
+    competencyPicker.list = el.querySelector('ul');
+
+    competencyPicker.input.addEventListener('input', () => {
+        competencyPicker.active = 0;
+        renderCompetencyOptions();
+    });
+
+    competencyPicker.input.addEventListener('keydown', event => {
+        const count = competencyPicker.options.length;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (!count) return;
+            competencyPicker.active = (competencyPicker.active + (event.key === 'ArrowDown' ? 1 : count - 1)) % count;
+            renderCompetencyOptions();
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            const choice = competencyPicker.options[competencyPicker.active];
+            if (choice) chooseCompetency(choice.id);
+        } else if (event.key === 'Escape') {
+            event.stopPropagation();
+            closeCompetencyPicker({ refocus: true });
+        } else if (event.key === 'Tab') {
+            closeCompetencyPicker();
+        }
+    });
+
+    // mousedown keeps focus in the search box until the choice is made.
+    competencyPicker.list.addEventListener('mousedown', event => {
+        event.preventDefault();
+        const option = event.target.closest('[data-id]');
+        if (option) chooseCompetency(Number(option.dataset.id));
+    });
+
+    document.addEventListener('mousedown', event => {
+        if (!competencyPicker.anchor) return;
+        if (competencyPicker.el.contains(event.target) || competencyPicker.anchor.contains(event.target)) return;
+        closeCompetencyPicker();
+    });
+
+    // The popover is fixed-position, so close it rather than let it drift.
+    window.addEventListener('resize', () => closeCompetencyPicker());
+    document.addEventListener('scroll', event => {
+        if (competencyPicker.anchor && !competencyPicker.el.contains(event.target)) closeCompetencyPicker();
+    }, true);
+}
+
+function toggleCompetencyPicker(button, questionId) {
+    if (!competencyPicker.el) buildCompetencyPicker();
+
+    if (competencyPicker.anchor === button) {
+        closeCompetencyPicker();
+        return;
+    }
+
+    closeCompetencyPicker();
+    competencyPicker.anchor = button;
+    competencyPicker.questionId = questionId;
+    competencyPicker.input.value = '';
+    button.setAttribute('aria-expanded', 'true');
+
+    // Start on the question's current competency.
+    const current = findQuestion(questionId)?.competency_id;
+    competencyPicker.active = Math.max(0, (state.studio.competencies || []).findIndex(c => c.id === current));
+
+    competencyPicker.el.classList.remove('is-hidden');
+    renderCompetencyOptions();
+    positionCompetencyPicker();
+    competencyPicker.input.focus();
+}
+
+function closeCompetencyPicker({ refocus = false } = {}) {
+    if (!competencyPicker.anchor) return;
+
+    const anchor = competencyPicker.anchor;
+    anchor.setAttribute('aria-expanded', 'false');
+    competencyPicker.el.classList.add('is-hidden');
+    competencyPicker.anchor = null;
+    competencyPicker.questionId = null;
+    if (refocus && document.body.contains(anchor)) anchor.focus();
+}
+
+function renderCompetencyOptions() {
+    const query = competencyPicker.input.value.trim().toLowerCase();
+    const current = findQuestion(competencyPicker.questionId)?.competency_id;
+
+    competencyPicker.options = (state.studio?.competencies || []).filter(c => c.name.toLowerCase().includes(query));
+    competencyPicker.active = Math.min(competencyPicker.active, Math.max(0, competencyPicker.options.length - 1));
+
+    competencyPicker.list.innerHTML = competencyPicker.options.length
+        ? competencyPicker.options
+              .map(
+                  (c, i) => `
+                <li id="competencyOption${c.id}" role="option" data-id="${c.id}" aria-selected="${c.id === current}"
+                    class="competency-option${i === competencyPicker.active ? ' is-active' : ''}${c.id === current ? ' is-current' : ''}">
+                    <span>${esc(c.name)}</span>
+                    ${c.id === current ? '<i class="fas fa-check" aria-hidden="true"></i>' : ''}
+                </li>`,
+              )
+              .join('')
+        : '<li class="competency-option-empty">No competencies match your search.</li>';
+
+    const active = competencyPicker.options[competencyPicker.active];
+    if (active) {
+        competencyPicker.input.setAttribute('aria-activedescendant', `competencyOption${active.id}`);
+        competencyPicker.list.querySelector('.is-active')?.scrollIntoView({ block: 'nearest' });
+    } else {
+        competencyPicker.input.removeAttribute('aria-activedescendant');
+    }
+}
+
+/* Below the button when there is room, otherwise above it. */
+function positionCompetencyPicker() {
+    const rect = competencyPicker.anchor.getBoundingClientRect();
+    const el = competencyPicker.el;
+    const width = Math.min(window.innerWidth - 16, Math.max(rect.width, 320));
+
+    el.style.width = `${width}px`;
+    el.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`;
+
+    const height = el.offsetHeight;
+    const below = window.innerHeight - rect.bottom;
+    el.style.top = below >= height + 12 || below >= rect.top
+        ? `${rect.bottom + 6}px`
+        : `${Math.max(8, rect.top - height - 6)}px`;
+}
+
+function chooseCompetency(competencyId) {
+    const questionId = competencyPicker.questionId;
+    const card = competencyPicker.anchor?.closest('.question-card');
+    const unchanged = findQuestion(questionId)?.competency_id === competencyId;
+
+    closeCompetencyPicker({ refocus: unchanged });
+    if (!unchanged && card) saveCompetency(questionId, competencyId, card);
+}
+
+async function saveCompetency(id, competencyId, card) {
+    card.classList.add('is-busy');
+
+    try {
+        const { ok, status, data } = await apiRequest(lessonUrl(`/questions/${id}/competency`), {
+            method: 'PUT',
+            body: { competency_id: competencyId },
+        });
+
+        if (!ok) {
+            showToast(errorMessageFor(status, data, 'Could not change the competency.'));
+            renderQuestions(); // put the dropdown back on the saved value
+            return;
+        }
+
+        replaceQuestion(data.question);
+        renderQuestions();
+        showToast(`Tagged as "${data.question.competency}"`);
+    } catch (e) {
+        renderQuestions();
         showToast('Could not reach the server. Please try again.');
     }
 }

@@ -192,6 +192,8 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
         Route::post('/top-up', [QuizStudioController::class, 'topUp'])
             ->middleware('throttle:6,1')->name('top-up');
         Route::put('/questions/{question}/review', [QuizStudioController::class, 'review'])->name('questions.review');
+        Route::put('/questions/{question}/competency', [QuizStudioController::class, 'updateCompetency'])
+            ->name('questions.competency');
         Route::delete('/questions/{question}/review', [QuizStudioController::class, 'clearReview'])
             ->name('questions.review.clear');
     });

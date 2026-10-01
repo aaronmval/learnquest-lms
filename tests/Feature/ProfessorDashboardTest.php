@@ -153,7 +153,10 @@ class ProfessorDashboardTest extends TestCase
         // Strongest student first.
         $this->assertSame($this->alice->id, $json['students'][0]['student_id']);
         $this->assertSame(6, $json['record_count']);
-        $this->assertSame([['id' => $this->classId, 'label' => 'Chemistry - STEM A']], $json['sections']);
+        $this->assertSame(
+            [['id' => $this->classId, 'label' => 'Chemistry - STEM A', 'subject_id' => $this->subjectId]],
+            $json['sections'],
+        );
     }
 
     public function test_unassessed_students_count_at_prior_and_are_flagged(): void
@@ -245,6 +248,57 @@ class ProfessorDashboardTest extends TestCase
 
         $json = $this->actingAs($collaborator)->getJson("/professor/analytics?class_id={$this->classId}")->assertOk()->json();
         $this->assertCount(2, $json['students']);
+    }
+
+    public function test_subject_filter_scopes_everything_to_one_subject(): void
+    {
+        // A second subject taught by the same professor, with its own section, competency and student.
+        $physicsId = $this->actingAs($this->professor)->postJson('/professor/subjects', ['name' => 'Physics'])->json('id');
+        $physicsClassId = $this->actingAs($this->professor)->postJson("/professor/subjects/{$physicsId}/sections", [
+            'name' => 'Physics - STEM A',
+            'section' => 'STEM A',
+        ])->json('id');
+        $forcesId = $this->actingAs($this->professor)
+            ->postJson("/professor/subjects/{$physicsId}/competencies", ['name' => 'Forces'])->json('id');
+        $carla = User::factory()->create(['role' => 'student', 'name' => 'Carla Diaz']);
+        $this->join($carla, $physicsClassId);
+
+        [$postId, $questions] = $this->lessonQuiz('1st Quarter');
+        $this->submit($this->alice, $postId, $questions, [0, 0]);
+
+        $all = $this->actingAs($this->professor)->getJson('/professor/analytics')->assertOk()->json();
+        $this->assertSame(['Chemistry', 'Physics'], array_column($all['subjects'], 'name'));
+        $this->assertCount(3, $all['competencies']);
+        $this->assertSame(3, $all['student_count']);
+        $this->assertSame($physicsId, collect($all['sections'])->firstWhere('id', $physicsClassId)['subject_id']);
+
+        $chemistry = $this->actingAs($this->professor)
+            ->getJson("/professor/analytics?subject_id={$this->subjectId}")->assertOk()->json();
+        $this->assertSame($this->subjectId, $chemistry['filters']['subject_id']);
+        $this->assertEqualsCanonicalizing([$this->atomsId, $this->molesId], array_column($chemistry['competencies'], 'id'));
+        // One subject in scope, so competency names carry no subject suffix.
+        $this->assertSame('Atomic Structure', $this->competency($chemistry, $this->atomsId)['name']);
+        $this->assertSame(2, $chemistry['student_count']);
+        $this->assertSame(2, $chemistry['record_count']);
+        $this->assertNotEmpty($chemistry['quiz_scores']);
+        // The filter lists stay complete so the professor can switch subject.
+        $this->assertCount(2, $chemistry['subjects']);
+        $this->assertCount(2, $chemistry['sections']);
+
+        $physics = $this->actingAs($this->professor)
+            ->getJson("/professor/analytics?subject_id={$physicsId}")->assertOk()->json();
+        $this->assertSame([$forcesId], array_column($physics['competencies'], 'id'));
+        $this->assertSame(['Carla Diaz'], array_column($physics['students'], 'name'));
+        $this->assertSame(0, $physics['record_count']);
+        $this->assertSame([], $physics['quiz_scores']);
+
+        // A section that isn't part of the chosen subject, and other professors' subjects, are not found.
+        $this->actingAs($this->professor)
+            ->getJson("/professor/analytics?subject_id={$physicsId}&class_id={$this->classId}")->assertNotFound();
+
+        $stranger = User::factory()->create(['role' => 'professor']);
+        $this->actingAs($stranger)->getJson("/professor/analytics?subject_id={$this->subjectId}")->assertNotFound();
+        $this->actingAs($stranger)->getJson("/professor/analytics/insights?subject_id={$this->subjectId}")->assertNotFound();
     }
 
     public function test_archived_sections_are_excluded(): void

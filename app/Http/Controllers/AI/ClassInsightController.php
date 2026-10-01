@@ -27,6 +27,7 @@ class ClassInsightController extends Controller
             $request->quarterName(),
             $request->startDate(),
             $request->endDate(),
+            $request->subjectId(),
         );
 
         try {

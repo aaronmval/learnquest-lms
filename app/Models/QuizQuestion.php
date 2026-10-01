@@ -13,6 +13,7 @@ class QuizQuestion extends Model
     protected $fillable = [
         'quiz_id',
         'competency_id',
+        'ai_competency_id',
         'question_text',
         'choices',
         'correct_answer',
@@ -36,6 +37,12 @@ class QuizQuestion extends Model
     public function competency(): BelongsTo
     {
         return $this->belongsTo(Competency::class);
+    }
+
+    /** The AI's original tag, set only after a teacher corrected it. */
+    public function aiCompetency(): BelongsTo
+    {
+        return $this->belongsTo(Competency::class, 'ai_competency_id');
     }
 
     public function answers(): HasMany

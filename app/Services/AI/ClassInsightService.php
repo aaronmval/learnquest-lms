@@ -229,7 +229,11 @@ class ClassInsightService
         $classId = $dashboard['filters']['class_id'];
         $section = $classId ? collect($dashboard['sections'])->firstWhere('id', $classId)['label'] ?? null : null;
 
+        $subjectId = $dashboard['filters']['subject_id'] ?? null;
+        $subject = $subjectId ? collect($dashboard['subjects'] ?? [])->firstWhere('id', $subjectId)['name'] ?? null : null;
+
         return collect([
+            $subject ? "Subject: {$subject}" : null,
             $section ?? 'All sections',
             $dashboard['filters']['quarter'],
             $dashboard['filters']['start'] ? 'from '.$dashboard['filters']['start'] : null,

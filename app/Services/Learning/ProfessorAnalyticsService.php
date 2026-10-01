@@ -52,16 +52,25 @@ class ProfessorAnalyticsService
     /**
      * @param  ?int  $classId  narrow to one managed section; any other id is a 404.
      * @param  ?string  $quarter  e.g. "1st Quarter" — matched against the quiz's lesson post.
+     * @param  ?int  $subjectId  narrow to the managed sections of one subject; any other id is a 404.
      *
      * @throws ModelNotFoundException
      */
-    public function dashboard(User $professor, ?int $classId = null, ?string $quarter = null, ?Carbon $start = null, ?Carbon $end = null): array
+    public function dashboard(User $professor, ?int $classId = null, ?string $quarter = null, ?Carbon $start = null, ?Carbon $end = null, ?int $subjectId = null): array
     {
         $managed = $this->managedClasses($professor);
-        $classes = $classId ? $managed->where('id', $classId)->values() : $managed;
+        $classes = $subjectId ? $managed->where('subject_id', $subjectId)->values() : $managed;
 
-        if ($classId && $classes->isEmpty()) {
-            throw (new ModelNotFoundException)->setModel(ClassRoom::class, [$classId]);
+        if ($subjectId && $classes->isEmpty()) {
+            throw (new ModelNotFoundException)->setModel(Subject::class, [$subjectId]);
+        }
+
+        if ($classId) {
+            $classes = $classes->where('id', $classId)->values();
+
+            if ($classes->isEmpty()) {
+                throw (new ModelNotFoundException)->setModel(ClassRoom::class, [$classId]);
+            }
         }
 
         $competencies = $classes
@@ -81,12 +90,24 @@ class ProfessorAnalyticsService
 
         return [
             'filters' => [
+                'subject_id' => $subjectId,
                 'class_id' => $classId,
                 'quarter' => $quarter,
                 'start' => $start?->toDateString(),
                 'end' => $end?->toDateString(),
             ],
-            'sections' => $managed->map(fn (ClassRoom $c) => ['id' => $c->id, 'label' => $this->sectionLabel($c)])->values()->all(),
+            'subjects' => $managed
+                ->map(fn (ClassRoom $c) => $c->parentSubject)
+                ->filter()
+                ->unique('id')
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->map(fn (Subject $s) => ['id' => $s->id, 'name' => $s->name])
+                ->values()
+                ->all(),
+            'sections' => $managed
+                ->map(fn (ClassRoom $c) => ['id' => $c->id, 'label' => $this->sectionLabel($c), 'subject_id' => $c->subject_id])
+                ->values()
+                ->all(),
             'competencies' => $this->competencyRows($classes, $labels, $params, $mastery, $observations),
             'quiz_scores' => $this->quizScores($classes, $studentIds, $quarter, $start, $end),
             'students' => $students,

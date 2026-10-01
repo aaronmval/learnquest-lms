@@ -272,6 +272,65 @@ class QuizStudioTest extends TestCase
 
     /* ── Generation with settings + training ── */
 
+    public function test_competency_tag_can_be_corrected_and_only_future_answers_follow_it(): void
+    {
+        $subjectId = ClassRoom::find($this->classId)->subject_id;
+        $bondingId = $this->actingAs($this->professor)
+            ->postJson("/professor/subjects/{$subjectId}/competencies", ['name' => 'Chemical Bonding'])->json('id');
+        $question = $this->questions['charge'];
+        $url = $this->url("/questions/{$question->id}/competency");
+
+        // The studio lists the subject's competencies and each question's current tag.
+        $studio = $this->actingAs($this->professor)->getJson($this->url('/studio'))->assertOk();
+        $this->assertSame(['Atomic Structure', 'Chemical Bonding'], array_column($studio->json('competencies'), 'name'));
+        $this->assertSame($this->competencyId, $studio->json('questions.0.competency_id'));
+        $this->assertNull($studio->json('questions.0.ai_competency'));
+
+        // An answer recorded before the correction keeps the old competency.
+        $this->submit(['charge' => 0])->assertCreated();
+
+        $this->actingAs($this->professor)->putJson($url, ['competency_id' => $bondingId])
+            ->assertOk()
+            ->assertJsonPath('question.competency', 'Chemical Bonding')
+            ->assertJsonPath('question.competency_id', $bondingId)
+            ->assertJsonPath('question.ai_competency', 'Atomic Structure');
+
+        $this->assertDatabaseHas('quiz_questions', [
+            'id' => $question->id, 'competency_id' => $bondingId, 'ai_competency_id' => $this->competencyId,
+        ]);
+        $this->assertDatabaseHas('quiz_answers', ['quiz_question_id' => $question->id, 'competency_id' => $this->competencyId]);
+        $this->assertDatabaseMissing('quiz_answers', ['quiz_question_id' => $question->id, 'competency_id' => $bondingId]);
+
+        // New answers count toward the corrected competency.
+        $this->submit(['charge' => 0])->assertCreated();
+        $this->assertDatabaseHas('quiz_answers', ['quiz_question_id' => $question->id, 'competency_id' => $bondingId]);
+
+        // Changing it back to the AI's tag clears the correction marker.
+        $this->actingAs($this->professor)->putJson($url, ['competency_id' => $this->competencyId])
+            ->assertOk()
+            ->assertJsonPath('question.ai_competency', null);
+        $this->assertDatabaseHas('quiz_questions', ['id' => $question->id, 'ai_competency_id' => null]);
+    }
+
+    public function test_competency_tag_must_belong_to_the_subject_and_the_owner(): void
+    {
+        $question = $this->questions['charge'];
+        $url = $this->url("/questions/{$question->id}/competency");
+
+        $otherSubjectId = $this->actingAs($this->professor)->postJson('/professor/subjects', ['name' => 'Physics'])->json('id');
+        $forcesId = $this->actingAs($this->professor)
+            ->postJson("/professor/subjects/{$otherSubjectId}/competencies", ['name' => 'Forces'])->json('id');
+
+        $this->actingAs($this->professor)->putJson($url, ['competency_id' => $forcesId])->assertStatus(422);
+        $this->actingAs($this->professor)->putJson($url, ['competency_id' => 999999])->assertStatus(422);
+        $this->actingAs($this->professor)->putJson($url, [])->assertStatus(422);
+
+        $stranger = User::factory()->create(['role' => 'professor']);
+        $this->actingAs($stranger)->putJson($url, ['competency_id' => $this->competencyId])->assertNotFound();
+
+        $this->assertSame($this->competencyId, $question->fresh()->competency_id);
+    }
+
     public function test_generate_uses_settings_and_includes_the_teachers_training_data(): void
     {
         $this->saveSettings(['question_count' => 10, 'difficulty_mix' => ['easy' => 20, 'medium' => 40, 'hard' => 40]]);

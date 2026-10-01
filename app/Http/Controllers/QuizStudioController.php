@@ -8,6 +8,7 @@ use App\Http\Requests\ReviewQuizQuestionRequest;
 use App\Http\Requests\UpdateQuizSettingsRequest;
 use App\Models\ClassPost;
 use App\Models\ClassRoom;
+use App\Models\Competency;
 use App\Models\QuizQuestion;
 use App\Models\QuizQuestionReview;
 use App\Services\AI\QuizGenerationService;
@@ -90,7 +91,7 @@ class QuizStudioController extends Controller
         $this->authorizeOwnedLesson($request, $class, $post);
 
         $quiz = $post->quiz;
-        $questions = $quiz ? $quiz->questions()->with(['competency', 'review'])->get() : collect();
+        $questions = $quiz ? $quiz->questions()->with(['competency', 'aiCompetency', 'review'])->get() : collect();
         $stats = $training->questionStats($questions);
         $settings = $settingsService->for($post);
 
@@ -99,6 +100,11 @@ class QuizStudioController extends Controller
             'settings' => $settings,
             'allocation' => $settingsService->allocate($settings['question_count'], $settings['difficulty_mix']),
             'pool' => $adaptiveQuiz->poolAllocation($settings),
+            // The subject's competencies, for checking each question's tag.
+            'competencies' => ($class->parentSubject?->competencies ?? collect())
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])
+                ->values(),
             'limits' => [
                 'min_question_count' => (int) config('quiz.min_question_count'),
                 'max_question_count' => (int) config('quiz.max_question_count'),
@@ -212,6 +218,43 @@ class QuizStudioController extends Controller
         ]);
     }
 
+    /**
+     * Correct the competency a question is tagged with. The AI's original
+     * tag is kept alongside it. Only future answers are affected: responses
+     * already recorded keep the competency they were graded under, so stored
+     * BKT mastery is not rewritten.
+     */
+    public function updateCompetency(Request $request, ClassRoom $class, ClassPost $post, QuizQuestion $question, QuizTrainingService $training): JsonResponse
+    {
+        $this->authorizeOwnedQuestion($request, $class, $post, $question);
+
+        $validated = $request->validate(['competency_id' => ['required', 'integer']]);
+        $competencyId = (int) $validated['competency_id'];
+
+        // Only competencies of this section's own subject are valid tags.
+        abort_unless(
+            $class->subject_id !== null
+                && Competency::where('id', $competencyId)->where('subject_id', $class->subject_id)->exists(),
+            422,
+            'That competency does not belong to this subject.',
+        );
+
+        if ($competencyId !== $question->competency_id) {
+            $original = $question->ai_competency_id ?? $question->competency_id;
+
+            $question->update([
+                'competency_id' => $competencyId,
+                'ai_competency_id' => $competencyId === $original ? null : $original,
+            ]);
+        }
+
+        $question = $question->fresh(['competency', 'aiCompetency', 'review']);
+
+        return response()->json([
+            'question' => $this->questionPayload($question, $training->questionStats(collect([$question]))[$question->id] ?? null),
+        ]);
+    }
+
     /** Undo a review: the question returns to its AI label and becomes active again. */
     public function clearReview(Request $request, ClassRoom $class, ClassPost $post, QuizQuestion $question, QuizTrainingService $training): JsonResponse
     {
@@ -262,6 +305,9 @@ class QuizStudioController extends Controller
             'correct_index' => array_search($question->correct_answer, $question->choices, true),
             'explanation' => $question->explanation,
             'competency' => $question->competency?->name,
+            'competency_id' => $question->competency_id,
+            // Set only when the teacher changed the AI's tag.
+            'ai_competency' => $question->aiCompetency?->name,
             'difficulty' => $question->difficulty,
             'ai_difficulty' => $review?->ai_difficulty ?? $question->difficulty,
             'review' => $review ? [

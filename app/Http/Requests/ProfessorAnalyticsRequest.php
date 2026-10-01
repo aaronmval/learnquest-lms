@@ -20,7 +20,7 @@ class ProfessorAnalyticsRequest extends FormRequest
     public function authorize(): bool
     {
         // Route middleware (auth + professor.role) already restricts this to professors;
-        // section ownership is checked by ProfessorAnalyticsService.
+        // subject/section ownership is checked by ProfessorAnalyticsService.
         return true;
     }
 
@@ -30,11 +30,17 @@ class ProfessorAnalyticsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'subject_id' => ['nullable', 'integer'],
             'class_id' => ['nullable', 'integer'],
             'quarter' => ['nullable', 'integer', 'in:1,2,3,4'],
             'start' => ['nullable', 'date'],
             'end' => ['nullable', 'date', 'after_or_equal:start'],
         ];
+    }
+
+    public function subjectId(): ?int
+    {
+        return $this->filled('subject_id') ? (int) $this->validated('subject_id') : null;
     }
 
     public function classId(): ?int
