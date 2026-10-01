@@ -21,7 +21,7 @@ class ClassPostController extends Controller
         $this->authorizeOwner($request, $class);
 
         return response()->json(
-            $class->posts()->latest()->get()
+            $class->posts()->with('author:id,name,avatar_path')->latest()->get()
         );
     }
 

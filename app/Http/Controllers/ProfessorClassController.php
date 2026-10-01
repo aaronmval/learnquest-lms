@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreClassRequest;
 use App\Models\ClassRoom;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -61,10 +62,43 @@ class ProfessorClassController extends Controller
     {
         abort_unless($class->professor_id === $request->user()->id, 404);
 
-        $class->load('professor:id,name');
+        $class->load('professor:id,name,avatar_path');
         $class->loadCount('students');
 
         return response()->json($class);
+    }
+
+    /**
+     * List the class's enrolled students, alphabetically.
+     */
+    public function students(Request $request, ClassRoom $class): JsonResponse
+    {
+        abort_unless($class->professor_id === $request->user()->id, 404);
+
+        $students = $class->students()
+            ->orderBy('users.name')
+            ->get(['users.id', 'users.name', 'users.email', 'users.avatar_path'])
+            ->map(fn (User $student) => [
+                'id' => $student->id,
+                'name' => $student->name,
+                'email' => $student->email,
+                'avatar_url' => $student->avatar_url,
+                'joined_at' => $student->pivot->created_at?->toIso8601String(),
+            ]);
+
+        return response()->json($students);
+    }
+
+    /**
+     * Remove a student from the class. Only the enrollment goes: their quiz
+     * attempts and BKT mastery are kept, so nothing is lost if they rejoin.
+     */
+    public function removeStudent(Request $request, ClassRoom $class, User $student): Response
+    {
+        abort_unless($class->professor_id === $request->user()->id, 404);
+        abort_unless($class->students()->detach($student->id) > 0, 404);
+
+        return response()->noContent();
     }
 
     /**

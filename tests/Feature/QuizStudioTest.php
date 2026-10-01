@@ -230,6 +230,101 @@ class QuizStudioTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_collaborator_can_manage_the_subjects_lessons(): void
+    {
+        $collaborator = User::factory()->create(['role' => 'professor']);
+        $subjectId = ClassRoom::find($this->classId)->subject_id;
+        $reviewUrl = $this->url("/questions/{$this->questions['proton']->id}/review");
+        $trainingUrl = "/professor/quiz-studio/training?class_id={$this->classId}";
+
+        $this->actingAs($this->professor)
+            ->postJson("/professor/subjects/{$subjectId}/collaborators", ['email' => $collaborator->email])
+            ->assertCreated();
+
+        $this->actingAs($collaborator)->getJson('/professor/quiz-studio/lessons')
+            ->assertOk()
+            ->assertJsonCount(1, 'classes')
+            ->assertJsonPath('classes.0.id', $this->classId)
+            ->assertJsonPath('classes.0.lessons.0.id', $this->post->id);
+
+        $this->actingAs($collaborator)->getJson($this->url('/studio'))->assertOk()->assertJsonCount(4, 'questions');
+        $this->actingAs($collaborator)->putJson($this->url('/settings'), $this->settings())->assertOk();
+        $this->actingAs($collaborator)->putJson($reviewUrl, ['verdict' => 'approved'])->assertOk();
+        $this->actingAs($collaborator)->getJson($trainingUrl)->assertOk();
+
+        // Removing the collaborator revokes access again.
+        $this->actingAs($this->professor)
+            ->deleteJson("/professor/subjects/{$subjectId}/collaborators/{$collaborator->id}")
+            ->assertNoContent();
+
+        $this->actingAs($collaborator)->getJson('/professor/quiz-studio/lessons')->assertOk()->assertJsonCount(0, 'classes');
+        $this->actingAs($collaborator)->getJson($this->url('/studio'))->assertNotFound();
+        $this->actingAs($collaborator)->getJson($trainingUrl)->assertNotFound();
+    }
+
+    public function test_students_can_take_a_quiz_set_up_by_a_collaborator(): void
+    {
+        $collaborator = User::factory()->create(['role' => 'professor']);
+        $subjectId = ClassRoom::find($this->classId)->subject_id;
+        $this->actingAs($this->professor)
+            ->postJson("/professor/subjects/{$subjectId}/collaborators", ['email' => $collaborator->email])
+            ->assertCreated();
+
+        // A lesson the collaborator posted into the owner's section, with a
+        // quiz the collaborator configured and reviewed.
+        $post = ClassPost::create([
+            'class_id' => $this->classId,
+            'author_id' => $collaborator->id,
+            'type' => 'lesson',
+            'quarter' => '1st Quarter',
+            'title' => 'Isotopes',
+            'attachment_path' => 'class-posts/isotopes.pdf',
+            'attachment_name' => 'isotopes.pdf',
+        ]);
+        $quiz = Quiz::create(['class_post_id' => $post->id, 'model' => 'llama-3.3-70b-instruct', 'generated_at' => now()]);
+        $kept = $quiz->questions()->create([
+            'competency_id' => $this->competencyId,
+            'question_text' => 'Isotopes differ in the number of what?',
+            'choices' => ['Neutrons', 'Protons', 'Electrons', 'Shells'],
+            'correct_answer' => 'Neutrons',
+            'explanation' => 'Same protons, different neutrons.',
+            'difficulty' => 'easy',
+            'order_index' => 0,
+        ]);
+        $rejected = $quiz->questions()->create([
+            'competency_id' => $this->competencyId,
+            'question_text' => 'Which is an isotope?',
+            'choices' => ['A', 'B', 'C', 'D'],
+            'correct_answer' => 'A',
+            'explanation' => 'Unclear.',
+            'difficulty' => 'easy',
+            'order_index' => 1,
+        ]);
+
+        $this->actingAs($collaborator)
+            ->putJson($this->url('/settings', $post), $this->settings(['max_attempts' => 2, 'time_limit_minutes' => 15]))
+            ->assertOk();
+        $this->actingAs($collaborator)
+            ->putJson($this->url("/questions/{$rejected->id}/review", $post), ['verdict' => 'rejected', 'reason' => 'unclear'])
+            ->assertOk();
+
+        $quizUrl = "/student/classes/{$this->classId}/posts/{$post->id}/quiz";
+
+        $res = $this->actingAs($this->student)->getJson($quizUrl)
+            ->assertOk()
+            ->assertJsonPath('settings.max_attempts', 2)
+            ->assertJsonPath('settings.time_limit_seconds', 900);
+        $this->assertSame([$kept->id], array_column($res->json('questions'), 'id'));
+
+        $this->actingAs($this->student)
+            ->postJson("{$quizUrl}/attempts", ['answers' => [['question_id' => $kept->id, 'selected_index' => 0]]])
+            ->assertCreated()
+            ->assertJsonPath('score.correct', 1);
+
+        // The answer still feeds BKT for the question's competency.
+        $this->assertDatabaseHas('quiz_answers', ['quiz_question_id' => $kept->id, 'competency_id' => $this->competencyId]);
+    }
+
     /* ── Review ── */
 
     public function test_review_records_labels_and_rejected_questions_are_hidden_and_not_graded(): void

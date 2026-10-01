@@ -36,13 +36,9 @@ class ProfessorAnalyticsService
      */
     public function managedClasses(User $professor): Collection
     {
-        $subjectIds = Subject::where('owner_id', $professor->id)
-            ->orWhereHas('collaborators', fn ($q) => $q->where('user_id', $professor->id))
-            ->pluck('id');
-
         return ClassRoom::query()
             ->whereNull('archived_at')
-            ->where(fn ($q) => $q->where('professor_id', $professor->id)->orWhereIn('subject_id', $subjectIds))
+            ->managedBy($professor)
             ->with(['parentSubject.competencies', 'students:users.id,users.name'])
             ->orderBy('name')
             ->orderBy('section')

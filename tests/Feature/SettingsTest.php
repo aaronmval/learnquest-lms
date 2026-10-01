@@ -171,6 +171,48 @@ class SettingsTest extends TestCase
         $this->actingAs($other)->get('/settings/avatar')->assertNotFound();
     }
 
+    public function test_other_signed_in_users_see_a_professors_photo_beside_their_name(): void
+    {
+        Storage::fake('local');
+        $professor = User::factory()->create(['role' => 'professor']);
+        $student = User::factory()->create(['role' => 'student']);
+
+        $subjectId = $this->actingAs($professor)->postJson('/professor/subjects', ['name' => 'Chemistry'])->json('id');
+        $class = $this->actingAs($professor)->postJson("/professor/subjects/{$subjectId}/sections", [
+            'name' => 'Class A',
+            'section' => 'STEM A',
+        ])->json();
+        $this->actingAs($professor)->postJson("/professor/classes/{$class['id']}/posts", [
+            'type' => 'announcement',
+            'quarter' => '1st Quarter',
+            'title' => 'Welcome',
+        ])->assertCreated();
+        $this->actingAs($student)->postJson('/student/classes/join', ['code' => $class['code']])->assertCreated();
+
+        // No photo yet: initials are used.
+        $this->actingAs($student)->getJson("/student/classes/{$class['id']}")->assertJsonPath('professor.avatar_url', null);
+        $this->actingAs($student)->get("/avatars/{$professor->id}")->assertNotFound();
+
+        $this->actingAs($professor)->post('/settings/avatar', [
+            'photo' => UploadedFile::fake()->image('me.png'),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $url = $this->actingAs($student)->getJson("/student/classes/{$class['id']}")->assertOk()->json('professor.avatar_url');
+        $this->assertStringContainsString("/avatars/{$professor->id}?v=", $url);
+        $this->actingAs($student)->get($url)->assertOk();
+
+        $this->actingAs($student)->getJson('/student/classes')->assertJsonPath('0.professor.avatar_url', $url);
+        $this->actingAs($student)->getJson("/student/classes/{$class['id']}/posts")
+            ->assertJsonPath('0.author.avatar_url', $url)
+            ->assertJsonMissingPath('0.author.avatar_path');
+        $this->actingAs($professor)->getJson("/professor/classes/{$class['id']}/posts")->assertJsonPath('0.author.avatar_url', $url);
+        $this->actingAs($professor)->getJson('/professor/subjects')->assertJsonPath('0.owner.avatar_url', $url);
+
+        // Guests can't fetch it.
+        $this->post('/logout');
+        $this->get("/avatars/{$professor->id}")->assertRedirect('/login');
+    }
+
     public function test_shell_passes_avatar_and_sound_setting_to_the_navbar(): void
     {
         Storage::fake('local');

@@ -23,6 +23,13 @@ const ClassPostCard = (function () {
             .replace(/'/g, "&#39;");
     }
 
+    /* Contents of an avatar circle: the profile photo if there is one, else initials. */
+    function avatarHtml(avatarUrl, initials) {
+        return avatarUrl
+            ? `<img src="${escapeHtml(avatarUrl)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
+            : escapeHtml(initials);
+    }
+
     function formatPostDate(isoString) {
         if (!isoString) return "";
         const date = new Date(isoString);
@@ -75,7 +82,10 @@ const ClassPostCard = (function () {
             id: post.id,
             type: post.type,
             quarter: post.quarter,
-            author: teacherName,
+            // Whoever posted it — a subject collaborator's post shows them,
+            // not the section's teacher.
+            author: post.author?.name || teacherName,
+            authorAvatarUrl: post.author?.avatar_url || null,
             date: formatPostDate(post.created_at),
             title: post.title,
             body: post.body || "",
@@ -95,7 +105,7 @@ const ClassPostCard = (function () {
             ? "badge-quarter-green"
             : "badge-quarter-orange";
 
-        const authorPhotoHtml = `<div class="post-author-initials">${escapeHtml(teacherInitials)}</div>`;
+        const authorPhotoHtml = `<div class="post-author-initials">${avatarHtml(post.authorAvatarUrl, post.author ? initialsFor(post.author) : teacherInitials)}</div>`;
 
         let bodyHtml = "";
         if (post.body)
@@ -228,6 +238,7 @@ const ClassPostCard = (function () {
     return {
         CLASS_GRADIENT_PALETTE,
         initialsFor,
+        avatarHtml,
         escapeHtml,
         formatPostDate,
         renderClassBanner,

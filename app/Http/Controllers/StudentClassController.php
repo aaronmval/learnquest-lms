@@ -17,7 +17,7 @@ class StudentClassController extends Controller
     public function index(Request $request): JsonResponse
     {
         $classes = $request->user()->enrolledClasses()
-            ->with('professor:id,name')
+            ->with('professor:id,name,avatar_path')
             ->orderByDesc('class_enrollments.created_at')
             ->get(['classes.id', 'classes.professor_id', 'classes.name', 'classes.section', 'classes.subject', 'classes.room']);
 
@@ -31,7 +31,7 @@ class StudentClassController extends Controller
     public function lookup(string $code): JsonResponse
     {
         $class = ClassRoom::where('code', strtoupper(trim($code)))
-            ->with('professor:id,name')
+            ->with('professor:id,name,avatar_path')
             ->first(['id', 'name', 'section', 'subject', 'code', 'professor_id']);
 
         abort_unless($class, 404);
@@ -46,7 +46,7 @@ class StudentClassController extends Controller
     {
         $code = strtoupper(trim($request->validated('code')));
 
-        $class = ClassRoom::where('code', $code)->with('professor:id,name')->first();
+        $class = ClassRoom::where('code', $code)->with('professor:id,name,avatar_path')->first();
 
         abort_unless($class, 404, 'Class code not found.');
 
@@ -78,7 +78,7 @@ class StudentClassController extends Controller
 
         abort_unless($isEnrolled, 404);
 
-        $class->load('professor:id,name');
+        $class->load('professor:id,name,avatar_path');
 
         return response()->json($class);
     }

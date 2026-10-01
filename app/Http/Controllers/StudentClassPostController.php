@@ -18,7 +18,7 @@ class StudentClassPostController extends Controller
         $this->authorizeEnrolled($request, $class);
 
         return response()->json(
-            $class->posts()->latest()->get()
+            $class->posts()->with('author:id,name,avatar_path')->latest()->get()
         );
     }
 

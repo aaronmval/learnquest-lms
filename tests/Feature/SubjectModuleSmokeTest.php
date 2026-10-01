@@ -141,4 +141,34 @@ class SubjectModuleSmokeTest extends TestCase
 
         $this->assertSame([$classId], array_map(fn ($s) => $s['id'], $res->json('target_sections')));
     }
+
+    public function test_owner_sees_the_name_of_a_collaborators_own_target_class(): void
+    {
+        $owner = User::factory()->create(['role' => 'professor']);
+        $collaborator = User::factory()->create(['role' => 'professor']);
+
+        $subjectId = $this->actingAs($owner)->postJson('/professor/subjects', ['name' => 'Chemistry'])->json('id');
+        $this->actingAs($owner)->postJson("/professor/subjects/{$subjectId}/collaborators", [
+            'email' => $collaborator->email,
+        ])->assertCreated();
+
+        // The collaborator's own standalone class, which the owner can't list.
+        $classId = $this->actingAs($collaborator)->postJson('/professor/classes', [
+            'name' => 'Chemistry',
+            'section' => 'STEM 7',
+        ])->json('id');
+
+        $pdf = UploadedFile::fake()->create('lesson.pdf', 500, 'application/pdf');
+        $this->actingAs($collaborator)->post("/professor/subjects/{$subjectId}/modules", [
+            'title' => 'Module 1',
+            'attachment' => $pdf,
+            'section_ids' => [$classId],
+        ])->assertCreated();
+
+        $this->actingAs($owner)->getJson("/professor/subjects/{$subjectId}")
+            ->assertOk()
+            ->assertJsonPath('modules.0.target_sections.0.id', $classId)
+            ->assertJsonPath('modules.0.target_sections.0.name', 'Chemistry')
+            ->assertJsonPath('modules.0.target_sections.0.section', 'STEM 7');
+    }
 }

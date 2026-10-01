@@ -55,6 +55,20 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("");
     }
 
+    /* Fill an avatar circle with the user's profile photo, or their initials. */
+    function fillAvatar(el, user) {
+        if (!user?.avatar_url) {
+            el.textContent = initialsFor(user?.name);
+            return;
+        }
+
+        const img = document.createElement("img");
+        img.src = user.avatar_url;
+        img.alt = "";
+        img.style.cssText = "width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;";
+        el.appendChild(img);
+    }
+
     function formatBytes(bytes) {
         const value = Number(bytes) || 0;
         if (value === 0) return "0 KB";
@@ -195,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const avatar = document.createElement("div");
         avatar.className = "mat-subject-uploader-initials";
         avatar.style.display = "flex";
-        avatar.textContent = initialsFor(subject.owner?.name);
+        fillAvatar(avatar, subject.owner);
 
         const label = document.createElement("span");
         label.textContent = `Owned by: ${subject.owner?.name || "Unknown"}`;
@@ -212,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
             subject.collaborators.slice(0, 3).forEach((collab) => {
                 const bubble = document.createElement("div");
                 bubble.className = "mat-collab-bubble";
-                bubble.textContent = initialsFor(collab.name);
+                fillAvatar(bubble, collab);
                 collabStack.appendChild(bubble);
             });
 

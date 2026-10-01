@@ -44,6 +44,13 @@ class User extends Authenticatable
     ];
 
     /**
+     * @var list<string>
+     */
+    protected $appends = [
+        'avatar_url',
+    ];
+
+    /**
      * System Alert preference keys a user can toggle, per role. Anything not
      * stored defaults to enabled.
      */
@@ -142,6 +149,18 @@ class User extends Authenticatable
     {
         return $this->avatar_path
             ? route('settings.avatar.show', ['v' => $this->updated_at?->timestamp])
+            : null;
+    }
+
+    /**
+     * "avatar_url" in JSON: the photo as other signed-in users see it (next
+     * to this user's posts, classes and subjects). Null when there is no
+     * photo, or when avatar_path wasn't selected.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar_path
+            ? route('avatars.show', ['user' => $this->id, 'v' => substr(md5($this->avatar_path), 0, 8)])
             : null;
     }
 

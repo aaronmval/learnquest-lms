@@ -68,6 +68,9 @@ Route::middleware('auth')->group(function () {
         ->name('notifications.read');
     Route::delete('/notifications', [NotificationController::class, 'clear'])->name('notifications.clear');
 
+    // Another user's profile photo, shown beside their name
+    Route::get('/avatars/{user}', [SettingsController::class, 'showUserAvatar'])->name('avatars.show');
+
     // Account settings (shared by every role; always the signed-in user)
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'show'])->name('show');
@@ -169,6 +172,10 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
     Route::post('/classes/{class}/archive', [ProfessorClassController::class, 'archive'])->name('classes.archive');
     Route::post('/classes/{class}/restore', [ProfessorClassController::class, 'restore'])->name('classes.restore');
     Route::delete('/classes/{class}', [ProfessorClassController::class, 'destroy'])->name('classes.destroy');
+    Route::get('/classes/{class}/students', [ProfessorClassController::class, 'students'])
+        ->name('classes.students.index');
+    Route::delete('/classes/{class}/students/{student}', [ProfessorClassController::class, 'removeStudent'])
+        ->name('classes.students.destroy');
 
     Route::get('/classes/{class}/posts', [ClassPostController::class, 'index'])->name('classes.posts.index');
     Route::post('/classes/{class}/posts', [ClassPostController::class, 'store'])->name('classes.posts.store');

@@ -18,7 +18,7 @@ class SubjectController extends Controller
 
         $subjects = Subject::where('owner_id', $userId)
             ->orWhereHas('collaborators', fn ($q) => $q->where('user_id', $userId))
-            ->with(['owner:id,name,email', 'collaborators:id,name,email'])
+            ->with(['owner:id,name,email,avatar_path', 'collaborators:id,name,email,avatar_path'])
             ->withCount(['sections', 'modules'])
             ->withSum('modules', 'file_size')
             ->withMax('modules', 'created_at')
@@ -34,7 +34,7 @@ class SubjectController extends Controller
     public function store(StoreSubjectRequest $request): JsonResponse
     {
         $subject = $request->user()->ownedSubjects()->create($request->validated());
-        $subject->load(['owner:id,name,email', 'collaborators:id,name,email']);
+        $subject->load(['owner:id,name,email,avatar_path', 'collaborators:id,name,email,avatar_path']);
 
         return response()->json($subject, 201);
     }
@@ -47,10 +47,10 @@ class SubjectController extends Controller
         abort_unless($subject->isManagedBy($request->user()), 404);
 
         $subject->load([
-            'owner:id,name,email',
-            'collaborators:id,name,email',
+            'owner:id,name,email,avatar_path',
+            'collaborators:id,name,email,avatar_path',
             'sections' => fn ($q) => $q->withCount('students'),
-            'modules' => fn ($q) => $q->with(['uploader:id,name', 'targetSections:id'])->latest(),
+            'modules' => fn ($q) => $q->with(['uploader:id,name,avatar_path', 'targetSections:id,name,section'])->latest(),
         ]);
 
         return response()->json($subject);
@@ -64,7 +64,7 @@ class SubjectController extends Controller
         abort_unless($subject->isManagedBy($request->user()), 404);
 
         $subject->update($request->validated());
-        $subject->load(['owner:id,name,email', 'collaborators:id,name,email']);
+        $subject->load(['owner:id,name,email,avatar_path', 'collaborators:id,name,email,avatar_path']);
 
         return response()->json($subject);
     }

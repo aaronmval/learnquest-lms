@@ -27,18 +27,19 @@ use Throwable;
 /**
  * Quiz & AI Setup page: per-lesson quiz settings, optional review of the
  * AI-generated questions (which trains future generation for the subject),
- * and AI accuracy metrics. Class-level actions are owner-only, like the
- * other class-post professor actions.
+ * and AI accuracy metrics. Open to whoever manages the section: its
+ * creator, or the owner/collaborators of the subject it belongs to
+ * (ClassRoom::isManagedBy).
  */
 class QuizStudioController extends Controller
 {
     /**
-     * The professor's active sections with their PDF lessons and quiz status.
+     * The active sections the professor manages, with their PDF lessons and quiz status.
      */
     public function lessons(Request $request, QuizSettingsService $settingsService, AdaptiveQuizService $adaptiveQuiz): JsonResponse
     {
         $classes = ClassRoom::query()
-            ->where('professor_id', $request->user()->id)
+            ->managedBy($request->user())
             ->whereNull('archived_at')
             ->with('parentSubject')
             ->orderBy('name')
@@ -88,7 +89,7 @@ class QuizStudioController extends Controller
      */
     public function show(Request $request, ClassRoom $class, ClassPost $post, QuizSettingsService $settingsService, QuizTrainingService $training, QuizFeedbackService $feedback, AdaptiveQuizService $adaptiveQuiz): JsonResponse
     {
-        $this->authorizeOwnedLesson($request, $class, $post);
+        $this->authorizeManagedLesson($request, $class, $post);
 
         $quiz = $post->quiz;
         $questions = $quiz ? $quiz->questions()->with(['competency', 'aiCompetency', 'review'])->get() : collect();
@@ -127,7 +128,7 @@ class QuizStudioController extends Controller
 
     public function updateSettings(UpdateQuizSettingsRequest $request, ClassRoom $class, ClassPost $post, QuizSettingsService $settingsService, AdaptiveQuizService $adaptiveQuiz): JsonResponse
     {
-        $this->authorizeOwnedLesson($request, $class, $post);
+        $this->authorizeManagedLesson($request, $class, $post);
 
         $settingsService->save($post, $request->user(), $request->validated());
         $settings = $settingsService->for($post->fresh());
@@ -146,7 +147,7 @@ class QuizStudioController extends Controller
      */
     public function generate(Request $request, ClassRoom $class, ClassPost $post, QuizGenerationService $generator): JsonResponse
     {
-        $this->authorizeOwnedLesson($request, $class, $post);
+        $this->authorizeManagedLesson($request, $class, $post);
 
         try {
             $quiz = $post->quiz ? $generator->regenerateForPost($post) : $generator->generateForPost($post);
@@ -163,7 +164,7 @@ class QuizStudioController extends Controller
      */
     public function topUp(Request $request, ClassRoom $class, ClassPost $post, QuizGenerationService $generator): JsonResponse
     {
-        $this->authorizeOwnedLesson($request, $class, $post);
+        $this->authorizeManagedLesson($request, $class, $post);
 
         try {
             $added = $generator->topUp($post);
@@ -180,7 +181,7 @@ class QuizStudioController extends Controller
      */
     public function review(ReviewQuizQuestionRequest $request, ClassRoom $class, ClassPost $post, QuizQuestion $question, QuizTrainingService $training): JsonResponse
     {
-        $this->authorizeOwnedQuestion($request, $class, $post, $question);
+        $this->authorizeManagedQuestion($request, $class, $post, $question);
         $data = $request->validated();
 
         $review = DB::transaction(function () use ($question, $data, $request) {
@@ -226,7 +227,7 @@ class QuizStudioController extends Controller
      */
     public function updateCompetency(Request $request, ClassRoom $class, ClassPost $post, QuizQuestion $question, QuizTrainingService $training): JsonResponse
     {
-        $this->authorizeOwnedQuestion($request, $class, $post, $question);
+        $this->authorizeManagedQuestion($request, $class, $post, $question);
 
         $validated = $request->validate(['competency_id' => ['required', 'integer']]);
         $competencyId = (int) $validated['competency_id'];
@@ -258,7 +259,7 @@ class QuizStudioController extends Controller
     /** Undo a review: the question returns to its AI label and becomes active again. */
     public function clearReview(Request $request, ClassRoom $class, ClassPost $post, QuizQuestion $question, QuizTrainingService $training): JsonResponse
     {
-        $this->authorizeOwnedQuestion($request, $class, $post, $question);
+        $this->authorizeManagedQuestion($request, $class, $post, $question);
 
         DB::transaction(function () use ($question) {
             if ($review = $question->review) {
@@ -282,7 +283,7 @@ class QuizStudioController extends Controller
         $validated = $request->validate(['class_id' => ['required', 'integer']]);
 
         $class = ClassRoom::with('parentSubject')->find($validated['class_id']);
-        abort_unless($class && $class->professor_id === $request->user()->id, 404);
+        abort_unless($class && $class->isManagedBy($request->user()), 404);
 
         if (! $class->parentSubject) {
             return response()->json(['subject' => null, 'metrics' => null]);
@@ -350,16 +351,16 @@ class QuizStudioController extends Controller
         return $class->section ? "{$subject} - {$class->section}" : $subject;
     }
 
-    private function authorizeOwnedLesson(Request $request, ClassRoom $class, ClassPost $post): void
+    private function authorizeManagedLesson(Request $request, ClassRoom $class, ClassPost $post): void
     {
-        abort_unless($class->professor_id === $request->user()->id, 404);
+        abort_unless($class->isManagedBy($request->user()), 404);
         abort_unless($post->class_id === $class->id && $post->type === 'lesson', 404);
     }
 
     /** The question must belong to one of this lesson's quiz versions. */
-    private function authorizeOwnedQuestion(Request $request, ClassRoom $class, ClassPost $post, QuizQuestion $question): void
+    private function authorizeManagedQuestion(Request $request, ClassRoom $class, ClassPost $post, QuizQuestion $question): void
     {
-        $this->authorizeOwnedLesson($request, $class, $post);
+        $this->authorizeManagedLesson($request, $class, $post);
         abort_unless($question->quiz?->class_post_id === $post->id, 404);
     }
 }

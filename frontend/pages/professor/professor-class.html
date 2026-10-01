@@ -97,7 +97,7 @@
                             <div id="classSnapshotList">
                                 <div class="insight-item">
                                     <strong>Students:</strong>
-                                    <span id="snapshotStudents">42</span>
+                                    <span id="snapshotStudents">0</span>
                                     enrolled
                                 </div>
                                 <div class="insight-item">
@@ -110,6 +110,13 @@
                                     <span id="snapshotLastActivity">—</span>
                                 </div>
                             </div>
+                            <button
+                                id="viewStudentsBtn"
+                                class="invite-code-regen-btn view-students-btn"
+                                type="button"
+                            >
+                                <i class="fas fa-users"></i> View Students
+                            </button>
                         </div>
 
                         <div class="ai-insights-card invite-code-card">
@@ -411,6 +418,58 @@
                     </button>
                 </div>
                 <div id="quizFeedbackBody"></div>
+            </div>
+        </div>
+
+        <!-- ENROLLED STUDENTS MODAL -->
+        <div id="studentsModal" aria-modal="true" role="dialog">
+            <div id="studentsModalCard">
+                <div class="pc-modal-header">
+                    <h3 class="modal-title">
+                        Enrolled Students
+                        <span id="studentsModalCount" class="students-count"></span>
+                    </h3>
+                    <button
+                        id="studentsCloseBtn"
+                        class="jc-close-btn"
+                        type="button"
+                        aria-label="Close student list"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="studentsList"></div>
+            </div>
+        </div>
+
+        <!-- REMOVE STUDENT CONFIRM MODAL -->
+        <div id="removeStudentModal" aria-modal="true" role="dialog">
+            <div id="removeStudentCard">
+                <div class="modal-icon-wrap modal-icon-danger">
+                    <i class="fas fa-user-minus"></i>
+                </div>
+                <h3 class="modal-title">Remove student?</h3>
+                <p class="modal-desc">
+                    <strong id="removeStudentName">This student</strong> will
+                    lose access to this class. Their quiz results are kept,
+                    and they can rejoin with the invite code.
+                </p>
+                <div class="modal-actions">
+                    <button
+                        id="removeStudentCancelBtn"
+                        class="modal-btn modal-btn-cancel"
+                        type="button"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        id="removeStudentConfirmBtn"
+                        class="modal-btn modal-btn-danger"
+                        type="button"
+                    >
+                        Remove
+                    </button>
+                </div>
             </div>
         </div>
 

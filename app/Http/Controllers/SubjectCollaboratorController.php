@@ -37,7 +37,7 @@ class SubjectCollaboratorController extends Controller
 
         $subject->collaborators()->attach($invitee->id, ['invited_by' => $request->user()->id]);
 
-        return response()->json($invitee->only(['id', 'name', 'email']), 201);
+        return response()->json($invitee->only(['id', 'name', 'email', 'avatar_url']), 201);
     }
 
     /**

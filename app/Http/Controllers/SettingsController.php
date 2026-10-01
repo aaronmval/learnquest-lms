@@ -159,6 +159,21 @@ class SettingsController extends Controller
         ]);
     }
 
+    /**
+     * Stream any user's photo to a signed-in user, for showing it beside
+     * their name on posts, class cards and subjects.
+     */
+    public function showUserAvatar(User $user): StreamedResponse
+    {
+        $path = $user->avatar_path;
+
+        abort_unless($path && Storage::disk()->exists($path), 404);
+
+        return Storage::disk()->response($path, null, [
+            'Cache-Control' => 'private, max-age=86400',
+        ]);
+    }
+
     private function payload(User $user): array
     {
         return [

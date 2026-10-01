@@ -29,7 +29,7 @@ class ModuleController extends Controller
         $this->authorizeManager($request, $subject);
 
         $modules = $subject->modules()
-            ->with(['uploader:id,name', 'targetSections:id'])
+            ->with(['uploader:id,name,avatar_path', 'targetSections:id,name,section'])
             ->latest()
             ->get();
 
@@ -58,7 +58,7 @@ class ModuleController extends Controller
         $module = $subject->modules()->create($data);
         $targetedClassIds = $this->syncTargetSections($request, $module, $subject, $request->input('section_ids'));
         $this->createLessonPostsForNewlyTargetedClasses($request, $module, $targetedClassIds);
-        $module->load(['uploader:id,name', 'targetSections:id']);
+        $module->load(['uploader:id,name,avatar_path', 'targetSections:id,name,section']);
 
         return response()->json($module, 201);
     }
@@ -86,7 +86,7 @@ class ModuleController extends Controller
         $module->update($data);
         $targetedClassIds = $this->syncTargetSections($request, $module, $subject, $request->input('section_ids'));
         $this->createLessonPostsForNewlyTargetedClasses($request, $module, $targetedClassIds);
-        $module->load(['uploader:id,name', 'targetSections:id']);
+        $module->load(['uploader:id,name,avatar_path', 'targetSections:id,name,section']);
 
         return response()->json($module);
     }

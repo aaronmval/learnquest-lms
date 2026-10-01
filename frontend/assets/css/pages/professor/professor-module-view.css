@@ -573,6 +573,35 @@ body.dark .mv-section-check-item {
 
 body.dark .mv-collab-item { background-color: #0f172a; }
 
+.mv-collab-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #dbeafe;
+    color: #1d4ed8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.mv-collab-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+body.dark .mv-collab-avatar {
+    background-color: rgba(37, 99, 235, 0.35);
+    color: #bfdbfe;
+}
+
+.mv-collab-item-info { flex: 1; min-width: 0; }
+
 .mv-collab-item-name { font-weight: 700; color: #0f172a; }
 .mv-collab-item-email { color: #94a3b8; font-size: 0.72rem; }
 

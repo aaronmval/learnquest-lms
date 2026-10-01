@@ -66,6 +66,7 @@ async function loadClassInfo() {
             section: data.section || "",
             teacher,
             teacherInitials: initialsFor(teacher),
+            teacherAvatarUrl: data.professor?.avatar_url || null,
             gradient: CLASS_GRADIENT_PALETTE[data.id % CLASS_GRADIENT_PALETTE.length],
             code: data.code || "",
             studentsCount: typeof data.students_count === "number" ? data.students_count : 0,
@@ -157,7 +158,12 @@ function mapServerPost(post) {
         id: post.id,
         type: post.type,
         quarter: post.quarter,
-        author: CLASS_INFO ? CLASS_INFO.teacher : "",
+        // Whoever posted it (a subject collaborator's module shows them);
+        // a just-saved post has no author loaded, and is always the teacher's.
+        author: post.author?.name || (CLASS_INFO ? CLASS_INFO.teacher : ""),
+        authorAvatarUrl: post.author
+            ? post.author.avatar_url || null
+            : CLASS_INFO?.teacherAvatarUrl || null,
         date: formatPostDate(post.created_at),
         title: post.title,
         body: post.body || "",
@@ -274,7 +280,11 @@ function buildPostCard(post) {
         ? "badge-quarter-green"
         : "badge-quarter-orange";
 
-    const authorPhotoHtml = `<div class="post-author-initials">${CLASS_INFO.teacherInitials}</div>`;
+    const authorPhotoHtml = `<div class="post-author-initials">${
+        post.authorAvatarUrl
+            ? `<img src="${escapeHtml(post.authorAvatarUrl)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`
+            : escapeHtml(initialsFor(post.author))
+    }</div>`;
 
     let bodyHtml = "";
     if (post.body)
@@ -805,6 +815,133 @@ async function confirmRegenerateQuiz() {
     }
 }
 
+/* ENROLLED STUDENTS — list, and remove from the class */
+let classStudents = [];
+let pendingRemoveStudentId = null;
+
+function openStudentsModal() {
+    if (!CLASS_ID) return;
+
+    const list = document.getElementById("studentsList");
+    if (list) {
+        list.innerHTML = `<p class="qf-empty-state"><i class="fas fa-spinner fa-spin"></i> Loading students...</p>`;
+    }
+    document.getElementById("studentsModalCount").textContent = "";
+
+    document.getElementById("studentsModal")?.classList.add("open");
+    document.body.style.overflow = "hidden";
+
+    loadStudents();
+}
+
+function closeStudentsModal() {
+    const modal = document.getElementById("studentsModal");
+    if (!modal || !modal.classList.contains("open")) return;
+    modal.classList.remove("open");
+    document.body.style.overflow = "";
+}
+
+async function loadStudents() {
+    const list = document.getElementById("studentsList");
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/students`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error("failed to load students");
+
+        classStudents = await res.json();
+        renderStudents();
+    } catch (e) {
+        if (list) {
+            list.innerHTML = `<p class="qf-empty-state">Could not load the student list. Please try again.</p>`;
+        }
+    }
+}
+
+function renderStudents() {
+    const list = document.getElementById("studentsList");
+    if (!list) return;
+
+    document.getElementById("studentsModalCount").textContent = `(${classStudents.length})`;
+    CLASS_INFO.studentsCount = classStudents.length;
+    renderClassSnapshot();
+
+    if (!classStudents.length) {
+        list.innerHTML = `<p class="qf-empty-state"><i class="fas fa-circle-info"></i> No students have joined this class yet.</p>`;
+        return;
+    }
+
+    list.innerHTML = classStudents
+        .map((s) => {
+            const joined = formatPostDate(s.joined_at);
+            const meta = [s.email, joined ? `Joined ${joined}` : ""].filter(Boolean).join(" · ");
+
+            return `
+            <div class="student-row">
+                <div class="student-avatar">${
+                    s.avatar_url
+                        ? `<img src="${escapeHtml(s.avatar_url)}" alt="">`
+                        : escapeHtml(initialsFor(s.name))
+                }</div>
+                <div class="student-info">
+                    <p class="student-name">${escapeHtml(s.name)}</p>
+                    <p class="student-meta">${escapeHtml(meta)}</p>
+                </div>
+                <button class="student-remove-btn" type="button" data-student-id="${s.id}" aria-label="Remove ${escapeHtml(s.name)} from the class">
+                    <i class="fas fa-user-minus"></i> Remove
+                </button>
+            </div>`;
+        })
+        .join("");
+}
+
+function requestRemoveStudent(studentId) {
+    const student = classStudents.find((s) => String(s.id) === String(studentId));
+    if (!student) return;
+
+    pendingRemoveStudentId = student.id;
+    document.getElementById("removeStudentName").textContent = student.name;
+    document.getElementById("removeStudentModal")?.classList.add("open");
+}
+
+function closeRemoveStudentModal() {
+    document.getElementById("removeStudentModal")?.classList.remove("open");
+    pendingRemoveStudentId = null;
+}
+
+async function confirmRemoveStudent() {
+    if (pendingRemoveStudentId === null || !CLASS_ID) return;
+
+    const studentId = pendingRemoveStudentId;
+    const btn = document.getElementById("removeStudentConfirmBtn");
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/students/${studentId}`, {
+            method: "DELETE",
+            credentials: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+        });
+
+        // 404 = already gone (e.g. removed in another tab); drop the row too.
+        if (!res.ok && res.status !== 404) throw new Error("failed to remove student");
+
+        classStudents = classStudents.filter((s) => s.id !== studentId);
+        renderStudents();
+        showToast("Student removed from the class");
+    } catch (e) {
+        showToast("Could not remove the student. Please try again.");
+    } finally {
+        if (btn) btn.disabled = false;
+        closeRemoveStudentModal();
+    }
+}
+
 /* EDIT CLASS DETAILS — title, subject, section and room */
 function openRenameClassModal() {
     if (!CLASS_INFO) return;
@@ -1094,6 +1231,30 @@ document.addEventListener("DOMContentLoaded", () => {
             if (e.target.id === "quizFeedbackModal") closeQuizFeedbackModal();
         });
 
+    /* Enrolled students modal */
+    document
+        .getElementById("viewStudentsBtn")
+        ?.addEventListener("click", openStudentsModal);
+    document
+        .getElementById("studentsCloseBtn")
+        ?.addEventListener("click", closeStudentsModal);
+    document.getElementById("studentsModal")?.addEventListener("click", (e) => {
+        if (e.target.id === "studentsModal") closeStudentsModal();
+    });
+    document.getElementById("studentsList")?.addEventListener("click", (e) => {
+        const btn = e.target.closest(".student-remove-btn");
+        if (btn) requestRemoveStudent(btn.dataset.studentId);
+    });
+    document
+        .getElementById("removeStudentCancelBtn")
+        ?.addEventListener("click", closeRemoveStudentModal);
+    document
+        .getElementById("removeStudentConfirmBtn")
+        ?.addEventListener("click", confirmRemoveStudent);
+    document.getElementById("removeStudentModal")?.addEventListener("click", (e) => {
+        if (e.target.id === "removeStudentModal") closeRemoveStudentModal();
+    });
+
     /* Regenerate confirm modal */
     document
         .getElementById("regenerateCancelBtn")
@@ -1121,6 +1282,12 @@ document.addEventListener("DOMContentLoaded", () => {
         closeDeleteModal();
         closeRegenerateConfirm();
         closeQuizFeedbackModal();
+        // The confirm sits on top of the list: Escape closes only it first.
+        if (document.getElementById("removeStudentModal")?.classList.contains("open")) {
+            closeRemoveStudentModal();
+        } else {
+            closeStudentsModal();
+        }
         closeAllKebabMenus();
     });
 });

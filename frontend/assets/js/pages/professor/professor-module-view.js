@@ -301,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function buildModuleCard(module) {
         const targetIds = module.target_sections || [];
         const tags = targetIds.length
-            ? targetIds.map((t) => `<span class="mv-module-tag">${escapeHtml(sectionLabelById(t.id))}</span>`).join("")
+            ? targetIds.map((t) => `<span class="mv-module-tag">${escapeHtml(t.section || t.name || sectionLabelById(t.id))}</span>`).join("")
             : '<span class="mv-module-tag">No sections assigned</span>';
 
         return `
@@ -844,7 +844,12 @@ document.addEventListener("DOMContentLoaded", () => {
                   .map(
                       (c) => `
                 <div class="mv-collab-item" data-id="${c.id}">
-                    <div>
+                    <div class="mv-collab-avatar">${
+                        c.avatar_url
+                            ? `<img src="${escapeHtml(c.avatar_url)}" alt="">`
+                            : escapeHtml(initialsFor(c.name))
+                    }</div>
+                    <div class="mv-collab-item-info">
                         <div class="mv-collab-item-name">${escapeHtml(c.name)}</div>
                         <div class="mv-collab-item-email">${escapeHtml(c.email)}</div>
                     </div>

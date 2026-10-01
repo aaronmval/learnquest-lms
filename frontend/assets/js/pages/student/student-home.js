@@ -98,7 +98,11 @@ function buildClassCardHtml(cls) {
                 <div class="card-subject">${escapeHtml(cls.name.toUpperCase())}</div>
                 <div class="card-section">${escapeHtml(cls.section || metaParts.join(' · '))}</div>
                 <div class="card-teacher-photo">
-                    <div class="card-teacher-initials" style="display:flex;">${escapeHtml(initials)}</div>
+                    ${
+                        cls.professor?.avatar_url
+                            ? `<img src="${escapeHtml(cls.professor.avatar_url)}" alt="">`
+                            : `<div class="card-teacher-initials" style="display:flex;">${escapeHtml(initials)}</div>`
+                    }
                 </div>
             </div>
             <div class="card-bottom">
