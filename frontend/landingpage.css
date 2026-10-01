@@ -298,3 +298,5 @@ footer.site-footer:target .footer-cta{
 @media (prefers-reduced-motion: reduce){
   *{transition:none !important;animation:none !important;}
 }
+
+html.lq-reduced-motion *{transition:none !important;animation:none !important;}

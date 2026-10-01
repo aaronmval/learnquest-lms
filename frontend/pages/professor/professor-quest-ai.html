@@ -36,9 +36,10 @@
                             Welcome to <span>QuestAI Coach</span>!
                         </h1>
                         <p class="qai-hero-subtitle">
-                            Upload a reading or module and QuestAI drafts a
-                            slide deck for you, or ask it a quick question about
-                            your class on the right.
+                            Ask QuestAI a quick question about your class on
+                            the left, or upload a reading (or pick one of your
+                            modules) and it drafts a slide deck for you on the
+                            right.
                         </p>
                     </div>
                     <div class="qai-hero-art" aria-hidden="true">
@@ -46,178 +47,9 @@
                     </div>
                 </section>
 
-                <!-- QAI WORKSPACE — split: generator (left) / chat (right) -->
+                <!-- QAI WORKSPACE — split: chat (left) / generator (right) -->
                 <section class="qai-workspace">
-                    <!-- LEFT: PDF → PPT GENERATOR -->
-                    <div class="qai-panel qai-generator" id="qaiGeneratorPanel">
-                        <div class="qai-panel-header">
-                            <div class="qai-panel-heading">
-                                <span
-                                    class="qai-panel-icon qai-panel-icon-amber"
-                                    ><i class="fas fa-file-powerpoint"></i
-                                ></span>
-                                <div>
-                                    <h2 class="qai-panel-title">
-                                        Generate a Presentation
-                                    </h2>
-                                    <p class="qai-panel-subtitle">
-                                        Upload a PDF, QuestAI drafts the slides
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Upload dropzone (and file chip once selected) —
-                         this area grows to fill extra height so the
-                         panel matches the chat panel's height cleanly. -->
-                        <div class="qai-dropzone-area">
-                            <div id="pptDropzone" class="qai-dropzone">
-                                <input
-                                    type="file"
-                                    id="pptFileInput"
-                                    accept="application/pdf"
-                                    hidden
-                                />
-                                <div class="qai-dropzone-icon">
-                                    <i class="fas fa-file-arrow-up"></i>
-                                </div>
-                                <p class="qai-dropzone-title">
-                                    Drag a PDF here, or browse
-                                </p>
-                                <p class="qai-dropzone-meta">
-                                    PDF only &middot; up to 25MB
-                                </p>
-                                <button
-                                    id="pptBrowseBtn"
-                                    type="button"
-                                    class="qai-browse-btn"
-                                >
-                                    Choose File
-                                </button>
-                            </div>
-
-                            <!-- Selected file chip -->
-                            <div id="pptFileChip" class="qai-file-chip hidden">
-                                <div class="qai-file-chip-icon">
-                                    <i class="fas fa-file-pdf"></i>
-                                </div>
-                                <div class="qai-file-chip-text">
-                                    <p
-                                        id="pptFileName"
-                                        class="qai-file-chip-name"
-                                    >
-                                        lesson-reading.pdf
-                                    </p>
-                                    <p
-                                        id="pptFileMeta"
-                                        class="qai-file-chip-meta"
-                                    >
-                                        2.4 MB
-                                    </p>
-                                </div>
-                                <button
-                                    id="pptFileRemoveBtn"
-                                    type="button"
-                                    class="qai-file-chip-remove"
-                                    aria-label="Remove file"
-                                >
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Generation options -->
-                        <div class="qai-options">
-                            <div class="qai-option-field">
-                                <label
-                                    class="qai-option-label"
-                                    for="pptSlideCount"
-                                    >Slide count</label
-                                >
-                                <select id="pptSlideCount" class="qai-select">
-                                    <option value="8">~8 slides</option>
-                                    <option value="12" selected>
-                                        ~12 slides
-                                    </option>
-                                    <option value="16">~16 slides</option>
-                                    <option value="20">~20 slides</option>
-                                </select>
-                            </div>
-                            <div class="qai-option-field">
-                                <label class="qai-option-label" for="pptTheme"
-                                    >Theme</label
-                                >
-                                <select id="pptTheme" class="qai-select">
-                                    <option value="learnquest" selected>
-                                        LearnQuest Blue
-                                    </option>
-                                    <option value="emerald">
-                                        Emerald Green
-                                    </option>
-                                    <option value="charcoal">
-                                        Classic Charcoal
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button
-                            id="pptGenerateBtn"
-                            type="button"
-                            class="qai-generate-btn"
-                            disabled
-                        >
-                            <i class="fas fa-wand-magic-sparkles"></i> Generate
-                            Presentation
-                        </button>
-
-                        <!-- Progress state -->
-                        <div id="pptProgress" class="qai-progress hidden">
-                            <div class="qai-progress-bar-track">
-                                <div
-                                    id="pptProgressBar"
-                                    class="qai-progress-bar-fill"
-                                ></div>
-                            </div>
-                            <p id="pptProgressLabel" class="qai-progress-label">
-                                Reading your PDF…
-                            </p>
-                        </div>
-
-                        <!-- Result state -->
-                        <div id="pptResult" class="qai-result hidden">
-                            <div class="qai-result-icon">
-                                <i class="fas fa-circle-check"></i>
-                            </div>
-                            <div class="qai-result-text">
-                                <p id="pptResultTitle" class="qai-result-title">
-                                    Your deck is ready
-                                </p>
-                                <p id="pptResultMeta" class="qai-result-meta">
-                                    12 slides &middot; Lecture deck
-                                </p>
-                            </div>
-                            <div class="qai-result-actions">
-                                <button
-                                    id="pptDownloadBtn"
-                                    type="button"
-                                    class="qai-result-btn qai-result-btn-primary"
-                                >
-                                    <i class="fas fa-download"></i> Download
-                                    .pptx
-                                </button>
-                                <button
-                                    id="pptStartOverBtn"
-                                    type="button"
-                                    class="qai-result-btn"
-                                >
-                                    Start Over
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- RIGHT: ASK QUESTAI — same chat pattern as the student QuestAI page  -->
+                    <!-- LEFT: ASK QUESTAI — same chat pattern as the student QuestAI page  -->
                     <div class="qai-panel qai-chat-panel" id="qaiChatPanel">
                         <!-- Subject context selector -->
                         <div
@@ -307,6 +139,242 @@
                                 Ask
                             </button>
                         </form>
+                    </div>
+
+                    <!-- RIGHT: PDF / MODULE → PPT GENERATOR -->
+                    <div class="qai-panel qai-generator" id="qaiGeneratorPanel">
+                        <div class="qai-panel-header">
+                            <div class="qai-panel-heading">
+                                <span
+                                    class="qai-panel-icon qai-panel-icon-amber"
+                                    ><i class="fas fa-file-powerpoint"></i
+                                ></span>
+                                <div>
+                                    <h2 class="qai-panel-title">
+                                        Generate a Presentation
+                                    </h2>
+                                    <p class="qai-panel-subtitle">
+                                        Upload a PDF or pick a module, QuestAI
+                                        drafts the slides
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload dropzone (and file chip once selected) —
+                         this area grows to fill extra height so the
+                         panel matches the chat panel's height cleanly. -->
+                        <div class="qai-dropzone-area">
+                            <div id="pptDropzone" class="qai-dropzone">
+                                <input
+                                    type="file"
+                                    id="pptFileInput"
+                                    accept="application/pdf"
+                                    hidden
+                                />
+                                <div class="qai-dropzone-icon">
+                                    <i class="fas fa-file-arrow-up"></i>
+                                </div>
+                                <p class="qai-dropzone-title">
+                                    Drag a PDF here, or browse
+                                </p>
+                                <p class="qai-dropzone-meta">
+                                    PDF only &middot; up to 25MB
+                                </p>
+                                <button
+                                    id="pptBrowseBtn"
+                                    type="button"
+                                    class="qai-browse-btn"
+                                >
+                                    Choose File
+                                </button>
+                            </div>
+
+                            <!-- Or use a module already on the Modules page -->
+                            <div id="pptModulePicker" class="qai-module-picker">
+                                <p class="qai-module-picker-label">
+                                    <span>or use one of your modules</span>
+                                </p>
+                                <div class="qai-options">
+                                    <div class="qai-option-field">
+                                        <label
+                                            class="qai-option-label"
+                                            for="pptSubjectSelect"
+                                            >Subject</label
+                                        >
+                                        <select
+                                            id="pptSubjectSelect"
+                                            class="qai-select"
+                                            disabled
+                                        >
+                                            <option value="">
+                                                Loading subjects…
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="qai-option-field">
+                                        <label
+                                            class="qai-option-label"
+                                            for="pptModuleSelect"
+                                            >Module</label
+                                        >
+                                        <select
+                                            id="pptModuleSelect"
+                                            class="qai-select"
+                                            disabled
+                                        >
+                                            <option value="">
+                                                Choose a subject first
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Selected file / module chip -->
+                            <div id="pptFileChip" class="qai-file-chip hidden">
+                                <div class="qai-file-chip-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="qai-file-chip-text">
+                                    <p
+                                        id="pptFileName"
+                                        class="qai-file-chip-name"
+                                    >
+                                        lesson-reading.pdf
+                                    </p>
+                                    <p
+                                        id="pptFileMeta"
+                                        class="qai-file-chip-meta"
+                                    >
+                                        2.4 MB
+                                    </p>
+                                </div>
+                                <button
+                                    id="pptFileRemoveBtn"
+                                    type="button"
+                                    class="qai-file-chip-remove"
+                                    aria-label="Remove file"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Generation options -->
+                        <div class="qai-options">
+                            <div class="qai-option-field">
+                                <label
+                                    class="qai-option-label"
+                                    for="pptSlideCount"
+                                    >Slide count</label
+                                >
+                                <select id="pptSlideCount" class="qai-select">
+                                    <option value="8">~8 slides</option>
+                                    <option value="12" selected>
+                                        ~12 slides
+                                    </option>
+                                    <option value="16">~16 slides</option>
+                                    <option value="20">~20 slides</option>
+                                </select>
+                            </div>
+                            <div class="qai-option-field">
+                                <label class="qai-option-label" for="pptTheme"
+                                    >Theme</label
+                                >
+                                <select id="pptTheme" class="qai-select">
+                                    <option value="learnquest" selected>
+                                        LearnQuest Blue
+                                    </option>
+                                    <option value="emerald">
+                                        Emerald Green
+                                    </option>
+                                    <option value="charcoal">
+                                        Classic Charcoal
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="qai-option-field qai-option-field-wide">
+                                <label
+                                    class="qai-option-label"
+                                    for="pptFocusClass"
+                                    >Targeted focus</label
+                                >
+                                <select id="pptFocusClass" class="qai-select">
+                                    <option value="" selected>
+                                        None: cover the reading evenly
+                                    </option>
+                                </select>
+                                <p id="pptFocusHint" class="qai-option-hint">
+                                    Pick a class to give its weakest
+                                    competencies extra slides.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            id="pptGenerateBtn"
+                            type="button"
+                            class="qai-generate-btn"
+                            disabled
+                        >
+                            <i class="fas fa-wand-magic-sparkles"></i> Generate
+                            Presentation
+                        </button>
+
+                        <!-- Progress state -->
+                        <div id="pptProgress" class="qai-progress hidden">
+                            <div class="qai-progress-bar-track">
+                                <div
+                                    id="pptProgressBar"
+                                    class="qai-progress-bar-fill"
+                                ></div>
+                            </div>
+                            <p id="pptProgressLabel" class="qai-progress-label">
+                                Reading your PDF…
+                            </p>
+                        </div>
+
+                        <!-- Result state -->
+                        <div id="pptResult" class="qai-result hidden">
+                            <div class="qai-result-icon">
+                                <i class="fas fa-circle-check"></i>
+                            </div>
+                            <div class="qai-result-text">
+                                <p id="pptResultTitle" class="qai-result-title">
+                                    Your deck is ready
+                                </p>
+                                <p id="pptResultMeta" class="qai-result-meta">
+                                    12 slides &middot; Lecture deck
+                                </p>
+                                <!-- Whether the targeted focus was applied -->
+                                <p
+                                    id="pptFocusNote"
+                                    class="qai-focus-note hidden"
+                                    role="status"
+                                >
+                                    <i class="fas fa-bullseye"></i>
+                                    <span id="pptFocusNoteText"></span>
+                                </p>
+                            </div>
+                            <div class="qai-result-actions">
+                                <button
+                                    id="pptDownloadBtn"
+                                    type="button"
+                                    class="qai-result-btn qai-result-btn-primary"
+                                >
+                                    <i class="fas fa-download"></i> Download
+                                    .pptx
+                                </button>
+                                <button
+                                    id="pptStartOverBtn"
+                                    type="button"
+                                    class="qai-result-btn"
+                                >
+                                    Start Over
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </section>
 

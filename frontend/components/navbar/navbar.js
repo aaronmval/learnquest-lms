@@ -149,10 +149,14 @@ const NOTIFICATION_POLL_MS = 60000;
 
 /*INIT — runs when page loads */
 document.addEventListener("DOMContentLoaded", () => {
-    // Restore dark mode kung naka-save sa browser
-    if (localStorage.getItem("darkMode") === "true") {
-        document.body.classList.add("dark");
-        if (darkModeIcon) darkModeIcon.className = "fas fa-sun";
+    // General settings saved on the account (theme, text size, motion);
+    // the theme falls back to the browser's saved dark mode if none is chosen.
+    applyPreferences();
+
+    // A fixed "sidebar on open" setting overrides the remembered state.
+    const sidebarPreference = getPreferences().sidebar;
+    if (sidebarPreference === "expanded" || sidebarPreference === "collapsed") {
+        localStorage.setItem("sidebarState", sidebarPreference);
     }
 
     //Restore sidebar state (collapsed or expanded)
@@ -625,7 +629,10 @@ function loadDefaultFramePage() {
     // Otherwise reopen the page that was showing before a refresh.
     let lastPage = null;
     try {
-        lastPage = sessionStorage.getItem("LQ_LAST_PAGE");
+        lastPage =
+            getPreferences().restore_last_page === false
+                ? null
+                : sessionStorage.getItem("LQ_LAST_PAGE");
     } catch (e) {
         lastPage = null;
     }
@@ -683,6 +690,7 @@ function initHostShell() {
             syncActiveLinkFromIframe();
             rememberFramePage();
             syncFrameDarkMode();
+            applyPreferencesToFrame();
             pruneIframeSharedShell();
             if (pageLoader) pageLoader.classList.add("hidden");
         });
@@ -834,8 +842,8 @@ function toggleProfessorDropdown() {
 }
 
 /*DARK MODE*/
-function toggleDarkMode() {
-    const isDark = document.body.classList.toggle("dark");
+function setDarkMode(isDark) {
+    document.body.classList.toggle("dark", isDark);
 
     syncFrameDarkMode();
 
@@ -843,8 +851,102 @@ function toggleDarkMode() {
 
     if (darkModeIcon)
         darkModeIcon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+}
+
+function toggleDarkMode() {
+    const isDark = !document.body.classList.contains("dark");
+
+    setDarkMode(isDark);
+    saveThemePreference(isDark ? "dark" : "light");
     showToast(isDark ? "Switched to Dark mode" : "Switched to Light mode");
 }
+
+/* GENERAL PREFERENCES — Settings → General, saved on the account and handed
+   to the shell in LQ_HOST_CONFIG.preferences. */
+function getPreferences() {
+    return getHostConfig().preferences || {};
+}
+
+function applyThemePreference() {
+    const theme = getPreferences().theme;
+    let isDark;
+
+    if (theme === "dark" || theme === "light") {
+        isDark = theme === "dark";
+    } else if (theme === "system") {
+        isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    } else {
+        // Not chosen yet: keep whatever this browser last used.
+        isDark = localStorage.getItem("darkMode") === "true";
+    }
+
+    setDarkMode(isDark);
+}
+
+/* Keeps the account's theme in step with the top-bar toggle. */
+function saveThemePreference(theme) {
+    const config = getHostConfig();
+    if (!config.preferences) return;
+
+    config.preferences.theme = theme;
+    fetch("/settings/general", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-XSRF-TOKEN": getCsrfToken(),
+        },
+        body: JSON.stringify({ theme }),
+    }).catch(() => {
+        // The theme still applies on this device; it just isn't saved.
+    });
+}
+
+/* Text size and reduced motion are classes on the content page's <html>
+   (styled in base/components.css). frame-guard.js sets them before first
+   paint; this keeps them right after a settings change. */
+function applyPreferencesToFrame() {
+    if (!contentFrame || !contentFrame.contentWindow) return;
+    try {
+        const root = contentFrame.contentWindow.document.documentElement;
+        const preferences = getPreferences();
+
+        root.classList.toggle("lq-text-small", preferences.text_size === "small");
+        root.classList.toggle("lq-text-large", preferences.text_size === "large");
+        root.classList.toggle("lq-reduced-motion", preferences.motion === "reduced");
+    } catch (e) {
+        // ignore same-origin framing issues
+    }
+}
+
+function applyPreferences() {
+    applyThemePreference();
+    applyPreferencesToFrame();
+
+    // The landing and login pages can't read the account, so they follow
+    // this device's copy of the motion setting.
+    try {
+        localStorage.setItem(
+            "lqMotion",
+            getPreferences().motion === "reduced" ? "reduced" : "full",
+        );
+    } catch (e) {
+        // ignore storage issues
+    }
+}
+
+/* Called by the Settings page (inside the content iframe) after a save. */
+window.LQ_applyPreferences = function (preferences) {
+    getHostConfig().preferences = preferences || {};
+    applyPreferences();
+};
+
+window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", () => {
+        if (getPreferences().theme === "system") applyThemePreference();
+    });
 
 /*  JOIN CLASS MODAL (student pages only) */
 
@@ -1554,6 +1656,7 @@ function confirmLogout() {
 
     try {
         sessionStorage.removeItem("LQ_LAST_PAGE");
+        sessionStorage.removeItem("LQ_DASHBOARD_UNLOCKED_AT");
     } catch (e) {
         // ignore storage issues
     }

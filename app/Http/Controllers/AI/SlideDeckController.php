@@ -6,6 +6,8 @@ use App\Exceptions\AI\InvalidAiResponseException;
 use App\Exceptions\AI\LlamaApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GenerateSlideDeckRequest;
+use App\Models\Module;
+use App\Services\AI\SlideDeckFocusService;
 use App\Services\AI\SlideDeckGenerationService;
 use App\Services\Documents\PdfTextExtractorService;
 use App\Services\Documents\PresentationBuilderService;
@@ -20,7 +22,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 /**
- * QuestAI Coach "Generate a Presentation": PDF → extracted text → Llama
+ * QuestAI Coach "Generate a Presentation": PDF (uploaded, or an existing
+ * module's) → extracted text → Llama
  * slide outline (validated) → .pptx the professor can download.
  */
 class SlideDeckController extends Controller
@@ -32,16 +35,41 @@ class SlideDeckController extends Controller
         PdfTextExtractorService $extractor,
         SlideDeckGenerationService $generator,
         PresentationBuilderService $builder,
+        SlideDeckFocusService $focus,
     ): JsonResponse {
         $requestId = (string) Str::uuid();
         $professor = $request->user();
-        $file = $request->file('file');
         $slideCount = (int) $request->validated('slide_count');
         $theme = $request->validated('theme');
-        $sourceName = $file->getClientOriginalName();
+
+        // Optional targeted focus from the chosen class's BKT mastery; a
+        // class the professor doesn't manage is a 404.
+        $focusPlan = $request->filled('focus_class_id')
+            ? $focus->plan($professor, (int) $request->validated('focus_class_id'))
+            : null;
+
+        if ($file = $request->file('file')) {
+            $sourcePath = $file->getRealPath();
+            $sourceName = $file->getClientOriginalName();
+        } else {
+            // An existing module from the Modules page, limited to subjects
+            // this professor owns or collaborates on.
+            $module = Module::with('subject')->findOrFail($request->validated('module_id'));
+            abort_unless($module->subject?->isManagedBy($professor), 404);
+
+            if (! $module->file_path || ! Storage::disk('local')->exists($module->file_path)) {
+                return response()->json([
+                    'message' => "This module's PDF could not be found. Re-upload it on the Modules page and try again.",
+                    'request_id' => $requestId,
+                ], 422);
+            }
+
+            $sourcePath = Storage::disk('local')->path($module->file_path);
+            $sourceName = $module->file_name ?: "{$module->title}.pdf";
+        }
 
         try {
-            $text = $extractor->extractText($file->getRealPath());
+            $text = $extractor->extractText($sourcePath);
         } catch (RuntimeException $e) {
             return response()->json([
                 'message' => $e->getMessage().' Try a PDF with selectable text.',
@@ -50,7 +78,12 @@ class SlideDeckController extends Controller
         }
 
         try {
-            $deck = $generator->generate($sourceName, $text, $slideCount);
+            $deck = $generator->generate(
+                $sourceName,
+                $text,
+                $slideCount,
+                $focusPlan && $focus->isNeeded($focusPlan) ? $focusPlan : null,
+            );
             $fileId = (string) Str::uuid();
             $path = $builder->build($deck, $fileId, $theme, $professor->name);
         } catch (LlamaApiException|InvalidAiResponseException $e) {
@@ -90,6 +123,8 @@ class SlideDeckController extends Controller
             'title' => $deck['title'],
             'slide_count' => count($deck['slides']),
             'theme' => $theme,
+            // null when no focus was requested; otherwise whether it was applied and why.
+            'focus' => $focusPlan ? $focus->report($focusPlan, $deck) : null,
             'download_url' => route('professor.questai.decks.download', $fileId),
             'request_id' => $requestId,
         ], 201);

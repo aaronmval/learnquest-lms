@@ -37,6 +37,9 @@ body.dark #mainContent.qai-main {
     min-height: 160px;
     box-sizing: border-box;
     width: 100%;
+    /* overflow:hidden lets a flex item shrink below its content, which
+       clipped the text once min-height is dropped on small screens */
+    flex-shrink: 0;
 }
 
 .qai-hero-text {
@@ -173,8 +176,75 @@ body.dark .qai-panel-subtitle { color: #94a3b8; }
     margin: auto 0;
 }
 
+/* "or use one of your modules" picker under the dropzone */
+.qai-module-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+}
 
-/* LEFT PANEL — PDF → PPT GENERATOR */
+.qai-module-picker-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.qai-module-picker-label::before,
+.qai-module-picker-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: #e2e8f0;
+}
+
+body.dark .qai-module-picker-label::before,
+body.dark .qai-module-picker-label::after {
+    background-color: #334155;
+}
+
+.qai-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Targeted focus: full-width option with a hint underneath */
+.qai-option-field-wide {
+    grid-column: 1 / -1;
+}
+
+.qai-option-hint {
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: #64748b;
+}
+
+body.dark .qai-option-hint { color: #94a3b8; }
+
+/* Result line saying whether the targeted focus was applied */
+.qai-focus-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.74rem;
+    line-height: 1.45;
+    font-weight: 600;
+    color: #b45309;
+}
+
+.qai-focus-note i { margin-top: 2px; }
+
+.qai-focus-note-applied { color: #166534; }
+
+body.dark .qai-focus-note { color: #fbbf24; }
+body.dark .qai-focus-note-applied { color: #86efac; }
+
+
+/* RIGHT PANEL — PDF / MODULE → PPT GENERATOR */
 
 /* Dropzone */
 .qai-dropzone {

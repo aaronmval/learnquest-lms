@@ -38,9 +38,18 @@
                     <p class="hero-subtitle">
                         Comprehensive Monitoring Graphs Management Overview
                     </p>
-                    <a href="professor-quest-ai.html" class="hero-btn">
-                        <i class="fas fa-robot"></i> Launch QuestAI Coach
-                    </a>
+                    <div class="hero-actions">
+                        <a href="professor-quest-ai.html" class="hero-btn">
+                            <i class="fas fa-robot"></i> Launch QuestAI Coach
+                        </a>
+                        <button
+                            type="button"
+                            class="hero-btn hero-lock-btn hidden"
+                            data-dashboard-lock-now
+                        >
+                            <i class="fas fa-lock"></i> Lock now
+                        </button>
+                    </div>
                 </div>
                 <div class="hero-illustration">
                     <i class="fas fa-magnifying-glass-chart"></i>
@@ -152,8 +161,22 @@
                         ></span>
                     </div>
                     <div class="chart-canvas-wrap chart-canvas-wrap-main">
-                        <canvas id="radarChart"></canvas>
+                        <canvas id="radarChart" data-chart-zoom></canvas>
                     </div>
+                    <ul class="chart-key">
+                        <li>
+                            <span class="chart-key-swatch" style="background-color: #22d3ee"></span>
+                            Shaded area: average class mastery (BKT estimate)
+                        </li>
+                        <li>
+                            <i class="fas fa-circle-dot"></i>
+                            Each point: one lesson
+                        </li>
+                        <li>
+                            <i class="fas fa-bullseye"></i>
+                            Rings: 0% at the centre, 100% at the outer edge
+                        </li>
+                    </ul>
                 </div>
 
                 <div class="chart-card chart-card-performance">
@@ -339,6 +362,8 @@
             </div>
         </main>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script src="../../assets/js/common/dashboard-lock.js"></script>
+        <script src="../../assets/js/common/chart-zoom.js"></script>
         <script src="../../assets/js/pages/professor/professor-dashboard.js"></script>
     </body>
 </html>

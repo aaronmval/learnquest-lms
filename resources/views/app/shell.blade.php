@@ -35,6 +35,7 @@
             role: @json($user->role),
             avatarUrl: @json($user->avatarUrl()),
             alertSound: @json($user->wantsAlert('sound')),
+            preferences: @json($user->generalPreferences()),
         };
     </script>
     <script src="{{ route('shell.navbar.js') }}"></script>

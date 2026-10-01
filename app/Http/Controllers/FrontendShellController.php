@@ -17,7 +17,7 @@ class FrontendShellController extends Controller
         abort_unless($user instanceof User, 403);
 
         return view('app.shell', [
-            'initialPage' => $this->defaultPageForRole($user->role),
+            'initialPage' => $this->defaultPageForRole($user->role, $user->generalPreferences()['start_page']),
             'navbarMarkup' => $this->navbarMarkup(),
             'user' => $user,
         ]);
@@ -107,11 +107,15 @@ class FrontendShellController extends Controller
         };
     }
 
-    private function defaultPageForRole(string $role): string
+    /**
+     * The page the shell opens first: the role's Home, or its Dashboard when
+     * the user picked that as their start page in General settings.
+     */
+    private function defaultPageForRole(string $role, string $startPage = 'home'): string
     {
-        return $role === 'professor'
-            ? '/pages/professor/professor-home.html'
-            : '/pages/student/student-home.html';
+        $role = $role === 'professor' ? 'professor' : 'student';
+
+        return "/pages/{$role}/{$role}-{$startPage}.html";
     }
 
     private function navbarMarkup(): string

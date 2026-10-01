@@ -1,6 +1,6 @@
 /* QUESTAI COACH (professor) — chat answered by Llama via Laravel, grounded in
    the professor's lesson materials and the class-level BKT mastery; plus a
-   PDF → .pptx slide-deck generator. */
+   PDF → .pptx slide-deck generator (from an upload or an existing module). */
 
 /* INIT — runs when page loads */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -128,7 +128,7 @@ function esc(value) {
 }
 
 
-/* LEFT PANEL — PDF → PPT GENERATOR */
+/* RIGHT PANEL — PDF / MODULE → PPT GENERATOR */
 function wirePptGenerator() {
     const dropzone      = document.getElementById('pptDropzone');
     const fileInput      = document.getElementById('pptFileInput');
@@ -139,8 +139,16 @@ function wirePptGenerator() {
     const fileMetaEl        = document.getElementById('pptFileMeta');
     const fileRemoveBtn      = document.getElementById('pptFileRemoveBtn');
 
+    const modulePicker   = document.getElementById('pptModulePicker');
+    const subjectSelect  = document.getElementById('pptSubjectSelect');
+    const moduleSelect   = document.getElementById('pptModuleSelect');
+
     const slideCountSelect    = document.getElementById('pptSlideCount');
     const themeSelect          = document.getElementById('pptTheme');
+    const focusSelect          = document.getElementById('pptFocusClass');
+    const focusHint            = document.getElementById('pptFocusHint');
+    const focusNote            = document.getElementById('pptFocusNote');
+    const focusNoteText        = document.getElementById('pptFocusNoteText');
 
     const generateBtn           = document.getElementById('pptGenerateBtn');
 
@@ -156,9 +164,20 @@ function wirePptGenerator() {
 
     if (!dropzone || !fileInput || !generateBtn) return;
 
+    // Presentation defaults from Settings → General.
+    try {
+        const preferences = (window.parent.LQ_HOST_CONFIG || {}).preferences || {};
+        if (preferences.deck_slide_count) slideCountSelect.value = String(preferences.deck_slide_count);
+        if (preferences.deck_theme) themeSelect.value = preferences.deck_theme;
+    } catch (e) {
+        /* not inside the shell — keep the built-in defaults */
+    }
+
     const MAX_BYTES = 25 * 1024 * 1024;
 
     let selectedFile = null;
+    let selectedModule = null; // an existing module, used instead of an upload
+    const modulesBySubject = new Map();
     let downloadUrl = null;
     let isGenerating = false;
 
@@ -183,11 +202,28 @@ function wirePptGenerator() {
         }
 
         selectedFile = file;
-        fileNameEl.textContent = file.name;
-        fileMetaEl.textContent = formatFileSize(file.size);
+        selectedModule = null;
+        showSourceChip(file.name, formatFileSize(file.size));
+    }
+
+    function setSelectedModule(module) {
+        if (!module || isGenerating) return;
+
+        selectedModule = module;
+        selectedFile = null;
+        fileInput.value = '';
+
+        const size = module.file_size ? ' · ' + formatFileSize(module.file_size) : '';
+        showSourceChip(module.file_name || module.title, 'Module: ' + module.title + size);
+    }
+
+    function showSourceChip(name, meta) {
+        fileNameEl.textContent = name;
+        fileMetaEl.textContent = meta;
 
         fileChip.classList.remove('hidden');
         dropzone.style.display = 'none';
+        if (modulePicker) modulePicker.classList.add('hidden');
         generateBtn.disabled = false;
 
         // I-reset ang dating result/progress kung mag-iiba ng file
@@ -196,10 +232,13 @@ function wirePptGenerator() {
 
     function clearSelectedFile() {
         selectedFile = null;
+        selectedModule = null;
         downloadUrl = null;
         fileInput.value = '';
+        if (moduleSelect) moduleSelect.value = '';
         fileChip.classList.add('hidden');
         dropzone.style.display = 'flex';
+        if (modulePicker) modulePicker.classList.remove('hidden');
         generateBtn.disabled = true;
         resetProgressAndResult();
     }
@@ -247,10 +286,96 @@ function wirePptGenerator() {
         if (dropped) setSelectedFile(dropped);
     });
 
+    /* Existing modules — the same subjects and modules as the Modules page */
+    function setOptions(select, placeholder, items, labelOf) {
+        select.innerHTML = '';
+        select.appendChild(new Option(placeholder, ''));
+        items.forEach(item => select.appendChild(new Option(labelOf(item), item.id)));
+        select.disabled = items.length === 0;
+    }
+
+    async function loadSubjects() {
+        try {
+            const { ok, data } = await apiRequest('/professor/subjects');
+            const subjects = ok && Array.isArray(data) ? data.filter(s => s.modules_count > 0) : [];
+
+            setOptions(
+                subjectSelect,
+                !ok ? 'Could not load subjects' : subjects.length ? 'Select a subject' : 'No modules uploaded yet',
+                subjects,
+                s => s.name,
+            );
+        } catch (e) {
+            setOptions(subjectSelect, 'Could not load subjects', [], null);
+        }
+    }
+
+    async function loadModules(subjectId) {
+        if (!subjectId) {
+            setOptions(moduleSelect, 'Choose a subject first', [], null);
+            return;
+        }
+
+        if (!modulesBySubject.has(subjectId)) {
+            setOptions(moduleSelect, 'Loading modules…', [], null);
+            try {
+                const { ok, data } = await apiRequest(`/professor/subjects/${encodeURIComponent(subjectId)}/modules`);
+                if (!ok || !Array.isArray(data)) throw new Error('modules request failed');
+                modulesBySubject.set(subjectId, data);
+            } catch (e) {
+                setOptions(moduleSelect, 'Could not load modules', [], null);
+                return;
+            }
+        }
+
+        // The professor may have switched subject while this one loaded.
+        if (subjectSelect.value !== subjectId) return;
+
+        const modules = modulesBySubject.get(subjectId);
+        setOptions(
+            moduleSelect,
+            modules.length ? 'Select a module' : 'No modules in this subject',
+            modules,
+            m => m.title,
+        );
+    }
+
+    if (modulePicker && subjectSelect && moduleSelect) {
+        subjectSelect.addEventListener('change', () => loadModules(subjectSelect.value));
+        moduleSelect.addEventListener('change', () => {
+            const modules = modulesBySubject.get(subjectSelect.value) || [];
+            const module = modules.find(m => String(m.id) === moduleSelect.value);
+            if (module) setSelectedModule(module);
+        });
+        loadSubjects();
+    }
+
+    /* Targeted focus — tells the professor up front what the chosen class's
+       BKT stats would emphasise (the server decides again at generate time). */
+    function updateFocusHint() {
+        if (!focusSelect || !focusHint) return;
+
+        const cls = findClass(Number(focusSelect.value));
+        if (!cls) {
+            focusHint.textContent = 'Pick a class to give its weakest competencies extra slides.';
+        } else if (!cls.assessed) {
+            focusHint.textContent = 'No quiz results for this class yet, so there is nothing to focus on.';
+        } else if (!cls.weaknesses.length) {
+            focusHint.textContent = 'This class shows high mastery in every assessed competency; no focus is needed.';
+        } else {
+            focusHint.textContent = 'Weakest: ' + cls.weaknesses
+                .slice(0, 3)
+                .map(w => `${w.name} (${w.mastery}%)`)
+                .join(', ') + '. Slides on these get extra attention if the reading covers them.';
+        }
+    }
+
+    if (focusSelect) focusSelect.addEventListener('change', updateFocusHint);
+
     /* Generate — the labels advance while the server works, then hold at
        the last step until the response arrives. */
     const PROGRESS_STEPS = [
-        { pct: 12, label: 'Uploading your PDF…' },
+        { pct: 12, label: () => selectedModule ? 'Opening your module…' : 'Uploading your PDF…' },
         { pct: 30, label: 'Reading your PDF…' },
         { pct: 52, label: 'Pulling out key concepts…' },
         { pct: 72, label: 'Drafting slide outline…' },
@@ -271,7 +396,7 @@ function wirePptGenerator() {
         const apply = () => {
             const step = PROGRESS_STEPS[stepIndex];
             progressBar.style.width = step.pct + '%';
-            progressLabel.textContent = step.label;
+            progressLabel.textContent = typeof step.label === 'function' ? step.label() : step.label;
         };
 
         apply();
@@ -286,7 +411,7 @@ function wirePptGenerator() {
     }
 
     async function generate() {
-        if (!selectedFile || isGenerating) return;
+        if ((!selectedFile && !selectedModule) || isGenerating) return;
 
         isGenerating = true;
         generateBtn.disabled = true;
@@ -295,13 +420,19 @@ function wirePptGenerator() {
         progressWrap.classList.remove('hidden');
         slideCountSelect.disabled = true;
         themeSelect.disabled = true;
+        if (focusSelect) focusSelect.disabled = true;
 
         const stopProgress = startProgress();
 
         const form = new FormData();
-        form.append('file', selectedFile);
+        if (selectedModule) {
+            form.append('module_id', selectedModule.id);
+        } else {
+            form.append('file', selectedFile);
+        }
         form.append('slide_count', slideCountSelect.value);
         form.append('theme', themeSelect.value);
+        if (focusSelect && focusSelect.value) form.append('focus_class_id', focusSelect.value);
 
         try {
             const { ok, status, data } = await apiRequest('/professor/questai/decks', { method: 'POST', body: form });
@@ -326,6 +457,7 @@ function wirePptGenerator() {
             isGenerating = false;
             slideCountSelect.disabled = false;
             themeSelect.disabled = false;
+            if (focusSelect) focusSelect.disabled = false;
         }
     }
 
@@ -339,7 +471,21 @@ function wirePptGenerator() {
         resultTitle.textContent = data.title || 'Your deck is ready';
         resultMeta.textContent = `${data.slide_count} slides + title · ${themeLabel}`;
 
-        showToast('Presentation generated!');
+        // Say plainly whether the targeted focus made it into the deck.
+        const focus = data.focus;
+        if (focusNote && focusNoteText) {
+            focusNote.classList.toggle('hidden', !focus);
+            focusNote.classList.toggle('qai-focus-note-applied', focus?.status === 'applied');
+            focusNoteText.textContent = focus ? focus.message : '';
+        }
+
+        if (!focus) {
+            showToast('Presentation generated!');
+        } else if (focus.status === 'applied') {
+            showToast('Presentation generated with targeted focus.');
+        } else {
+            showToast('Presentation generated. Targeted focus was not applied.');
+        }
     }
 
     generateBtn.addEventListener('click', generate);
@@ -364,7 +510,7 @@ function wirePptGenerator() {
 }
 
 
-/*  RIGHT PANEL — ASK QUESTAI */
+/*  LEFT PANEL — ASK QUESTAI */
 
 /* STATE */
 let coachClasses = [];
@@ -398,6 +544,15 @@ async function loadContext() {
     renderGreeting();
     renderClassChips();
     updatePersonalizationBanner();
+    renderFocusClassOptions();
+}
+
+/* "Targeted focus" picker in the presentation generator: one option per class. */
+function renderFocusClassOptions() {
+    const select = document.getElementById('pptFocusClass');
+    if (!select) return;
+
+    coachClasses.forEach(cls => select.appendChild(new Option(classLabel(cls), cls.id)));
 }
 
 function renderGreeting() {

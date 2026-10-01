@@ -92,6 +92,14 @@
                                 </button>
                                 <button
                                     class="settings-tab"
+                                    data-tab="general"
+                                    role="tab"
+                                    aria-selected="false"
+                                >
+                                    <i class="fas fa-sliders"></i> General
+                                </button>
+                                <button
+                                    class="settings-tab"
                                     data-tab="academic-info"
                                     role="tab"
                                     aria-selected="false"
@@ -146,6 +154,119 @@
                                             </button>
                                         </div>
                                     </form>
+                                </section>
+
+                                <!-- ── GENERAL ── -->
+                                <section id="panel-general" class="settings-panel" role="tabpanel">
+                                    <div class="settings-card">
+                                        <div class="settings-card-header">
+                                            <h3 class="settings-card-title">General Settings</h3>
+                                            <p class="settings-card-desc">How LearnQuest looks and behaves for you. These are saved to your account and follow you to any device.</p>
+                                        </div>
+
+                                        <div class="notif-group">
+                                            <p class="notif-group-title">Display</p>
+
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <label class="notif-row-label" for="general-theme">Theme</label>
+                                                    <span class="notif-row-desc">Light, dark, or follow your device. Also changed by the moon button in the top bar.</span>
+                                                </div>
+                                                <select id="general-theme" class="settings-select" data-general="theme">
+                                                    <option value="light">Light</option>
+                                                    <option value="dark">Dark</option>
+                                                    <option value="system">Match device</option>
+                                                </select>
+                                            </div>
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <label class="notif-row-label" for="general-text_size">Text Size</label>
+                                                    <span class="notif-row-desc">Size of the text on every page.</span>
+                                                </div>
+                                                <select id="general-text_size" class="settings-select" data-general="text_size">
+                                                    <option value="small">Small</option>
+                                                    <option value="default">Default</option>
+                                                    <option value="large">Large</option>
+                                                </select>
+                                            </div>
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <label class="notif-row-label" for="general-motion">Animations</label>
+                                                    <span class="notif-row-desc">Reduced turns off page transitions and moving backgrounds.</span>
+                                                </div>
+                                                <select id="general-motion" class="settings-select" data-general="motion">
+                                                    <option value="full">On</option>
+                                                    <option value="reduced">Reduced</option>
+                                                </select>
+                                            </div>
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <label class="notif-row-label" for="general-sidebar">Sidebar on Open</label>
+                                                    <span class="notif-row-desc">How the side menu starts when you open LearnQuest.</span>
+                                                </div>
+                                                <select id="general-sidebar" class="settings-select" data-general="sidebar">
+                                                    <option value="remember">Remember last state</option>
+                                                    <option value="expanded">Expanded</option>
+                                                    <option value="collapsed">Collapsed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="notif-group">
+                                            <p class="notif-group-title">Behaviour</p>
+
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <label class="notif-row-label" for="general-start_page">Start Page</label>
+                                                    <span class="notif-row-desc">The page that opens after you log in.</span>
+                                                </div>
+                                                <select id="general-start_page" class="settings-select" data-general="start_page">
+                                                    <option value="home">Home</option>
+                                                    <option value="dashboard">Dashboard</option>
+                                                </select>
+                                            </div>
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <span class="notif-row-label">Reopen Last Page</span>
+                                                    <span class="notif-row-desc">After a refresh, return to the page you were on instead of the start page.</span>
+                                                </div>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" id="general-restore_last_page" data-general="restore_last_page" aria-label="Reopen Last Page" checked />
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <span class="notif-row-label">Show Chart Labels</span>
+                                                    <span class="notif-row-desc">Show the names around the dashboard radar charts by default.</span>
+                                                </div>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" id="general-chart_labels" data-general="chart_labels" aria-label="Show Chart Labels" checked />
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                            <div class="notif-row">
+                                                <div class="notif-row-text">
+                                                    <span class="notif-row-label">Lock My Dashboard</span>
+                                                    <span class="notif-row-desc">Hide the dashboard behind a cover until you choose to show it.</span>
+                                                </div>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" id="general-dashboard_lock" data-general="dashboard_lock" aria-label="Lock My Dashboard" checked />
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-card-footer">
+                                            <button id="generalResetBtn" type="button" class="settings-reset-btn">
+                                                <i class="fas fa-rotate-left"></i> Reset to Defaults
+                                            </button>
+                                            <span id="generalSaveStatus" class="settings-save-status"></span>
+                                            <button id="generalSaveBtn" type="button" class="settings-save-btn">
+                                                <i class="fas fa-floppy-disk"></i> Save Settings
+                                            </button>
+                                        </div>
+                                    </div>
                                 </section>
 
                                 <!-- ── MY CLASSES ── -->

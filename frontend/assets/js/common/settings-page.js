@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         renderProfile();
+        renderGeneral();
         renderPreferences();
         loadClasses();
     }
@@ -262,6 +263,98 @@ document.addEventListener('DOMContentLoaded', () => {
             list.innerHTML = '<p class="settings-field-hint">Could not load your classes.</p>';
         }
     }
+
+    /* GENERAL SETTINGS — display and behaviour, saved on the account. Each
+       control carries data-general="<setting key>". */
+    function renderGeneral() {
+        const prefs = settings.general_preferences || {};
+        document.querySelectorAll('[data-general]').forEach((control) => {
+            const key = control.dataset.general;
+            // Hide any setting the server doesn't offer for this role.
+            if (!(key in prefs)) {
+                const row = control.closest('.notif-row');
+                if (row) row.hidden = true;
+                return;
+            }
+
+            let value = prefs[key];
+            // No theme chosen yet: show what this browser is using now.
+            if (key === 'theme' && value === null) value = shellIsDark() ? 'dark' : 'light';
+
+            if (control.type === 'checkbox') control.checked = Boolean(value);
+            else control.value = String(value);
+        });
+    }
+
+    function shellIsDark() {
+        try {
+            return window.parent.document.body.classList.contains('dark');
+        } catch (e) {
+            return document.body.classList.contains('dark');
+        }
+    }
+
+    /* Hand the saved settings to the shell so they take effect right away. */
+    function applyGeneral() {
+        try {
+            if (window.parent && typeof window.parent.LQ_applyPreferences === 'function') {
+                window.parent.LQ_applyPreferences(settings.general_preferences);
+            }
+        } catch (e) {
+            /* not inside the shell */
+        }
+    }
+
+    (function initGeneralPrefs() {
+        const saveBtn = document.getElementById('generalSaveBtn');
+        const resetBtn = document.getElementById('generalResetBtn');
+        const saveStatus = document.getElementById('generalSaveStatus');
+        if (!saveBtn) return;
+
+        saveBtn.addEventListener('click', async () => {
+            const known = settings?.general_preferences || {};
+            const payload = {};
+            document.querySelectorAll('[data-general]').forEach((control) => {
+                const key = control.dataset.general;
+                if (!(key in known)) return;
+
+                if (control.type === 'checkbox') payload[key] = control.checked;
+                else payload[key] = control.dataset.type === 'number' ? Number(control.value) : control.value;
+            });
+
+            setButtonSaving(saveBtn, true);
+            try {
+                settings = await api('/settings/general', { method: 'PUT', json: payload });
+                renderGeneral();
+                applyGeneral();
+                flashSaveStatus(saveStatus, 'Settings saved.');
+                showToast('General settings saved.', 'success');
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                setButtonSaving(saveBtn, false);
+            }
+        });
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', async () => {
+                if (!window.confirm('Reset all General settings to their defaults?')) return;
+
+                resetBtn.disabled = true;
+                try {
+                    settings = await api('/settings/general', { method: 'DELETE' });
+                    renderGeneral();
+                    applyGeneral();
+                    flashSaveStatus(saveStatus, 'Defaults restored.');
+                    showToast('General settings reset to defaults.', 'success');
+                } catch (err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    resetBtn.disabled = false;
+                }
+            });
+        }
+    })();
 
     /* NOTIFICATION PREFERENCES */
     function renderPreferences() {

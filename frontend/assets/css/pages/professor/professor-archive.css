@@ -37,6 +37,9 @@ body.dark #mainContent.archive-main {
     min-height: 160px;
     box-sizing: border-box;
     width: 100%;
+    /* overflow:hidden lets a flex item shrink below its content, which
+       clipped the text once min-height is dropped on small screens */
+    flex-shrink: 0;
 }
 
 .hero-text {

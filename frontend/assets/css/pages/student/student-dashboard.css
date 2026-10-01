@@ -1067,3 +1067,10 @@ body.dark .export-confirm-btn:disabled {
         font-size: 0.68rem;
     }
 }
+
+/* SCROLLABLE CARDS
+   Cards have a fixed height; let them scroll rather than clip content. */
+.chart-card {
+    overflow-x: hidden;
+    overflow-y: auto;
+}

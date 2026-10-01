@@ -14,7 +14,16 @@
 (function () {
     try {
         if (window.top !== window.self) {
-            // Already inside the shell's iframe — nothing to do.
+            // Already inside the shell's iframe. Apply the account's text
+            // size and motion settings (Settings → General) before first
+            // paint, so the page doesn't flash at the default size.
+            var preferences =
+                (window.parent.LQ_HOST_CONFIG || {}).preferences || {};
+            var root = document.documentElement;
+
+            if (preferences.text_size === "small") root.classList.add("lq-text-small");
+            if (preferences.text_size === "large") root.classList.add("lq-text-large");
+            if (preferences.motion === "reduced") root.classList.add("lq-reduced-motion");
             return;
         }
 

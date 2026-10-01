@@ -68,7 +68,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("exportBtn")?.addEventListener("click", exportCsv);
 
     updateFilterBadges("");
-    loadDashboard();
+
+    // Nothing is fetched or drawn until the privacy cover is dismissed.
+    if (window.LQDashboardLock) {
+        window.LQDashboardLock.whenUnlocked(loadDashboard);
+    } else {
+        loadDashboard();
+    }
 });
 
 /* DATA LOADING */

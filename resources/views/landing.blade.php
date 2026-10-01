@@ -11,7 +11,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="/css/landingpage.css">
-<script>document.documentElement.classList.add('js');</script>
+<script>
+  document.documentElement.classList.add('js');
+  // Animations set to "Reduced" in Settings → General on this device.
+  try {
+    if (localStorage.getItem('lqMotion') === 'reduced') document.documentElement.classList.add('lq-reduced-motion');
+  } catch (e) {}
+</script>
 </head>
 <body>
 
@@ -159,7 +165,8 @@
 
 <script>
 (function(){
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = document.documentElement.classList.contains('lq-reduced-motion')
+    || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Scroll reveal for the step and feature cards, staggered within each grid
   const revealEls = document.querySelectorAll('.reveal');

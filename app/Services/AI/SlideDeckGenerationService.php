@@ -47,19 +47,24 @@ class SlideDeckGenerationService
     }
 
     /**
-     * @return array{title: string, slides: array<int, array{title: string, bullets: array<int, string>, notes: ?string}>}
+     * $focus is the class's weak and strong competencies (from BKT mastery)
+     * to emphasise or keep brief. Slides that emphasise a weak competency
+     * come back with a "focus" key naming it.
+     *
+     * @param  array{weaknesses: array<int, array{name: string, mastery: float}>, strengths: array<int, array{name: string, mastery: float}>}|null  $focus
+     * @return array{title: string, slides: array<int, array{title: string, bullets: array<int, string>, notes: ?string, focus?: string}>}
      *
      * @throws LlamaApiException
      * @throws InvalidAiResponseException
      */
-    public function generate(string $sourceName, string $text, int $slideCount): array
+    public function generate(string $sourceName, string $text, int $slideCount, ?array $focus = null): array
     {
         $parts = $this->plan($this->condense($text), $slideCount);
         $count = count($parts);
 
         $conversations = [];
         foreach ($parts as $i => $part) {
-            $conversations[$i] = $this->prompts->slideDeckMessages($sourceName, $part['content'], $part['slides'], $i + 1, $count);
+            $conversations[$i] = $this->prompts->slideDeckMessages($sourceName, $part['content'], $part['slides'], $i + 1, $count, $focus);
         }
 
         // Each part gets one quick attempt on Llama; parts that fail or come
@@ -72,7 +77,39 @@ class SlideDeckGenerationService
             fn (string $raw, int $i) => $this->loggedParse($raw, $i, $parts[$i]['slides']),
         );
 
-        return $this->assemble(array_column($results, 'value'), $slideCount);
+        $deck = $this->assemble(array_column($results, 'value'), $slideCount);
+        $deck['slides'] = $this->resolveFocus($deck['slides'], $focus['weaknesses'] ?? []);
+
+        return $deck;
+    }
+
+    /**
+     * Keep a slide's "focus" tag only when it names one of the requested
+     * weak competencies (normalised to that competency's exact name), and
+     * flag those slides in the speaker notes for the teacher.
+     *
+     * @param  array<int, array<string, mixed>>  $slides
+     * @param  array<int, array{name: string, mastery: float}>  $weaknesses
+     * @return array<int, array<string, mixed>>
+     */
+    private function resolveFocus(array $slides, array $weaknesses): array
+    {
+        $byKey = [];
+        foreach ($weaknesses as $topic) {
+            $byKey[Str::lower($topic['name'])] = $topic;
+        }
+
+        return array_map(function (array $slide) use ($byKey) {
+            $topic = $byKey[Str::lower($slide['focus'] ?? '')] ?? null;
+            unset($slide['focus']);
+
+            if ($topic) {
+                $slide['focus'] = $topic['name'];
+                $slide['notes'] = trim("Class focus: {$topic['name']} (class mastery {$topic['mastery']}%). ".($slide['notes'] ?? ''));
+            }
+
+            return $slide;
+        }, $slides);
     }
 
     /**
@@ -172,12 +209,13 @@ class SlideDeckGenerationService
             }
 
             $notes = $this->cleanString($slide['notes'] ?? null);
+            $focus = $this->cleanString($slide['focus'] ?? null);
 
             $slides[] = [
                 'title' => Str::limit($slideTitle, self::MAX_TITLE_CHARS),
                 'bullets' => array_slice($bullets, 0, self::MAX_BULLETS),
                 'notes' => $notes === '' ? null : Str::limit($notes, self::MAX_NOTES_CHARS),
-            ];
+            ] + ($focus === '' ? [] : ['focus' => $focus]);
         }
 
         if (empty($slides)) {

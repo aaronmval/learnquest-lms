@@ -1569,3 +1569,17 @@ body.dark .export-confirm-btn:disabled {
         font-size: 0.68rem;
     }
 }
+
+/* SCROLLABLE CARDS
+   Small screens fix the card height, so let a card scroll rather than clip
+   its content, and keep charts from collapsing to make room. */
+.chart-card,
+.mastery-card {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.chart-canvas-wrap:not(.chart-canvas-wrap-main) {
+    min-height: 180px;
+    flex-shrink: 0;
+}

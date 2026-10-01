@@ -9,7 +9,14 @@
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Reduced by the device, or by Settings → General on this device.
+    let reducedBySetting = false;
+    try {
+        reducedBySetting = localStorage.getItem('lqMotion') === 'reduced';
+    } catch (e) {
+        // storage unavailable
+    }
+    const reduceMotion = reducedBySetting || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const ORB_COLORS = ['94,200,255', '59,130,246', '168,85,247', '34,211,238'];
     const LINK_DISTANCE = 140;
 

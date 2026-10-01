@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\AI\SlideDeckGenerationService;
+use App\Services\Documents\PresentationBuilderService;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -27,6 +29,7 @@ class User extends Authenticatable
         'role',
         'avatar_path',
         'notification_preferences',
+        'general_preferences',
     ];
 
     /**
@@ -60,7 +63,53 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notification_preferences' => 'array',
+            'general_preferences' => 'array',
         ];
+    }
+
+    /**
+     * General (display and behaviour) settings a user of the given role can
+     * change: each key's allowed values and its default. A null default
+     * means "not chosen yet" (the browser keeps its current state).
+     *
+     * @return array<string, array{values: array<int, mixed>, default: mixed}>
+     */
+    public static function generalPreferenceOptions(string $role): array
+    {
+        $options = [
+            'theme' => ['values' => ['light', 'dark', 'system'], 'default' => null],
+            'motion' => ['values' => ['full', 'reduced'], 'default' => 'full'],
+            'text_size' => ['values' => ['default', 'small', 'large'], 'default' => 'default'],
+            'sidebar' => ['values' => ['remember', 'expanded', 'collapsed'], 'default' => 'remember'],
+            'start_page' => ['values' => ['home', 'dashboard'], 'default' => 'home'],
+            'restore_last_page' => ['values' => [true, false], 'default' => true],
+            'chart_labels' => ['values' => [true, false], 'default' => true],
+            // Privacy cover shown before the dashboard (a client-side cover, not access control).
+            'dashboard_lock' => ['values' => [true, false], 'default' => true],
+        ];
+
+        if ($role === 'professor') {
+            $options['deck_slide_count'] = ['values' => SlideDeckGenerationService::SLIDE_COUNTS, 'default' => 12];
+            $options['deck_theme'] = ['values' => array_keys(PresentationBuilderService::THEMES), 'default' => 'learnquest'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * This user's general settings, with defaults for anything not saved.
+     *
+     * @return array<string, mixed>
+     */
+    public function generalPreferences(): array
+    {
+        $stored = $this->general_preferences ?? [];
+
+        return collect(self::generalPreferenceOptions($this->role))
+            ->map(fn (array $option, string $key) => in_array($stored[$key] ?? null, $option['values'], true)
+                ? $stored[$key]
+                : $option['default'])
+            ->all();
     }
 
     /**

@@ -37,9 +37,18 @@
                     <p class="hero-subtitle">
                         Comprehensive Monitoring Graphs Management Overview
                     </p>
-                    <a href="student-quest-ai.html" class="hero-btn">
-                        <i class="fas fa-robot"></i> Launch QuestAI Coach
-                    </a>
+                    <div class="hero-actions">
+                        <a href="student-quest-ai.html" class="hero-btn">
+                            <i class="fas fa-robot"></i> Launch QuestAI Coach
+                        </a>
+                        <button
+                            type="button"
+                            class="hero-btn hero-lock-btn hidden"
+                            data-dashboard-lock-now
+                        >
+                            <i class="fas fa-lock"></i> Lock now
+                        </button>
+                    </div>
                 </div>
                 <div class="hero-illustration">
                     <i class="fas fa-magnifying-glass-chart"></i>
@@ -145,8 +154,22 @@
                         </span>
                     </div>
                     <div class="chart-canvas-wrap">
-                        <canvas id="radarChart"></canvas>
+                        <canvas id="radarChart" data-chart-zoom></canvas>
                     </div>
+                    <ul class="chart-key">
+                        <li>
+                            <span class="chart-key-swatch" style="background-color: #60a5fa"></span>
+                            Shaded area: your mastery level (BKT estimate)
+                        </li>
+                        <li>
+                            <i class="fas fa-circle-dot"></i>
+                            Each point: one subject. Click a point to see its sub-topics
+                        </li>
+                        <li>
+                            <i class="fas fa-bullseye"></i>
+                            Rings: 0% at the centre, 100% at the outer edge
+                        </li>
+                    </ul>
                 </div>
 
                 <div class="chart-card chart-card-mini-radar">
@@ -165,8 +188,22 @@
                         </span>
                     </div>
                     <div class="chart-canvas-wrap">
-                        <canvas id="subjectRadarChart"></canvas>
+                        <canvas id="subjectRadarChart" data-chart-zoom></canvas>
                     </div>
+                    <ul class="chart-key">
+                        <li>
+                            <span class="chart-key-swatch" style="background-color: #22c55e"></span>
+                            Shaded area: your mastery level (BKT estimate)
+                        </li>
+                        <li>
+                            <i class="fas fa-circle-dot"></i>
+                            Each point: one competency of the selected subject
+                        </li>
+                        <li>
+                            <i class="fas fa-bullseye"></i>
+                            Rings: 0% at the centre, 100% at the outer edge
+                        </li>
+                    </ul>
                 </div>
 
                 <div class="chart-card chart-card-performance">
@@ -198,6 +235,8 @@
                 </div>
             </section>
         </main>
+        <script src="../../assets/js/common/dashboard-lock.js"></script>
+        <script src="../../assets/js/common/chart-zoom.js"></script>
         <script src="../../assets/js/pages/student/student-dashboard.js"></script>
     </body>
 </html>

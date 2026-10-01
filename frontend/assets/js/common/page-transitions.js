@@ -8,6 +8,8 @@
    .lq-enter / .lq-fade classes; the motion itself lives in the stylesheet. */
 (function () {
     if (!("MutationObserver" in window)) return;
+    // Animations set to "Reduced" in Settings → General.
+    if (document.documentElement.classList.contains("lq-reduced-motion")) return;
     if (
         window.matchMedia &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches

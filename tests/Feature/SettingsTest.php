@@ -31,6 +31,16 @@ class SettingsTest extends TestCase
                 'role' => 'student',
                 'avatar_url' => null,
                 'notification_preferences' => ['announcements' => true, 'lessons' => true, 'mastery' => true, 'sound' => true],
+                'general_preferences' => [
+                    'theme' => null,
+                    'motion' => 'full',
+                    'text_size' => 'default',
+                    'sidebar' => 'remember',
+                    'start_page' => 'home',
+                    'restore_last_page' => true,
+                    'chart_labels' => true,
+                    'dashboard_lock' => true,
+                ],
             ]);
 
         $this->actingAs($professor)->getJson('/settings')
@@ -181,6 +191,87 @@ class SettingsTest extends TestCase
             ->assertSee('alertSound: false', false)
             // @json escapes forward slashes in the shell's inline config.
             ->assertSee('\/settings\/avatar?v=', false);
+    }
+
+    public function test_general_settings_are_saved_and_validated(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+
+        $this->actingAs($student)->putJson('/settings/general', [
+            'theme' => 'dark',
+            'text_size' => 'large',
+            'restore_last_page' => false,
+        ])
+            ->assertOk()
+            ->assertJsonPath('general_preferences.theme', 'dark')
+            ->assertJsonPath('general_preferences.text_size', 'large')
+            ->assertJsonPath('general_preferences.restore_last_page', false)
+            // Settings that were not sent keep their defaults.
+            ->assertJsonPath('general_preferences.motion', 'full');
+
+        // A later partial save keeps the earlier choices.
+        $this->actingAs($student)->putJson('/settings/general', ['motion' => 'reduced'])
+            ->assertOk()
+            ->assertJsonPath('general_preferences.theme', 'dark')
+            ->assertJsonPath('general_preferences.motion', 'reduced');
+
+        $this->actingAs($student)->putJson('/settings/general', ['theme' => 'neon'])
+            ->assertStatus(422)->assertJsonValidationErrors('theme');
+        $this->actingAs($student)->putJson('/settings/general', ['font' => 'comic'])
+            ->assertStatus(422);
+        $this->assertSame('dark', $student->fresh()->generalPreferences()['theme']);
+    }
+
+    public function test_presentation_defaults_are_professor_only(): void
+    {
+        $professor = User::factory()->create(['role' => 'professor']);
+        $student = User::factory()->create(['role' => 'student']);
+
+        $this->actingAs($professor)->getJson('/settings')
+            ->assertJsonPath('general_preferences.deck_slide_count', 12)
+            ->assertJsonPath('general_preferences.deck_theme', 'learnquest');
+
+        $this->actingAs($professor)->putJson('/settings/general', ['deck_slide_count' => 20, 'deck_theme' => 'emerald'])
+            ->assertOk()
+            ->assertJsonPath('general_preferences.deck_slide_count', 20)
+            ->assertJsonPath('general_preferences.deck_theme', 'emerald');
+        $this->actingAs($professor)->putJson('/settings/general', ['deck_slide_count' => 50])
+            ->assertStatus(422)->assertJsonValidationErrors('deck_slide_count');
+
+        $this->actingAs($student)->putJson('/settings/general', ['deck_theme' => 'emerald'])->assertStatus(422);
+        $this->actingAs($student)->getJson('/settings')->assertJsonMissingPath('general_preferences.deck_theme');
+    }
+
+    public function test_general_settings_reset_to_defaults(): void
+    {
+        $user = User::factory()->create(['role' => 'student']);
+
+        $this->actingAs($user)->putJson('/settings/general', ['theme' => 'dark', 'sidebar' => 'expanded', 'dashboard_lock' => false])
+            ->assertOk()
+            ->assertJsonPath('general_preferences.dashboard_lock', false);
+
+        $this->actingAs($user)->deleteJson('/settings/general')
+            ->assertOk()
+            ->assertJsonPath('general_preferences.theme', null)
+            ->assertJsonPath('general_preferences.sidebar', 'remember')
+            ->assertJsonPath('general_preferences.dashboard_lock', true);
+        $this->assertNull($user->fresh()->general_preferences);
+    }
+
+    public function test_shell_opens_on_the_chosen_start_page_with_preferences(): void
+    {
+        $professor = User::factory()->create(['role' => 'professor']);
+
+        $this->actingAs($professor)->get('/professor/dashboard')
+            ->assertOk()
+            ->assertSee('\/pages\/professor\/professor-home.html', false);
+
+        $this->actingAs($professor)->putJson('/settings/general', ['start_page' => 'dashboard', 'motion' => 'reduced'])->assertOk();
+
+        $this->actingAs($professor)->get('/professor/dashboard')
+            ->assertOk()
+            ->assertSee('\/pages\/professor\/professor-dashboard.html', false)
+            ->assertSee('"motion":"reduced"', false);
     }
 
     public function test_guests_are_rejected(): void

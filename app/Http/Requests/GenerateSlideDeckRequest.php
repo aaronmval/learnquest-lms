@@ -24,7 +24,11 @@ class GenerateSlideDeckRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:pdf', 'max:25600'],
+            // Either an uploaded PDF or one of the professor's existing modules.
+            'file' => ['nullable', 'required_without:module_id', 'file', 'mimes:pdf', 'max:25600'],
+            'module_id' => ['nullable', 'integer', 'exists:modules,id'],
+            // Optional: tailor the deck to this class's weak competencies.
+            'focus_class_id' => ['nullable', 'integer'],
             'slide_count' => ['required', 'integer', Rule::in(SlideDeckGenerationService::SLIDE_COUNTS)],
             'theme' => ['required', 'string', Rule::in(array_keys(PresentationBuilderService::THEMES))],
         ];
@@ -33,6 +37,7 @@ class GenerateSlideDeckRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'file.required_without' => 'Upload a PDF or choose one of your modules.',
             'file.mimes' => 'Please upload a PDF file.',
             'file.max' => 'The PDF must be 25MB or smaller.',
         ];

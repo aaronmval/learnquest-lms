@@ -66,7 +66,12 @@ function initDashboard() {
     }, 700);
 }
 
-document.addEventListener("DOMContentLoaded", initDashboard);
+// Nothing is fetched or drawn until the privacy cover is dismissed.
+if (window.LQDashboardLock) {
+    window.LQDashboardLock.whenUnlocked(initDashboard);
+} else {
+    document.addEventListener("DOMContentLoaded", initDashboard);
+}
 
 /* DATA LOADING */
 function currentFilters() {

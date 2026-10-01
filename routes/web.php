@@ -73,6 +73,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [SettingsController::class, 'show'])->name('show');
         Route::put('/profile', [SettingsController::class, 'updateProfile'])->name('profile');
         Route::put('/notifications', [SettingsController::class, 'updateNotifications'])->name('notifications');
+        Route::put('/general', [SettingsController::class, 'updateGeneral'])->name('general');
+        Route::delete('/general', [SettingsController::class, 'resetGeneral'])->name('general.reset');
         Route::put('/password', [SettingsController::class, 'updatePassword'])
             ->middleware('throttle:6,1')->name('password');
         Route::get('/avatar', [SettingsController::class, 'showAvatar'])->name('avatar.show');

@@ -584,10 +584,30 @@ class PromptService
      * decks are written in parts (generated in parallel); each part gets its
      * own section of the reading and knows where it sits in the deck.
      *
+     * $focus carries the class's weak and strong competencies as estimated by
+     * BKT; Llama only uses them to decide what to emphasise, never to
+     * estimate mastery itself.
+     *
+     * @param  array{weaknesses: array<int, array{name: string, mastery: float}>, strengths: array<int, array{name: string, mastery: float}>}|null  $focus
      * @return array<int, array{role: string, content: string}>
      */
-    public function slideDeckMessages(string $sourceName, string $content, int $slideCount, int $part = 1, int $parts = 1): array
+    public function slideDeckMessages(string $sourceName, string $content, int $slideCount, int $part = 1, int $parts = 1, ?array $focus = null): array
     {
+        $focusBlock = '';
+        $focusRule = '';
+
+        if (! empty($focus['weaknesses'])) {
+            $list = fn (array $topics) => implode('; ', array_map(fn ($t) => "{$t['name']} ({$t['mastery']}% class mastery)", $topics));
+
+            $focusBlock = "\n\nCLASS FOCUS (class mastery estimated by Bayesian Knowledge Tracing — use it as given, do not recalculate it):"
+                ."\nThe class is weakest in: ".$list($focus['weaknesses']).'.'
+                .(empty($focus['strengths']) ? '' : "\nThe class already shows high mastery in: ".$list($focus['strengths']).'.')
+                ."\nWhere the SOURCE MATERIAL covers a weak competency, give it extra attention: more slides, a step-by-step explanation, and a worked example or common mistake if the source has one. Keep material on already-mastered competencies brief."
+                ."\nNever add content that is not in the SOURCE MATERIAL. If it does not cover a weak competency, ignore that competency.";
+
+            $focusRule = "\n- On each slide that gives a weak competency this extra attention, add \"focus\": \"<that competency's exact name>\". Leave \"focus\" out of every other slide.";
+        }
+
         $position = match (true) {
             $parts === 1 => 'Start with a short introduction/overview slide and end with a short summary slide.',
             $part === 1 => "This is part 1 of {$parts} of the deck, covering the beginning of the reading. Start with a short introduction/overview slide. Do NOT add a summary or conclusion slide — later parts continue the deck.",
@@ -613,7 +633,7 @@ class PromptService
             build up concepts in a logical teaching order and include worked
             examples where the source has them.
 
-            {$position}
+            {$position}{$focusBlock}
 
             Respond with ONLY valid JSON, no markdown fences, no extra commentary,
             matching exactly this shape:
@@ -625,7 +645,7 @@ class PromptService
             - Produce exactly {$slideCount} slides.
             - Each slide has a short "title" and 2 to 5 "bullets"; each bullet is
               one concise line (at most about 20 words).
-            - "notes" are 1-2 sentences of speaker notes for the teacher.
+            - "notes" are 1-2 sentences of speaker notes for the teacher.{$focusRule}
             PROMPT;
 
         return [

@@ -52,6 +52,50 @@ class SettingsController extends Controller
         return response()->json($this->payload($user));
     }
 
+    /**
+     * Save any subset of the General tab's settings for the user's role.
+     */
+    public function updateGeneral(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $options = User::generalPreferenceOptions($user->role);
+
+        $unknown = array_diff(array_keys($request->all()), array_keys($options));
+        abort_if(! empty($unknown), 422, 'Unknown general setting: '.implode(', ', $unknown));
+
+        $validated = $request->validate(
+            collect($options)->map(fn (array $option) => [
+                'sometimes',
+                is_bool($option['values'][0]) ? 'boolean' : Rule::in($option['values']),
+            ])->all()
+        );
+
+        // Store each value in its declared type (e.g. "12" → 12, 1 → true).
+        foreach ($validated as $key => $value) {
+            $type = $options[$key]['values'][0];
+            $validated[$key] = match (true) {
+                is_bool($type) => (bool) $value,
+                is_int($type) => (int) $value,
+                default => $value,
+            };
+        }
+
+        $user->update(['general_preferences' => array_merge($user->general_preferences ?? [], $validated)]);
+
+        return response()->json($this->payload($user));
+    }
+
+    /**
+     * Put every General setting back to its default.
+     */
+    public function resetGeneral(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->update(['general_preferences' => null]);
+
+        return response()->json($this->payload($user));
+    }
+
     public function updatePassword(Request $request): JsonResponse
     {
         $request->validate([
@@ -125,6 +169,7 @@ class SettingsController extends Controller
             'role' => $user->role,
             'avatar_url' => $user->avatarUrl(),
             'notification_preferences' => $user->alertPreferences(),
+            'general_preferences' => $user->generalPreferences(),
         ];
     }
 }
