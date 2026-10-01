@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ForgotPasswordRequest extends FormRequest
+class VerifyOtpRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +22,15 @@ class ForgotPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:' . config('otp.length')],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'code.required' => 'Please enter the verification code.',
+            'code.digits' => 'The verification code must be :digits digits.',
         ];
     }
 }

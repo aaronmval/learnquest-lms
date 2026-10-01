@@ -7,6 +7,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
+use App\Services\Auth\OtpService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    public function register(RegisterRequest $request): RedirectResponse
+    public function register(RegisterRequest $request, OtpService $otp): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -33,13 +34,11 @@ class AuthController extends Controller
             'role' => $validated['role'],
         ]);
 
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return $this->redirectToRoleHome($user->role);
+        // The account stays signed out until the emailed code is confirmed.
+        return $this->sendVerificationOtp($request, $user, $otp);
     }
 
-    public function login(LoginRequest $request): RedirectResponse
+    public function login(LoginRequest $request, OtpService $otp): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -56,10 +55,16 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'The provided credentials do not match our records.'], 'login');
         }
 
-        $request->session()->regenerate();
-
         /** @var User $user */
         $user = $request->user();
+
+        if ($user->email_verified_at === null) {
+            Auth::logout();
+
+            return $this->sendVerificationOtp($request, $user, $otp);
+        }
+
+        $request->session()->regenerate();
 
         return $this->redirectToRoleHome($user->role);
     }
@@ -79,15 +84,23 @@ class AuthController extends Controller
         return view('auth.forgot-password');
     }
 
-    public function sendResetLink(ForgotPasswordRequest $request): RedirectResponse
+    public function sendResetLink(ForgotPasswordRequest $request, OtpService $otp): RedirectResponse
     {
-        $status = Password::sendResetLink($request->validated());
+        $email = $request->validated()['email'];
+        $user = User::query()->where('email', $email)->first();
+        $email = $user->email ?? $email;
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('status', __($status));
-        }
+        // Same response whether or not the account exists, so this form
+        // cannot be used to discover registered emails.
+        $otp->issue($email, OtpService::PURPOSE_PASSWORD_RESET, $user);
 
-        return back()->withErrors(['email' => __($status)], 'forgot')->withInput();
+        $request->session()->put('otp', [
+            'email' => $email,
+            'purpose' => OtpService::PURPOSE_PASSWORD_RESET,
+        ]);
+
+        return redirect()->route('otp.show')
+            ->with('status', 'If an account exists for that email, a verification code has been sent.');
     }
 
     public function showResetPasswordForm(Request $request, string $token): View
@@ -119,6 +132,26 @@ class AuthController extends Controller
         }
 
         return back()->withErrors(['email' => __($status)], 'reset')->withInput($request->only('email'));
+    }
+
+    private function sendVerificationOtp(Request $request, User $user, OtpService $otp): RedirectResponse
+    {
+        $result = $otp->issue($user->email, OtpService::PURPOSE_REGISTRATION, $user);
+
+        $request->session()->put('otp', [
+            'email' => $user->email,
+            'purpose' => OtpService::PURPOSE_REGISTRATION,
+        ]);
+
+        $redirect = redirect()->route('otp.show');
+
+        if ($result === OtpService::ISSUE_FAILED) {
+            return $redirect->withErrors([
+                'code' => 'We could not send the verification email right now. Please use Resend OTP to try again.',
+            ]);
+        }
+
+        return $redirect->with('status', 'Please verify your email to continue.');
     }
 
     private function redirectToRoleHome(string $role): RedirectResponse

@@ -13,6 +13,7 @@ use App\Http\Controllers\CompetencyController;
 use App\Http\Controllers\FrontendShellController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OtpController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ProfessorClassController;
 use App\Http\Controllers\ProfessorDashboardController;
@@ -35,12 +36,18 @@ Route::get('/', function () {
 // Auth Routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1')->name('register');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Forgot Password Routes
 Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
-Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])
+    ->middleware('throttle:6,1')->name('password.email');
+
+// Email OTP Routes (new-account verification and password reset)
+Route::get('/verify-otp', [OtpController::class, 'show'])->name('otp.show');
+Route::post('/verify-otp', [OtpController::class, 'verify'])->middleware('throttle:6,1')->name('otp.verify');
+Route::post('/verify-otp/resend', [OtpController::class, 'resend'])->middleware('throttle:6,1')->name('otp.resend');
 
 // Reset Password Routes
 Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');

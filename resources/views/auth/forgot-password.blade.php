@@ -44,7 +44,7 @@
 
   <div class="forgot-password-container">
     <h1>Forgot Password</h1>
-    <p class="subtitle">You will receive an email with a password reset link</p>
+    <p class="subtitle">You will receive an email with a verification code</p>
 
     @if (session('status'))
       <div class="success-message show">
