@@ -876,7 +876,7 @@ function renderStudents() {
     list.innerHTML = classStudents
         .map((s) => {
             const joined = formatPostDate(s.joined_at);
-            const meta = [s.email, joined ? `Joined ${joined}` : ""].filter(Boolean).join(" · ");
+            const joinedHtml = joined ? `<span class="student-joined">· Joined ${escapeHtml(joined)}</span>` : "";
 
             return `
             <div class="student-row">
@@ -887,7 +887,7 @@ function renderStudents() {
                 }</div>
                 <div class="student-info">
                     <p class="student-name">${escapeHtml(s.name)}</p>
-                    <p class="student-meta">${escapeHtml(meta)}</p>
+                    <p class="student-meta"><span class="student-email">${escapeHtml(s.email)}</span>${joinedHtml}</p>
                 </div>
                 <button class="student-remove-btn" type="button" data-student-id="${s.id}" aria-label="Remove ${escapeHtml(s.name)} from the class">
                     <i class="fas fa-user-minus"></i> Remove

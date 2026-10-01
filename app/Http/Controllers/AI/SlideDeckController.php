@@ -44,7 +44,7 @@ class SlideDeckController extends Controller
         $theme = $request->validated('theme');
 
         // Optional targeted focus from the chosen class's BKT mastery; a
-        // class the professor doesn't manage is a 404.
+        // class that isn't the professor's own is a 404.
         $focusPlan = $request->filled('focus_class_id')
             ? $focus->plan($professor, (int) $request->validated('focus_class_id'))
             : null;

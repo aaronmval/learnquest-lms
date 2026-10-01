@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ClassRoom;
 use App\Models\Module;
 use App\Models\Subject;
 use App\Models\User;
@@ -31,6 +32,8 @@ class SlideDeckGenerationTest extends TestCase
     use RefreshDatabase;
 
     private User $professor;
+
+    private ?int $focusClassId = null;
 
     /** Requests sent to the faked Routeway API, in order. */
     private array $sent = [];
@@ -319,11 +322,14 @@ class SlideDeckGenerationTest extends TestCase
     }
 
     /** Fake the class's BKT overview the targeted focus is read from. */
+    /** Mock the BKT stats of a class the professor owns ($this->focusClassId). */
     private function mockClassMastery(array $competencies): void
     {
+        $this->focusClassId ??= ClassRoom::create(['professor_id' => $this->professor->id, 'name' => 'Chemistry'])->id;
+
         $analytics = Mockery::mock(ProfessorAnalyticsService::class);
         $analytics->shouldReceive('dashboard')->andReturn([
-            'sections' => [['id' => 7, 'label' => 'Chemistry — STEM A', 'subject_id' => 1]],
+            'sections' => [['id' => $this->focusClassId, 'label' => 'Chemistry — STEM A', 'subject_id' => 1]],
             'competencies' => $competencies,
         ]);
 
@@ -362,7 +368,7 @@ class SlideDeckGenerationTest extends TestCase
             $this->focusedPart(2, '', 'Something Else', 1),
         ]);
 
-        $res = $this->upload(['focus_class_id' => 7])->assertCreated();
+        $res = $this->upload(['focus_class_id' => $this->focusClassId])->assertCreated();
         $res->assertJsonPath('focus.status', 'applied');
         $res->assertJsonPath('focus.topics', [['name' => 'Mole Ratios', 'mastery' => 35, 'slides' => 2]]);
         $res->assertJsonPath('focus.message', 'Targeted focus applied for Chemistry — STEM A: Mole Ratios (2 slides).');
@@ -388,7 +394,7 @@ class SlideDeckGenerationTest extends TestCase
         $this->mockClassMastery([$this->competencyRow('Mole Ratios', 35.0, 'low')]);
         $this->fakeRouteway([$this->part(1, 4, 'Cell Biology'), $this->part(2, 4)]);
 
-        $res = $this->upload(['focus_class_id' => 7])->assertCreated();
+        $res = $this->upload(['focus_class_id' => $this->focusClassId])->assertCreated();
         $res->assertJsonPath('focus.status', 'not_covered');
         $res->assertJsonPath('focus.topics.0.slides', 0);
     }
@@ -399,12 +405,12 @@ class SlideDeckGenerationTest extends TestCase
 
         $this->mockClassMastery([$this->competencyRow('Mole Ratios', 30.0, 'low', assessed: 0)]);
         $this->fakeRouteway([$this->part(1, 4, 'Stoichiometry'), $this->part(2, 4)]);
-        $this->upload(['focus_class_id' => 7])->assertCreated()->assertJsonPath('focus.status', 'no_data');
+        $this->upload(['focus_class_id' => $this->focusClassId])->assertCreated()->assertJsonPath('focus.status', 'no_data');
         $this->assertStringNotContainsString('CLASS FOCUS', $this->sentRequests()[0]['system']);
 
         $this->mockClassMastery([$this->competencyRow('Molar Mass', 88.0, 'high')]);
         $this->fakeRouteway([$this->part(1, 4, 'Stoichiometry'), $this->part(2, 4)]);
-        $this->upload(['focus_class_id' => 7])->assertCreated()->assertJsonPath('focus.status', 'not_needed');
+        $this->upload(['focus_class_id' => $this->focusClassId])->assertCreated()->assertJsonPath('focus.status', 'not_needed');
     }
 
     public function test_no_focus_is_reported_when_none_is_requested(): void
@@ -421,6 +427,33 @@ class SlideDeckGenerationTest extends TestCase
         $this->fakeRouteway([]);
 
         $this->upload(['focus_class_id' => 999])->assertNotFound();
+        $this->assertEmpty($this->sent);
+    }
+
+    public function test_focus_is_limited_to_the_professors_own_sections_of_a_shared_subject(): void
+    {
+        $this->mockExtractor();
+        $this->fakeRouteway([]);
+
+        // The professor collaborates on another professor's subject, and
+        // also has a section of their own under it.
+        $owner = User::factory()->create(['role' => 'professor']);
+        $subjectId = $this->actingAs($owner)->postJson('/professor/subjects', ['name' => 'Chemistry'])->json('id');
+        $ownersSection = $this->actingAs($owner)
+            ->postJson("/professor/subjects/{$subjectId}/sections", ['name' => 'Chemistry', 'section' => 'STEM A'])->json('id');
+        $this->actingAs($owner)
+            ->postJson("/professor/subjects/{$subjectId}/collaborators", ['email' => $this->professor->email])
+            ->assertCreated();
+        $ownSection = $this->actingAs($this->professor)
+            ->postJson("/professor/subjects/{$subjectId}/sections", ['name' => 'Chemistry', 'section' => 'STEM B'])->json('id');
+
+        // The coach (and so the focus dropdown) lists only their own section.
+        $this->assertSame(
+            [$ownSection],
+            array_column($this->actingAs($this->professor)->getJson('/professor/questai/context')->assertOk()->json('classes'), 'id'),
+        );
+
+        $this->upload(['focus_class_id' => $ownersSection])->assertNotFound();
         $this->assertEmpty($this->sent);
     }
 

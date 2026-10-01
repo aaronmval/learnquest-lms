@@ -30,15 +30,14 @@ class ProfessorAnalyticsService
     }
 
     /**
-     * Non-archived sections the professor manages: ones they created, plus
-     * every section of a subject they own or collaborate on (the same rule
-     * as ClassRoom::isManagedBy).
+     * The professor's own non-archived sections. Sharing a subject does not
+     * share its sections: each co-teacher sees only the ones they created.
      */
     public function managedClasses(User $professor): Collection
     {
         return ClassRoom::query()
             ->whereNull('archived_at')
-            ->managedBy($professor)
+            ->where('professor_id', $professor->id)
             ->with(['parentSubject.competencies', 'students:users.id,users.name'])
             ->orderBy('name')
             ->orderBy('section')

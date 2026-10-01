@@ -1689,11 +1689,28 @@ body.dark .student-name {
     color: #f1f5f9;
 }
 
+/* The list card grows with its longest row (a long email), up to the
+   screen width; past that the join date wraps under the email. */
+#studentsModalCard {
+    width: fit-content;
+    min-width: min(480px, 100%);
+    max-width: min(760px, 100%);
+}
+
 .student-meta {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 6px;
     font-size: 0.74rem;
     color: #94a3b8;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.student-email {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.student-joined {
     white-space: nowrap;
 }
 

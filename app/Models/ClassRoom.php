@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -76,35 +75,6 @@ class ClassRoom extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(ClassPost::class, 'class_id');
-    }
-
-    /**
-     * Whether the given user manages this section — either directly (the
-     * professor who created it) or through the subject it belongs to (a
-     * subject collaborator manages every section under that subject).
-     */
-    public function isManagedBy(User $user): bool
-    {
-        if ($this->professor_id === $user->id) {
-            return true;
-        }
-
-        return $this->subject_id !== null && $this->parentSubject && $this->parentSubject->isManagedBy($user);
-    }
-
-    /**
-     * Query form of isManagedBy(): sections the user created, plus every
-     * section of a subject they own or collaborate on.
-     */
-    public function scopeManagedBy(Builder $query, User $user): Builder
-    {
-        $subjectIds = Subject::where('owner_id', $user->id)
-            ->orWhereHas('collaborators', fn ($q) => $q->where('user_id', $user->id))
-            ->pluck('id');
-
-        return $query->where(
-            fn ($q) => $q->where('professor_id', $user->id)->orWhereIn('subject_id', $subjectIds)
-        );
     }
 
     /**

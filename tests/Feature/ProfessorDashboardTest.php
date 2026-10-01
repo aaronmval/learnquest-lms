@@ -239,15 +239,27 @@ class ProfessorDashboardTest extends TestCase
         $this->assertSame([], $strangerJson['students']);
     }
 
-    public function test_collaborator_sees_the_subjects_sections(): void
+    public function test_co_teachers_of_a_subject_each_see_only_their_own_sections(): void
     {
         $collaborator = User::factory()->create(['role' => 'professor']);
         $this->actingAs($this->professor)
             ->postJson("/professor/subjects/{$this->subjectId}/collaborators", ['email' => $collaborator->email])
             ->assertSuccessful();
+        $theirSection = $this->actingAs($collaborator)->postJson("/professor/subjects/{$this->subjectId}/sections", [
+            'name' => 'Chemistry - STEM C',
+            'section' => 'STEM C',
+        ])->json('id');
 
-        $json = $this->actingAs($collaborator)->getJson("/professor/analytics?class_id={$this->classId}")->assertOk()->json();
-        $this->assertCount(2, $json['students']);
+        // The collaborator: their own section only, not the owner's.
+        $json = $this->actingAs($collaborator)->getJson('/professor/analytics')->assertOk()->json();
+        $this->assertSame([$theirSection], array_column($json['sections'], 'id'));
+        $this->assertSame([], $json['students']);
+        $this->actingAs($collaborator)->getJson("/professor/analytics?class_id={$this->classId}")->assertNotFound();
+
+        // The owner: their own section only, not the collaborator's.
+        $json = $this->actingAs($this->professor)->getJson('/professor/analytics')->assertOk()->json();
+        $this->assertSame([$this->classId], array_column($json['sections'], 'id'));
+        $this->actingAs($this->professor)->getJson("/professor/analytics?class_id={$theirSection}")->assertNotFound();
     }
 
     public function test_subject_filter_scopes_everything_to_one_subject(): void

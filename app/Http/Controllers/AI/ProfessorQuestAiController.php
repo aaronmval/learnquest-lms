@@ -66,7 +66,7 @@ class ProfessorQuestAiController extends Controller
 
             if ($classId !== null) {
                 $class = ClassRoom::whereNull('archived_at')->find($classId);
-                abort_unless($class && $class->isManagedBy($professor), 404);
+                abort_unless($class && $class->professor_id === $professor->id, 404);
             }
 
             $conversation = AiConversation::create([
