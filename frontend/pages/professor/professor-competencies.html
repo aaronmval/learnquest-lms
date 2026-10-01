@@ -27,6 +27,10 @@
         />
         <link
             rel="stylesheet"
+            href="../../assets/css/pages/professor/professor-module-view.css"
+        />
+        <link
+            rel="stylesheet"
             href="../../assets/css/pages/professor/professor-competencies.css"
         />
     </head>
@@ -52,7 +56,8 @@
                         <a id="backToSubjectLink" href="professor-module-view.html" class="mv-back-link">
                             <i class="fas fa-arrow-left"></i> Back to subject
                         </a>
-                        <h1 id="pcSubjectName" class="mv-subject-name">Competencies</h1>
+                        <span class="pc-eyebrow">Manage Competencies</span>
+                        <h1 id="pcSubjectName" class="mv-subject-name"></h1>
                         <p class="pc-subtitle">
                             Competencies are the skills AI-generated quizzes tag
                             each question with, so student mastery can be
@@ -60,6 +65,10 @@
                         </p>
                     </div>
                     <div class="mv-header-actions">
+                        <button id="suggestCompetenciesBtn" class="mv-action-btn pc-ai-btn">
+                            <i class="fas fa-wand-magic-sparkles"></i> Suggest
+                            with AI
+                        </button>
                         <button id="addCompetencyBtn" class="mv-action-btn mv-action-primary">
                             <i class="fas fa-plus"></i> Add Competency
                         </button>
@@ -68,15 +77,57 @@
 
                 <!-- COMPETENCY LIST -->
                 <section class="mv-modules-section">
+                    <div id="competencyToolbar" class="pc-toolbar hidden">
+                        <div class="pc-toolbar-heading">
+                            <h2 class="mv-section-title">Competencies</h2>
+                            <span id="competencyCount" class="pc-count-badge">0</span>
+                        </div>
+                        <div class="mat-search-wrap pc-search-wrap">
+                            <i class="fas fa-search mat-search-icon"></i>
+                            <input
+                                id="competencySearchInput"
+                                class="mat-search-input"
+                                type="text"
+                                placeholder="Search competencies..."
+                                autocomplete="off"
+                                spellcheck="false"
+                                aria-label="Search competencies"
+                            />
+                        </div>
+                    </div>
+
                     <div id="competencyList" class="pc-list"></div>
+
                     <p id="competencyLoading" class="mat-search-empty hidden">
                         <i class="fas fa-spinner fa-spin"></i> Loading
                         competencies...
                     </p>
-                    <p id="competencyEmpty" class="mat-search-empty hidden">
-                        <i class="fas fa-list-check"></i> No competencies
-                        defined yet. Click "Add Competency" to create one.
+
+                    <p id="competencySearchEmpty" class="mat-search-empty hidden">
+                        <i class="fas fa-magnifying-glass"></i> No competencies
+                        match your search.
                     </p>
+
+                    <div id="competencyEmpty" class="pc-empty hidden">
+                        <div class="pc-empty-icon">
+                            <i class="fas fa-list-check"></i>
+                        </div>
+                        <h2 class="pc-empty-title">No competencies yet</h2>
+                        <p class="pc-empty-text">
+                            Add them yourself, or let AI read this subject's
+                            uploaded modules and suggest a list for you to
+                            review.
+                        </p>
+                        <div class="pc-empty-actions">
+                            <button id="emptySuggestBtn" class="mv-action-btn pc-ai-btn">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                Suggest with AI
+                            </button>
+                            <button id="emptyAddBtn" class="mv-action-btn">
+                                <i class="fas fa-plus"></i> Add Competency
+                            </button>
+                        </div>
+                    </div>
                 </section>
             </div>
 
@@ -141,6 +192,62 @@
                             class="modal-btn cc-create-btn"
                         >
                             Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI SUGGESTIONS MODAL -->
+            <div id="suggestModal" class="modal-overlay">
+                <div id="suggestModalCard" class="cc-card pc-suggest-card">
+                    <div class="cc-modal-header">
+                        <h3 class="modal-title cc-modal-title">
+                            <i class="fas fa-wand-magic-sparkles pc-suggest-title-icon"></i>
+                            AI-suggested competencies
+                        </h3>
+                        <button
+                            id="suggestCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div id="suggestLoading" class="pc-suggest-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p class="pc-suggest-state-title">
+                            Reading your uploaded modules...
+                        </p>
+                        <p class="mat-field-hint">
+                            This can take up to a minute, longer the first
+                            time for a subject with many modules.
+                        </p>
+                    </div>
+
+                    <div id="suggestError" class="pc-suggest-state hidden">
+                        <i class="fas fa-circle-exclamation pc-suggest-error-icon"></i>
+                        <p id="suggestErrorText" class="pc-suggest-state-title"></p>
+                    </div>
+
+                    <div id="suggestResults" class="pc-suggest-results hidden">
+                        <p id="suggestSummary" class="mat-field-hint"></p>
+                        <label class="pc-suggest-select-all">
+                            <input id="suggestSelectAll" type="checkbox" checked />
+                            Select all
+                        </label>
+                        <div id="suggestList" class="pc-suggest-list"></div>
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button id="suggestCancelBtn" class="modal-btn cc-cancel-btn">
+                            Cancel
+                        </button>
+                        <button id="suggestRetryBtn" class="modal-btn cc-cancel-btn hidden">
+                            Try again
+                        </button>
+                        <button id="suggestAddBtn" class="modal-btn cc-create-btn hidden">
+                            Add selected
                         </button>
                     </div>
                 </div>

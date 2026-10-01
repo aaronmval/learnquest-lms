@@ -77,6 +77,15 @@ return [
             'fallback_timeout' => env('LLAMA_QUIZ_FALLBACK_TIMEOUT', 60),
             'fallback_max_retries' => env('LLAMA_QUIZ_FALLBACK_MAX_RETRIES', 0),
         ],
+        // AI competency suggestions (from a subject's uploaded modules): Llama
+        // with one retry on a transient gateway error, then the fallback model,
+        // leaving room for PDF text extraction inside PHP's 120s web limit.
+        'competency_suggestions' => [
+            'timeout' => env('LLAMA_COMPETENCY_TIMEOUT', 30),
+            'max_retries' => env('LLAMA_COMPETENCY_MAX_RETRIES', 1),
+            'fallback_timeout' => env('LLAMA_COMPETENCY_FALLBACK_TIMEOUT', 40),
+            'fallback_max_retries' => env('LLAMA_COMPETENCY_FALLBACK_MAX_RETRIES', 0),
+        ],
         // QuestAI Coach slide decks are written in parallel parts of up to 5
         // slides. Each part gets one Llama attempt, then one fallback attempt,
         // so the worst case (timeout + fallback_timeout) stays well under

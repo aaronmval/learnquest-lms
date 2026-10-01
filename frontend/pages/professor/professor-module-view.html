@@ -120,7 +120,7 @@
                         </button>
                     </div>
 
-                    <div class="cc-field">
+                    <div id="umTitleField" class="cc-field">
                         <label class="cc-label" for="umTitle"
                             >Title<span class="cc-required-star">*</span></label
                         >
@@ -137,7 +137,7 @@
                         </p>
                     </div>
 
-                    <div class="cc-field">
+                    <div id="umDescriptionField" class="cc-field">
                         <label class="cc-label" for="umDescription"
                             >Description</label
                         >
@@ -155,17 +155,29 @@
                         <div id="umDropzone" class="mv-dropzone">
                             <i class="fas fa-file-pdf mv-dropzone-icon"></i>
                             <p id="umFileName" class="mv-dropzone-text">
-                                Drag &amp; drop a PDF here, or click to browse
+                                Drag &amp; drop one or more PDFs here, or click
+                                to browse
                             </p>
                             <input
                                 id="umFileInput"
                                 type="file"
                                 accept=".pdf,application/pdf"
                                 class="mv-hidden-input"
+                                multiple
                             />
                         </div>
                         <p id="umFileError" class="cc-error hidden">
                             *A PDF file is required
+                        </p>
+                    </div>
+
+                    <!-- BULK UPLOAD: one row per PDF, title + quarter auto-filled from the file name -->
+                    <div id="umBulkField" class="cc-field hidden">
+                        <label class="cc-label">Modules to upload</label>
+                        <div id="umBulkList" class="mv-bulk-list"></div>
+                        <p class="mat-field-hint">
+                            Titles and quarters are filled in from each file
+                            name. Edit any of them before uploading.
                         </p>
                     </div>
 
@@ -174,13 +186,14 @@
                         <div id="umSectionChecks" class="mv-section-checks"></div>
                         <p class="mat-field-hint">
                             Choose from this subject's sections or any of your
-                            other classes. Leave everything unchecked to post
-                            to every section under this subject.
+                            other classes. Leave everything unchecked to keep
+                            it in this subject's library without posting it to
+                            any class.
                         </p>
                     </div>
 
                     <div class="cc-field">
-                        <label class="cc-label" for="umQuarter">Quarter</label>
+                        <label id="umQuarterLabel" class="cc-label" for="umQuarter">Quarter</label>
                         <select id="umQuarter" class="cc-input">
                             <option value="1st Quarter">1st Quarter</option>
                             <option value="2nd Quarter">2nd Quarter</option>
@@ -188,8 +201,9 @@
                             <option value="4th Quarter">4th Quarter</option>
                         </select>
                         <p class="mat-field-hint">
-                            Used as the quarter label for any new posts
-                            created in the classes checked above.
+                            Saved with the module and used as the quarter
+                            label for any new posts created in the classes
+                            checked above.
                         </p>
                     </div>
 

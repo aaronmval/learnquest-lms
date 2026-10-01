@@ -68,6 +68,19 @@ class ProfessorClassController extends Controller
     }
 
     /**
+     * Rename a class (its title and/or section). The invite code and
+     * enrolled students are unaffected.
+     */
+    public function update(StoreClassRequest $request, ClassRoom $class): JsonResponse
+    {
+        abort_unless($class->professor_id === $request->user()->id, 404);
+
+        $class->update($request->validated());
+
+        return response()->json($class);
+    }
+
+    /**
      * Replace a class's invite code with a freshly generated one.
      */
     public function regenerateCode(Request $request, ClassRoom $class): JsonResponse

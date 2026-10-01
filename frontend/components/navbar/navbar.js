@@ -79,6 +79,10 @@ async function loadProfessorClasses() {
     }
 }
 
+/* Called by the class page (inside the content iframe) after its details are
+   edited, so the sidebar's My Classes list and breadcrumb pick up the change. */
+window.LQ_refreshClasses = loadProfessorClasses;
+
 function renderMyClassesDropdown() {
     if (!professorDropdown) return;
 

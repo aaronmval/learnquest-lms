@@ -268,4 +268,36 @@ class ModuleClassPostTest extends TestCase
 
         $this->assertSame('1st Quarter', ClassPost::where('class_id', $classA)->first()->quarter);
     }
+
+    public function test_quarter_is_saved_on_the_module_and_reused_for_later_posts(): void
+    {
+        Storage::fake('local');
+
+        $professor = User::factory()->create(['role' => 'professor']);
+        $classA = $this->createClass($professor, 'Class A');
+
+        $subjectId = $this->actingAs($professor)->postJson('/professor/subjects', ['name' => 'Biology'])->json('id');
+
+        $pdf = UploadedFile::fake()->create('lesson.pdf', 500, 'application/pdf');
+        $res = $this->actingAs($professor)->post("/professor/subjects/{$subjectId}/modules", [
+            'title' => 'Cells',
+            'attachment' => $pdf,
+            'quarter' => '3rd Quarter',
+        ]);
+        $res->assertCreated()->assertJsonPath('quarter', '3rd Quarter');
+        $moduleId = $res->json('id');
+
+        $this->actingAs($professor)->getJson("/professor/subjects/{$subjectId}")
+            ->assertOk()
+            ->assertJsonPath('modules.0.quarter', '3rd Quarter');
+
+        // Assigning a class later, without resending the quarter, keeps it.
+        $this->actingAs($professor)->post("/professor/subjects/{$subjectId}/modules/{$moduleId}", [
+            '_method' => 'PUT',
+            'title' => 'Cells',
+            'section_ids' => [$classA],
+        ])->assertOk()->assertJsonPath('quarter', '3rd Quarter');
+
+        $this->assertSame('3rd Quarter', ClassPost::where('class_id', $classA)->first()->quarter);
+    }
 }

@@ -142,7 +142,8 @@ class ModuleController extends Controller
      * Sync which classes this module targets. Allowed targets are this
      * subject's own sections, or any class the uploading professor owns
      * (so a module can also be posted to their standalone classes). An
-     * empty/omitted list means "all sections" (no rows in the pivot table).
+     * empty/omitted list means no sections assigned (no rows in the pivot
+     * table, and nothing is posted to any class).
      * Returns the resolved, valid target class ids.
      */
     private function syncTargetSections(Request $request, Module $module, Subject $subject, ?array $sectionIds): Collection
@@ -179,7 +180,7 @@ class ModuleController extends Controller
             return;
         }
 
-        $quarter = $request->input('quarter') ?: '1st Quarter';
+        $quarter = $module->quarter ?: '1st Quarter';
 
         foreach ($newIds as $classId) {
             $attachmentPath = null;

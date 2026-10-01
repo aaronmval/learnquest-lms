@@ -40,9 +40,73 @@ class PromptService
     }
 
     /**
-     * @param  array<int, array{id:int, name:string, description:?string}>  $competencies
+     * Competency suggestions for a subject, grounded in excerpts of its
+     * uploaded modules. The teacher reviews them before any are saved.
+     *
+     * @param  array<int, array{title:string, description:?string, excerpt:?string}>  $modules
+     * @param  array<int, string>  $existingNames  competencies the subject already has
      * @return array<int, array{role: string, content: string}>
      */
+    public function competencySuggestionMessages(string $subject, array $modules, array $existingNames, int $maxSuggestions): array
+    {
+        $system = <<<PROMPT
+            You are a curriculum assistant for a Senior High School STEM science
+            teacher. From excerpts of the teacher's own uploaded learning modules,
+            propose the learning competencies of the subject. A competency is a
+            specific topic or skill that quiz questions can be tagged with, so each
+            student's mastery of it can be tracked.
+
+            Respond with ONLY valid JSON, no markdown fences, no extra commentary,
+            matching exactly this shape:
+
+            {"competencies": [{"name": "...", "description": "...", "modules": ["exact module title"]}]}
+
+            Rules:
+            - Return between 5 and {$maxSuggestions} competencies; fewer only if the
+              modules cover fewer distinct topics. Cover every module that has
+              readable content — do not stop at the first few modules.
+            - "name": a specific topic as a short noun phrase of 2 to 6 words in
+              Title Case, at most 60 characters (for example "Intermolecular
+              Forces"). Never use module numbers, file names, or generic labels
+              such as "Module 1" or "Introduction".
+            - "description": one sentence, at most 200 characters, stating what a
+              student who has mastered it can do.
+            - "modules": the titles, copied exactly, of the modules the competency
+              comes from.
+            - Base every competency ONLY on the module content provided. Do not add
+              topics that do not appear in it. Ignore cover pages, copyright
+              notices, and instructions on how to use the module.
+            - Competencies must not overlap or repeat each other.
+            - Do not repeat or rephrase any of the existing competencies listed.
+            - Order them in the sequence the modules teach them.
+            PROMPT;
+
+        $moduleBlocks = collect($modules)
+            ->map(function ($m) {
+                $lines = ["### Module: {$m['title']}"];
+
+                if ($m['description'] !== null) {
+                    $lines[] = "Teacher's description: {$m['description']}";
+                }
+
+                $lines[] = $m['excerpt'] !== null ? "Excerpt:\n{$m['excerpt']}" : 'Excerpt: (no readable text — do not base competencies on this module)';
+
+                return implode("\n", $lines);
+            })
+            ->implode("\n\n");
+
+        $existing = empty($existingNames) ? 'none' : implode('; ', $existingNames);
+
+        $user = "Subject: {$subject}\n"
+            ."Existing competencies (do not repeat): {$existing}\n\n"
+            ."Modules:\n\n{$moduleBlocks}";
+
+        return [
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => $user],
+        ];
+    }
+
     /**
      * @param  ?array{easy:int, medium:int, hard:int}  $difficultyCounts  exact questions per difficulty (teacher's mix)
      * @param  ?string  $trainingContext  teacher review data from QuizTrainingService

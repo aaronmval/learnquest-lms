@@ -59,6 +59,10 @@ async function loadClassInfo() {
 
         CLASS_INFO = {
             subject: (data.subject || data.name || "").toUpperCase(),
+            // Raw fields, as stored — what the edit-details modal reads/writes.
+            name: data.name || "",
+            subjectName: data.subject || "",
+            room: data.room || "",
             section: data.section || "",
             teacher,
             teacherInitials: initialsFor(teacher),
@@ -98,8 +102,15 @@ function renderClassBanner() {
 
     document.getElementById("classBannerSubject").textContent =
         CLASS_INFO.subject;
-    document.getElementById("classBannerSection").textContent =
-        CLASS_INFO.section;
+    // The headline is the subject when one is set (same rule as every
+    // other page), so the class title then moves down to this line.
+    document.getElementById("classBannerSection").textContent = [
+        CLASS_INFO.subjectName ? CLASS_INFO.name : "",
+        CLASS_INFO.section,
+        CLASS_INFO.room ? `Room ${CLASS_INFO.room}` : "",
+    ]
+        .filter(Boolean)
+        .join(" · ");
     document.getElementById("classBannerTeacher").textContent =
         CLASS_INFO.teacher;
 }
@@ -794,6 +805,102 @@ async function confirmRegenerateQuiz() {
     }
 }
 
+/* EDIT CLASS DETAILS — title, subject, section and room */
+function openRenameClassModal() {
+    if (!CLASS_INFO) return;
+
+    document.getElementById("rcName").value = CLASS_INFO.name;
+    document.getElementById("rcSubject").value = CLASS_INFO.subjectName;
+    document.getElementById("rcSection").value = CLASS_INFO.section;
+    document.getElementById("rcRoom").value = CLASS_INFO.room;
+    hideFieldError("rcNameError", "rcName");
+
+    document.getElementById("renameClassModal").classList.add("open");
+    document.body.style.overflow = "hidden";
+    document.getElementById("rcName").focus();
+}
+
+function closeRenameClassModal() {
+    const modal = document.getElementById("renameClassModal");
+    if (!modal || !modal.classList.contains("open")) return;
+    modal.classList.remove("open");
+    document.body.style.overflow = "";
+}
+
+function showRenameNameError(message) {
+    document.getElementById("rcNameErrorText").textContent = message;
+    document.getElementById("rcNameError").classList.remove("hidden");
+    document.getElementById("rcName").classList.add("pc-input-error");
+}
+
+async function saveRenameClass() {
+    if (!CLASS_ID || !CLASS_INFO) return;
+
+    const nameInput = document.getElementById("rcName");
+    const title = nameInput.value.trim();
+    const subject = document.getElementById("rcSubject").value.trim();
+    const section = document.getElementById("rcSection").value.trim();
+    const room = document.getElementById("rcRoom").value.trim();
+
+    if (!title) {
+        showRenameNameError("Class title is required.");
+        nameInput.focus();
+        return;
+    }
+    hideFieldError("rcNameError", "rcName");
+
+    const payload = {
+        name: title,
+        subject: subject || null,
+        section: section || null,
+        room: room || null,
+    };
+
+    const btn = document.getElementById("rcSaveBtn");
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}`, {
+            method: "PUT",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (res.status === 422) {
+            const data = await res.json().catch(() => null);
+            const errors = data?.errors || {};
+            const first = Object.values(errors)[0]?.[0] || data?.message;
+            showRenameNameError(first || "Please check the class details.");
+            return;
+        }
+
+        if (!res.ok) throw new Error("failed to rename class");
+
+        const data = await res.json();
+        CLASS_INFO.name = data.name || "";
+        CLASS_INFO.subjectName = data.subject || "";
+        CLASS_INFO.subject = (data.subject || data.name || "").toUpperCase();
+        CLASS_INFO.section = data.section || "";
+        CLASS_INFO.room = data.room || "";
+
+        renderClassBanner();
+        closeRenameClassModal();
+        showToast("Class details updated");
+
+        // The sidebar's My Classes list lives in the parent shell.
+        if (window.parent !== window) window.parent.LQ_refreshClasses?.();
+    } catch (e) {
+        showToast("Could not update the class. Please try again.");
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 /* INVITE CODE — copy & regenerate */
 async function copyInviteCode() {
     if (!CLASS_INFO || !CLASS_INFO.code) return;
@@ -885,6 +992,31 @@ document.addEventListener("DOMContentLoaded", () => {
     document
         .getElementById("regenerateCodeBtn")
         ?.addEventListener("click", regenerateInviteCode);
+
+    /* Rename class modal */
+    document
+        .getElementById("renameClassBtn")
+        ?.addEventListener("click", openRenameClassModal);
+    document
+        .getElementById("rcCloseBtn")
+        ?.addEventListener("click", closeRenameClassModal);
+    document
+        .getElementById("rcCancelBtn")
+        ?.addEventListener("click", closeRenameClassModal);
+    document
+        .getElementById("rcSaveBtn")
+        ?.addEventListener("click", saveRenameClass);
+    document.getElementById("renameClassModal")?.addEventListener("click", (e) => {
+        if (e.target.id === "renameClassModal") closeRenameClassModal();
+    });
+    document.getElementById("rcName")?.addEventListener("input", () => {
+        hideFieldError("rcNameError", "rcName");
+    });
+    ["rcName", "rcSubject", "rcSection", "rcRoom"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") saveRenameClass();
+        });
+    });
 
     /* Composer type toggle */
     document
@@ -985,6 +1117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key !== "Escape") return;
         closePdfModal();
         closeComposerModal();
+        closeRenameClassModal();
         closeDeleteModal();
         closeRegenerateConfirm();
         closeQuizFeedbackModal();

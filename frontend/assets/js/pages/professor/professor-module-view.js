@@ -6,6 +6,51 @@ let currentSectionFilter = "";
 let umMode = "create"; // 'create' | 'edit'
 let umEditingId = null;
 let umPickedFile = null;
+let umBulkItems = []; // create mode: [{ file, title, quarter, quarterTouched, error }]
+let umLastAutoTitle = "";
+
+const MAX_MODULE_BYTES = 10 * 1024 * 1024; // matches StoreModuleRequest (max:10240 KB)
+const QUARTER_LABELS = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
+const QUARTER_WORDS = { first: 1, second: 2, third: 3, fourth: 4 };
+const QUARTER_PATTERN =
+    /\b(?:q(?:uarter|tr)?\s*([1-4])|([1-4])(?:st|nd|rd|th)?\s*q(?:uarter|tr)?|(first|second|third|fourth)\s+q(?:uarter|tr))\b/i;
+const TITLE_SMALL_WORDS = ["a", "an", "and", "for", "in", "of", "on", "the", "to"];
+
+// "Q2_module3-chemical_bonding.pdf" -> "Q2 module3 chemical bonding"
+function normalizeFileBase(fileName) {
+    return String(fileName || "")
+        .replace(/\.pdf$/i, "")
+        .replace(/[_\-]+/g, " ")
+        .replace(/(?<!\d)\.|\.(?!\d)/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+// Quarter named in the file name ("Q2", "2nd Quarter", "Quarter 2"), or null.
+function quarterFromFileName(fileName) {
+    const match = normalizeFileBase(fileName).match(QUARTER_PATTERN);
+    if (!match) return null;
+    const number = match[1] || match[2] || QUARTER_WORDS[match[3].toLowerCase()];
+    return QUARTER_LABELS[Number(number) - 1];
+}
+
+// Readable module title from the file name, minus any quarter marker.
+function titleFromFileName(fileName) {
+    const base = normalizeFileBase(fileName);
+    const withoutQuarter = base.replace(QUARTER_PATTERN, " ").replace(/\s+/g, " ").trim();
+
+    const title = (withoutQuarter || base)
+        .replace(/([A-Za-z]{3,})(\d)/g, "$1 $2")
+        .split(" ")
+        .map((word, index) => {
+            if (word !== word.toLowerCase()) return word;
+            if (index > 0 && TITLE_SMALL_WORDS.includes(word)) return word;
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(" ");
+
+    return title.slice(0, 150) || "Untitled Module";
+}
 
 let pendingConfirmAction = null;
 
@@ -237,8 +282,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const modules = (subjectData.modules || []).filter((m) => {
             if (!currentSectionFilter) return true;
             const targetIds = (m.target_sections || []).map((t) => String(t.id));
-            return targetIds.length === 0 || targetIds.includes(currentSectionFilter);
+            return targetIds.includes(currentSectionFilter);
         });
+
+        // Natural title order, so "SLM 2" comes before "SLM 10".
+        modules.sort(
+            (a, b) =>
+                String(a.title).localeCompare(String(b.title), undefined, {
+                    numeric: true,
+                    sensitivity: "base",
+                }) || String(a.created_at).localeCompare(String(b.created_at)),
+        );
 
         moduleGrid.innerHTML = modules.map((m) => buildModuleCard(m)).join("");
         modulesEmpty?.classList.toggle("hidden", modules.length > 0);
@@ -248,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const targetIds = module.target_sections || [];
         const tags = targetIds.length
             ? targetIds.map((t) => `<span class="mv-module-tag">${escapeHtml(sectionLabelById(t.id))}</span>`).join("")
-            : '<span class="mv-module-tag">All sections</span>';
+            : '<span class="mv-module-tag">No sections assigned</span>';
 
         return `
             <article class="mv-module-card" data-id="${module.id}">
@@ -261,6 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span>${escapeHtml(module.uploader?.name || "Unknown")}</span>
                     <span>${formatDate(module.created_at)}</span>
                     <span>${formatBytes(module.file_size)}</span>
+                    ${module.quarter ? `<span>${escapeHtml(module.quarter)}</span>` : ""}
                 </div>
                 <div class="mv-module-tags">${tags}</div>
                 <div class="mv-module-actions">
@@ -369,11 +424,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const umQuarter = document.getElementById("umQuarter");
     const umSubmitBtn = document.getElementById("umSubmitBtn");
     const umSubmitLabel = document.getElementById("umSubmitLabel");
+    const umTitleField = document.getElementById("umTitleField");
+    const umDescriptionField = document.getElementById("umDescriptionField");
+    const umBulkField = document.getElementById("umBulkField");
+    const umBulkList = document.getElementById("umBulkList");
+    const umQuarterLabel = document.getElementById("umQuarterLabel");
 
     function openUploadModal(mode, module) {
         umMode = mode;
         umEditingId = module ? module.id : null;
         umPickedFile = null;
+        umBulkItems = [];
+        umLastAutoTitle = "";
+        umFileInput.multiple = mode === "create";
 
         umModalTitle.textContent = mode === "edit" ? "Edit Module" : "Upload Module";
         umSubmitLabel.textContent = mode === "edit" ? "Save changes" : "Upload";
@@ -381,9 +444,12 @@ document.addEventListener("DOMContentLoaded", () => {
         umDescription.value = module ? module.description || "" : "";
         umFileName.textContent = module
             ? `Current file: ${module.file_name} (choose a new PDF to replace it)`
-            : "Drag & drop a PDF here, or click to browse";
+            : "Drag & drop one or more PDFs here, or click to browse";
         umFileInput.value = "";
-        if (umQuarter) umQuarter.value = "1st Quarter";
+        if (umQuarter) {
+            umQuarter.value = QUARTER_LABELS.includes(module?.quarter) ? module.quarter : "1st Quarter";
+        }
+        renderUploadMode();
         hideFieldError(umTitleError, umTitle);
         hideFieldError(umFileError, umDropzone);
 
@@ -425,24 +491,266 @@ document.addEventListener("DOMContentLoaded", () => {
     umDropzone?.addEventListener("drop", (e) => {
         e.preventDefault();
         umDropzone.classList.remove("dragover");
-        const file = e.dataTransfer.files?.[0];
-        if (file) setPickedFile(file);
+        setPickedFiles(Array.from(e.dataTransfer.files || []));
     });
 
     umFileInput?.addEventListener("change", () => {
-        const file = umFileInput.files?.[0];
-        if (file) setPickedFile(file);
+        setPickedFiles(Array.from(umFileInput.files || []));
+        // Let the same file be re-picked after it was removed from the list.
+        umFileInput.value = "";
     });
 
-    function setPickedFile(file) {
-        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-            umFileError.textContent = "*Only PDF files are supported";
+    function isPdf(file) {
+        return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    }
+
+    function setPickedFiles(files) {
+        if (files.length === 0) return;
+
+        const pdfs = files.filter(isPdf);
+        const accepted = pdfs.filter((file) => file.size <= MAX_MODULE_BYTES);
+        const problems = [];
+        if (pdfs.length < files.length) problems.push("Only PDF files are supported");
+        if (accepted.length < pdfs.length) problems.push("Each PDF must be 10 MB or smaller");
+
+        if (problems.length) {
+            const skipped = files.length - accepted.length;
+            umFileError.textContent =
+                files.length > 1
+                    ? `*${problems.join(". ")} (${skipped} skipped)`
+                    : `*${problems.join(". ")}`;
             umFileError.classList.remove("hidden");
+        } else {
+            hideFieldError(umFileError, umDropzone);
+        }
+
+        if (accepted.length === 0) return;
+
+        // Editing replaces the one existing file.
+        if (umMode === "edit") {
+            umPickedFile = accepted[0];
+            umFileName.textContent = accepted[0].name;
             return;
         }
-        umPickedFile = file;
-        umFileName.textContent = file.name;
-        hideFieldError(umFileError, umDropzone);
+
+        // Keep a title the professor already typed for the first file.
+        if (umBulkItems.length === 1 && umTitle.value.trim()) {
+            umBulkItems[0].title = umTitle.value.trim();
+        }
+
+        accepted.forEach((file) => {
+            const duplicate = umBulkItems.some(
+                (item) => item.file.name === file.name && item.file.size === file.size,
+            );
+            if (duplicate) return;
+
+            const detectedQuarter = quarterFromFileName(file.name);
+            umBulkItems.push({
+                file,
+                title: titleFromFileName(file.name),
+                quarter: detectedQuarter || umQuarter?.value || QUARTER_LABELS[0],
+                quarterTouched: Boolean(detectedQuarter),
+                error: "",
+            });
+        });
+
+        renderUploadMode();
+    }
+
+    // One file keeps the regular form (title auto-filled); two or more
+    // switch to the bulk list with a title and quarter per file.
+    function renderUploadMode() {
+        const isBulk = umMode === "create" && umBulkItems.length > 1;
+
+        umTitleField?.classList.toggle("hidden", isBulk);
+        umDescriptionField?.classList.toggle("hidden", isBulk);
+        umBulkField?.classList.toggle("hidden", !isBulk);
+        if (umQuarterLabel) umQuarterLabel.textContent = isBulk ? "Default quarter" : "Quarter";
+
+        if (umMode !== "create") return;
+
+        if (isBulk) {
+            umPickedFile = null;
+            umFileName.textContent = `${umBulkItems.length} PDFs selected. Drop or browse to add more.`;
+            umSubmitLabel.textContent = `Upload ${umBulkItems.length} modules`;
+            renderBulkList();
+            return;
+        }
+
+        umSubmitLabel.textContent = "Upload";
+        const only = umBulkItems[0];
+
+        if (!only) {
+            umPickedFile = null;
+            umFileName.textContent = "Drag & drop one or more PDFs here, or click to browse";
+            return;
+        }
+
+        umPickedFile = only.file;
+        umFileName.textContent = only.file.name;
+        if (!umTitle.value.trim() || umTitle.value === umLastAutoTitle) {
+            umTitle.value = only.title;
+            umLastAutoTitle = only.title;
+            hideFieldError(umTitleError, umTitle);
+        }
+        if (umQuarter && only.quarterTouched) umQuarter.value = only.quarter;
+    }
+
+    function renderBulkList() {
+        if (!umBulkList) return;
+
+        umBulkList.innerHTML = umBulkItems
+            .map(
+                (item, index) => `
+                <div class="mv-bulk-row" data-index="${index}">
+                    <div class="mv-bulk-row-head">
+                        <i class="fas fa-file-pdf"></i>
+                        <span class="mv-bulk-file">${escapeHtml(item.file.name)} · ${formatBytes(item.file.size)}</span>
+                        <button type="button" class="mv-bulk-remove" data-index="${index}" aria-label="Remove ${escapeHtml(item.file.name)}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mv-bulk-row-fields">
+                        <input class="cc-input mv-bulk-title" type="text" maxlength="150" autocomplete="off"
+                            placeholder="Title" aria-label="Title for ${escapeHtml(item.file.name)}"
+                            value="${escapeHtml(item.title)}" />
+                        <select class="cc-input mv-bulk-quarter" aria-label="Quarter for ${escapeHtml(item.file.name)}">
+                            ${QUARTER_LABELS.map(
+                                (label) =>
+                                    `<option value="${label}" ${label === item.quarter ? "selected" : ""}>${label}</option>`,
+                            ).join("")}
+                        </select>
+                    </div>
+                    <p class="cc-error mv-bulk-error ${item.error ? "" : "hidden"}">${escapeHtml(item.error ? `*${item.error}` : "")}</p>
+                </div>`,
+            )
+            .join("");
+    }
+
+    function bulkItemFor(el) {
+        const row = el.closest(".mv-bulk-row");
+        return row ? umBulkItems[Number(row.dataset.index)] : null;
+    }
+
+    umBulkList?.addEventListener("input", (e) => {
+        if (!e.target.classList.contains("mv-bulk-title")) return;
+        const item = bulkItemFor(e.target);
+        if (item) item.title = e.target.value;
+    });
+
+    umBulkList?.addEventListener("change", (e) => {
+        if (!e.target.classList.contains("mv-bulk-quarter")) return;
+        const item = bulkItemFor(e.target);
+        if (!item) return;
+        item.quarter = e.target.value;
+        item.quarterTouched = true;
+    });
+
+    umBulkList?.addEventListener("click", (e) => {
+        const btn = e.target.closest(".mv-bulk-remove");
+        if (!btn) return;
+        umBulkItems.splice(Number(btn.dataset.index), 1);
+        if (umBulkItems.length === 1) backToSingleForm(umBulkItems[0]);
+        renderUploadMode();
+    });
+
+    // Leaving bulk mode with one file left: carry its row over to the form.
+    function backToSingleForm(item) {
+        umTitle.value = item.title;
+        umLastAutoTitle = item.title;
+        item.quarterTouched = true;
+    }
+
+    // The main quarter picker sets every row whose quarter wasn't read from
+    // its file name or chosen by hand.
+    umQuarter?.addEventListener("change", () => {
+        if (umMode !== "create" || umBulkItems.length < 2) return;
+        umBulkItems.forEach((item) => {
+            if (!item.quarterTouched) item.quarter = umQuarter.value;
+        });
+        renderBulkList();
+    });
+
+    async function postModule(url, formData) {
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    Accept: "application/json",
+                    "X-XSRF-TOKEN": getCsrfToken(),
+                },
+                body: formData,
+            });
+
+            if (res.ok) return { ok: true };
+            return {
+                ok: false,
+                message: await extractErrorMessage(res, "Could not save the module."),
+            };
+        } catch (e) {
+            return { ok: false, message: "Could not save the module. Please try again." };
+        }
+    }
+
+    async function submitBulkUpload(sectionIds) {
+        umBulkItems.forEach((item) => {
+            item.title = item.title.trim();
+            item.error = item.title ? "" : "Title is required";
+        });
+
+        if (umBulkItems.some((item) => item.error)) {
+            renderBulkList();
+            umBulkList.querySelector(".mv-bulk-error:not(.hidden)")
+                ?.closest(".mv-bulk-row")
+                ?.querySelector(".mv-bulk-title")
+                ?.focus();
+            return;
+        }
+
+        const total = umBulkItems.length;
+        const failed = [];
+        umSubmitBtn.disabled = true;
+
+        // One request per PDF (sequential), so a single bad file can't sink
+        // the batch and no request exceeds the server's upload size limit.
+        for (let i = 0; i < total; i++) {
+            const item = umBulkItems[i];
+            umSubmitLabel.textContent = `Uploading ${i + 1} of ${total}...`;
+
+            const formData = new FormData();
+            formData.append("title", item.title);
+            formData.append("description", "");
+            formData.append("quarter", item.quarter);
+            sectionIds.forEach((id) => formData.append("section_ids[]", id));
+            formData.append("attachment", item.file);
+
+            const result = await postModule(`/professor/subjects/${SUBJECT_ID}/modules`, formData);
+            if (!result.ok) {
+                item.error = result.message;
+                failed.push(item);
+            }
+        }
+
+        const uploaded = total - failed.length;
+        if (uploaded > 0) await loadSubject();
+        umSubmitBtn.disabled = false;
+
+        if (failed.length === 0) {
+            closeUploadModal();
+            showToast(`${uploaded} modules uploaded`);
+            return;
+        }
+
+        // Keep only what failed so the professor can fix and retry.
+        umBulkItems = failed;
+        if (failed.length === 1) backToSingleForm(failed[0]);
+        renderUploadMode();
+        showToast(
+            failed.length === 1
+                ? `${uploaded} uploaded. "${failed[0].file.name}" failed: ${failed[0].error}`
+                : `${uploaded} uploaded, ${failed.length} failed. Fix the rows shown and try again.`,
+        );
     }
 
     function hideFieldError(errorEl, inputEl) {
@@ -451,6 +759,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     umSubmitBtn?.addEventListener("click", async () => {
+        if (umMode === "create" && umBulkItems.length > 1) {
+            const sectionIds = Array.from(
+                umSectionChecks.querySelectorAll("input:checked"),
+            ).map((el) => el.value);
+            await submitBulkUpload(sectionIds);
+            return;
+        }
+
         const title = umTitle.value.trim();
         if (!title) {
             umTitleError.classList.remove("hidden");
@@ -471,6 +787,10 @@ document.addEventListener("DOMContentLoaded", () => {
             umSectionChecks.querySelectorAll("input:checked"),
         ).map((el) => el.value);
 
+        await submitSingleModule(title, sectionIds);
+    });
+
+    async function submitSingleModule(title, sectionIds) {
         const formData = new FormData();
         formData.append("title", title);
         formData.append("description", umDescription.value.trim());
@@ -486,32 +806,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         umSubmitBtn.disabled = true;
 
-        try {
-            const res = await fetch(url, {
-                method: "POST",
-                credentials: "same-origin",
-                headers: {
-                    Accept: "application/json",
-                    "X-XSRF-TOKEN": getCsrfToken(),
-                },
-                body: formData,
-            });
-
-            if (!res.ok) {
-                const message = await extractErrorMessage(res, "Could not save the module.");
-                showToast(message);
-                return;
-            }
-
+        const result = await postModule(url, formData);
+        if (result.ok) {
             await loadSubject();
             closeUploadModal();
             showToast(isEdit ? "Module updated" : "Module uploaded");
-        } catch (e) {
-            showToast("Could not save the module. Please try again.");
-        } finally {
-            umSubmitBtn.disabled = false;
+        } else {
+            showToast(result.message);
         }
-    });
+
+        umSubmitBtn.disabled = false;
+    }
 
     document.getElementById("uploadModuleBtn")?.addEventListener("click", () => {
         openUploadModal("create", null);

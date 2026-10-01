@@ -16,6 +16,7 @@ class Module extends Model
         'uploaded_by',
         'title',
         'description',
+        'quarter',
         'file_path',
         'file_name',
         'file_size',
@@ -32,8 +33,8 @@ class Module extends Model
     }
 
     /**
-     * The sections (classes) this module is targeted at. No rows means the
-     * module is available to every section under its subject.
+     * The sections (classes) this module is posted to. No rows means it is
+     * not assigned to any section yet (it only lives in the subject library).
      */
     public function targetSections(): BelongsToMany
     {

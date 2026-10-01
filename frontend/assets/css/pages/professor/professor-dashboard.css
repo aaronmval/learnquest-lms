@@ -395,6 +395,50 @@ body.dark .filter-btn-reset:hover {
     line-height: 1.5;
 }
 
+.student-mastery-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    margin-top: -6px;
+}
+
+.student-mastery-toolbar .card-subtext {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+}
+
+.student-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #e2e8f0;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.student-sort-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+.student-sort-btn:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
 .student-mastery-list {
     display: flex;
     flex-direction: column;

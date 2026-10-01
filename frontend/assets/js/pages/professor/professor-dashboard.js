@@ -456,7 +456,50 @@ function renderMasteryBoxes(competencies, message) {
         .join("");
 }
 
+/* Student Mastery Level sort: "desc" = highest first, "asc" = lowest first. */
+let studentSortDirection = "desc";
+let lastStudentListArgs = [[], undefined];
+
+function isStudentAssessed(student) {
+    return Boolean(student.assessed) && student.masteryScore !== null;
+}
+
+/* Sorted copy for display. Students not yet assessed always go last, and
+   each student's rank is their position from the top (highest = #1)
+   whichever direction is shown. */
+function sortStudentsForDisplay(students) {
+    const ranked = [...students].sort((a, b) => {
+        if (isStudentAssessed(a) !== isStudentAssessed(b)) return isStudentAssessed(a) ? -1 : 1;
+        if (!isStudentAssessed(a)) return 0;
+        return b.masteryScore - a.masteryScore;
+    });
+    const rows = ranked.map((student, index) => ({ student, rank: index + 1 }));
+
+    if (studentSortDirection === "desc") return rows;
+
+    const assessed = rows.filter((row) => isStudentAssessed(row.student)).reverse();
+    return [...assessed, ...rows.filter((row) => !isStudentAssessed(row.student))];
+}
+
+function updateStudentSortButton() {
+    const icon = document.getElementById("studentSortIcon");
+    const label = document.getElementById("studentSortLabel");
+    const highestFirst = studentSortDirection === "desc";
+    if (icon) icon.className = `fas ${highestFirst ? "fa-arrow-down-wide-short" : "fa-arrow-up-short-wide"}`;
+    if (label) label.textContent = highestFirst ? "Highest first" : "Lowest first";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("studentSortBtn")?.addEventListener("click", () => {
+        studentSortDirection = studentSortDirection === "desc" ? "asc" : "desc";
+        updateStudentSortButton();
+        renderStudentMasteryList(...lastStudentListArgs);
+    });
+});
+
 function renderStudentMasteryList(students, errorMessage) {
+    lastStudentListArgs = [students, errorMessage];
+
     const container = document.getElementById("studentMasteryList");
     if (!container) return;
 
@@ -466,12 +509,12 @@ function renderStudentMasteryList(students, errorMessage) {
         return;
     }
 
-    container.innerHTML = students
-        .map((student, index) => {
-            const value = !student.assessed || student.masteryScore === null ? "Not yet assessed" : `${student.masteryScore}%`;
+    container.innerHTML = sortStudentsForDisplay(students)
+        .map(({ student, rank }) => {
+            const value = !isStudentAssessed(student) ? "Not yet assessed" : `${student.masteryScore}%`;
             return `
                 <button class="student-row" type="button" data-student-id="${escapeHtml(student.id)}">
-                    <span class="student-rank">#${index + 1}</span>
+                    <span class="student-rank">#${rank}</span>
                     <span class="student-name-wrap">
                         <span class="student-name">${escapeHtml(student.name)}</span>
                         <span class="student-section">${escapeHtml(student.section)}</span>

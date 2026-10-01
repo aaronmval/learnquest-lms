@@ -55,6 +55,15 @@
                         <p class="class-banner-role">Teacher</p>
                     </div>
                     <i class="fas fa-book-open class-banner-icon"></i>
+                    <button
+                        id="renameClassBtn"
+                        class="class-banner-edit-btn"
+                        type="button"
+                        title="Edit class details"
+                        aria-label="Edit class details"
+                    >
+                        <i class="fas fa-pen"></i>
+                    </button>
                 </section>
 
                 <!-- TWO COLUMN: FEED + SIDE PANEL -->
@@ -257,6 +266,100 @@
                         type="button"
                     >
                         <span id="pcSaveBtnLabel">Post</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EDIT CLASS DETAILS MODAL -->
+        <div id="renameClassModal" aria-modal="true" role="dialog">
+            <div id="renameClassCard">
+                <div class="pc-modal-header">
+                    <h3 class="modal-title">Edit class details</h3>
+                    <button
+                        id="rcCloseBtn"
+                        class="jc-close-btn"
+                        type="button"
+                        aria-label="Close class details"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="pc-field">
+                    <label class="pc-label" for="rcName">Class title</label>
+                    <input
+                        id="rcName"
+                        class="pc-input"
+                        type="text"
+                        maxlength="60"
+                        autocomplete="off"
+                        placeholder="e.g. General Chemistry 2"
+                    />
+                    <p id="rcNameError" class="pc-error hidden">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span id="rcNameErrorText">Class title is required.</span>
+                    </p>
+                </div>
+
+                <div class="pc-field">
+                    <label class="pc-label" for="rcSubject">Subject</label>
+                    <input
+                        id="rcSubject"
+                        class="pc-input"
+                        type="text"
+                        maxlength="60"
+                        autocomplete="off"
+                        placeholder="e.g. Chemistry (optional)"
+                    />
+                    <p class="pc-label-hint">
+                        When set, the subject is shown as the class headline
+                        and the title appears beneath it.
+                    </p>
+                </div>
+
+                <div class="pc-field">
+                    <label class="pc-label" for="rcSection">Section</label>
+                    <input
+                        id="rcSection"
+                        class="pc-input"
+                        type="text"
+                        maxlength="60"
+                        autocomplete="off"
+                        placeholder="e.g. STEM 4 (optional)"
+                    />
+                </div>
+
+                <div class="pc-field">
+                    <label class="pc-label" for="rcRoom">Room</label>
+                    <input
+                        id="rcRoom"
+                        class="pc-input"
+                        type="text"
+                        maxlength="40"
+                        autocomplete="off"
+                        placeholder="e.g. 204 (optional)"
+                    />
+                    <p class="pc-label-hint">
+                        Students keep their enrollment and the invite code
+                        stays the same.
+                    </p>
+                </div>
+
+                <div class="modal-actions">
+                    <button
+                        id="rcCancelBtn"
+                        class="modal-btn modal-btn-cancel"
+                        type="button"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        id="rcSaveBtn"
+                        class="modal-btn cc-create-btn"
+                        type="button"
+                    >
+                        Save
                     </button>
                 </div>
             </div>

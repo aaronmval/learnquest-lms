@@ -198,9 +198,23 @@
                             ><i class="fas fa-user-graduate"></i
                         ></span>
                     </div>
-                    <p class="card-subtext">
-                        Click a student to open detailed subject statistics.
-                    </p>
+                    <div class="student-mastery-toolbar">
+                        <p class="card-subtext">
+                            Click a student to open detailed subject statistics.
+                        </p>
+                        <button
+                            id="studentSortBtn"
+                            class="student-sort-btn"
+                            type="button"
+                            title="Change sort order"
+                        >
+                            <i
+                                id="studentSortIcon"
+                                class="fas fa-arrow-down-wide-short"
+                            ></i>
+                            <span id="studentSortLabel">Highest first</span>
+                        </button>
+                    </div>
                     <div class="student-mastery-list" id="studentMasteryList">
                         <!-- Student mastery rows injected by JS -->
                     </div>

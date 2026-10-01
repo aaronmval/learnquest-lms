@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AI\ClassInsightController;
+use App\Http\Controllers\AI\CompetencySuggestionController;
 use App\Http\Controllers\AI\InsightController;
 use App\Http\Controllers\AI\ProfessorQuestAiController;
 use App\Http\Controllers\AI\QuestAiController;
@@ -160,6 +161,7 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
     Route::post('/classes', [ProfessorClassController::class, 'store'])->name('classes.store');
     Route::get('/classes/archived', [ProfessorClassController::class, 'archived'])->name('classes.archived');
     Route::get('/classes/{class}', [ProfessorClassController::class, 'show'])->name('classes.show');
+    Route::put('/classes/{class}', [ProfessorClassController::class, 'update'])->name('classes.update');
     Route::post('/classes/{class}/regenerate-code', [ProfessorClassController::class, 'regenerateCode'])
         ->name('classes.regenerate-code');
     Route::post('/classes/{class}/archive', [ProfessorClassController::class, 'archive'])->name('classes.archive');
@@ -168,8 +170,8 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
 
     Route::get('/classes/{class}/posts', [ClassPostController::class, 'index'])->name('classes.posts.index');
     Route::post('/classes/{class}/posts', [ClassPostController::class, 'store'])->name('classes.posts.store');
-    Route::post('/classes/{class}/posts/{post}', [ClassPostController::class, 'update'])
-        ->name('classes.posts.update'); // _method=PUT spoofed (multipart)
+    Route::put('/classes/{class}/posts/{post}', [ClassPostController::class, 'update'])
+        ->name('classes.posts.update'); // sent as POST with _method=PUT (multipart), spoofed to a real PUT for routing
     Route::delete('/classes/{class}/posts/{post}', [ClassPostController::class, 'destroy'])
         ->name('classes.posts.destroy');
     Route::get('/classes/{class}/posts/{post}/attachment', [ClassPostController::class, 'attachment'])
@@ -219,6 +221,8 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
 
         Route::get('/{subject}/competencies', [CompetencyController::class, 'index'])->name('competencies.index');
         Route::post('/{subject}/competencies', [CompetencyController::class, 'store'])->name('competencies.store');
+        Route::post('/{subject}/competencies/suggest', [CompetencySuggestionController::class, 'store'])
+            ->middleware('throttle:6,1')->name('competencies.suggest');
         Route::put('/{subject}/competencies/{competency}', [CompetencyController::class, 'update'])
             ->name('competencies.update');
         Route::delete('/{subject}/competencies/{competency}', [CompetencyController::class, 'destroy'])

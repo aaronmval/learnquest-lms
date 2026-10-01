@@ -18,6 +18,150 @@ body.dark #mainContent {
 }
 
 
+/*PAGE WRAPPER: stacks the hero banner above the settings body */
+.settings-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+
+/*HERO BANNER (same pattern as the home page)*/
+.hero-banner {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    border-radius: 20px;
+    padding: 36px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
+    box-sizing: border-box;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: min(560px, 65%);
+    min-width: 0;
+    flex-shrink: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-title {
+    margin: 0;
+    font-size: clamp(1.05rem, 2.5vw, 1.75rem);
+    font-weight: 800;
+    line-height: 1.25;
+    color: #fff;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.hero-subtitle {
+    margin: 0;
+    font-size: clamp(0.8rem, 1.4vw, 0.9rem);
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+    overflow-wrap: break-word;
+}
+
+/* Faded icon, desktop only decoration */
+.hero-illustration {
+    font-size: clamp(5rem, 9vw, 8rem);
+    color: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+    user-select: none;
+    position: absolute;
+    right: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+@media (min-width: 1280px) {
+    .hero-banner {
+        padding: 44px 52px;
+        min-height: 190px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1023px) {
+    .hero-banner {
+        padding: 30px 32px;
+        min-height: unset;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-banner {
+        padding: 26px 22px;
+        min-height: unset;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .hero-illustration {
+        display: none;
+    }
+
+    .hero-text {
+        max-width: 100%;
+        gap: 8px;
+    }
+
+    .hero-title {
+        font-size: clamp(1rem, 3.5vw, 1.4rem);
+    }
+
+    .hero-subtitle {
+        font-size: 0.82rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-banner {
+        padding: 20px 18px;
+        border-radius: 16px;
+    }
+
+    .hero-title {
+        font-size: clamp(0.95rem, 4.5vw, 1.2rem);
+    }
+
+    .hero-subtitle {
+        font-size: 0.78rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .hero-banner {
+        padding: 18px 14px;
+        border-radius: 14px;
+    }
+
+    .hero-title {
+        font-size: clamp(0.9rem, 4vw, 1.1rem);
+    }
+
+    .hero-subtitle {
+        font-size: 0.75rem;
+    }
+}
+
+
 /*SETTINGS BODY: two-column layout */
 .settings-body {
     display: grid;
