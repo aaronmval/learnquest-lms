@@ -51,7 +51,8 @@ class SubjectModuleSmokeTest extends TestCase
         $res->assertOk();
         $this->assertCount(1, $res->json('sections'));
 
-        // Collaborator uploads a module PDF targeted at the section
+        // Collaborator uploads a module PDF. The owner's section isn't theirs
+        // to post into, so ticking it is ignored.
         $pdf = UploadedFile::fake()->create('lesson.pdf', 500, 'application/pdf');
         $res = $this->actingAs($collaborator)->post("/professor/subjects/{$subjectId}/modules", [
             'title' => 'Module 1',
@@ -61,7 +62,7 @@ class SubjectModuleSmokeTest extends TestCase
         ]);
         $res->assertCreated();
         $moduleId = $res->json('id');
-        $this->assertSame([$sectionId], array_map(fn ($s) => $s['id'], $res->json('target_sections')));
+        $this->assertSame([], $res->json('target_sections'));
 
         // Owner can preview/download the collaborator's upload
         $this->actingAs($owner)->get("/professor/subjects/{$subjectId}/modules/{$moduleId}/attachment")

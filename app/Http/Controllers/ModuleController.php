@@ -136,25 +136,24 @@ class ModuleController extends Controller
     }
 
     /**
-     * Sync which classes this module targets. Allowed targets are this
-     * subject's own sections, or any class the uploading professor owns
-     * (so a module can also be posted to their standalone classes). An
-     * empty/omitted list means no sections assigned (no rows in the pivot
-     * table, and nothing is posted to any class).
-     * Returns the resolved, valid target class ids.
+     * Sync which classes this module targets, among the ones this professor
+     * may post into (Subject::targetableSectionsFor). Targets set by other
+     * professors on classes this one can't manage are left as they are. A
+     * standalone class that gets targeted is linked to the subject, so its
+     * lessons have the subject's competencies for quizzes and mastery.
+     * Returns the class ids this professor targeted.
      */
     private function syncTargetSections(Request $request, Module $module, Subject $subject, ?array $sectionIds): Collection
     {
-        $validIds = ClassRoom::whereIn('id', $sectionIds ?? [])
-            ->where(function ($query) use ($subject, $request) {
-                $query->where('subject_id', $subject->id)
-                    ->orWhere('professor_id', $request->user()->id);
-            })
-            ->pluck('id');
+        $manageable = $subject->targetableSectionsFor($request->user())->pluck('id');
+        $requested = $manageable->intersect(array_map('intval', $sectionIds ?? []))->values();
+        $keptFromOthers = $module->targetSections()->pluck('classes.id')->diff($manageable);
 
-        $module->targetSections()->sync($validIds);
+        $module->targetSections()->sync($requested->merge($keptFromOthers)->all());
 
-        return $validIds;
+        ClassRoom::whereIn('id', $requested)->whereNull('subject_id')->update(['subject_id' => $subject->id]);
+
+        return $requested;
     }
 
     /**

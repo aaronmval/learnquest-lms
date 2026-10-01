@@ -454,12 +454,9 @@ document.addEventListener("DOMContentLoaded", () => {
         hideFieldError(umFileError, umDropzone);
 
         const checkedIds = (module?.target_sections || []).map((t) => String(t.id));
-        const seen = new Set();
-        const options = [...(subjectData?.sections || []), ...professorClasses].filter((c) => {
-            if (seen.has(c.id)) return false;
-            seen.add(c.id);
-            return true;
-        });
+        // Only the sections this professor may post into (a collaborator
+        // gets just their own); the server enforces the same list.
+        const options = subjectData?.targetable_sections || [];
         umSectionChecks.innerHTML = options
             .map(
                 (c) => `

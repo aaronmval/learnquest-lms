@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Services\AI\LlamaService;
 use App\Services\Documents\PdfTextExtractorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
 
@@ -230,59 +232,55 @@ class QuizStudioTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_collaborator_can_manage_the_subjects_lessons(): void
+    public function test_collaborator_sets_up_quizzes_for_their_own_sections_only(): void
     {
+        Storage::fake('local');
         $collaborator = User::factory()->create(['role' => 'professor']);
         $subjectId = ClassRoom::find($this->classId)->subject_id;
-        $reviewUrl = $this->url("/questions/{$this->questions['proton']->id}/review");
-        $trainingUrl = "/professor/quiz-studio/training?class_id={$this->classId}";
-
         $this->actingAs($this->professor)
             ->postJson("/professor/subjects/{$subjectId}/collaborators", ['email' => $collaborator->email])
             ->assertCreated();
+
+        // The owner's section is not the collaborator's to set up.
+        $this->actingAs($collaborator)->getJson('/professor/quiz-studio/lessons')->assertOk()->assertJsonCount(0, 'classes');
+        $this->actingAs($collaborator)->getJson($this->url('/studio'))->assertNotFound();
+        $this->actingAs($collaborator)->putJson($this->url('/settings'), $this->settings())->assertNotFound();
+        $this->actingAs($collaborator)->getJson("/professor/quiz-studio/training?class_id={$this->classId}")->assertNotFound();
+
+        // Their own standalone class, once a module of the subject is posted
+        // into it, is linked to the subject and gets its competencies.
+        $ownClassId = $this->actingAs($collaborator)
+            ->postJson('/professor/classes', ['name' => 'Chemistry', 'section' => 'STEM C'])->json('id');
+        $this->actingAs($collaborator)->post("/professor/subjects/{$subjectId}/modules", [
+            'title' => 'Isotopes',
+            'attachment' => UploadedFile::fake()->create('isotopes.pdf', 200, 'application/pdf'),
+            'section_ids' => [$ownClassId, $this->classId],
+        ])->assertCreated();
+
+        $this->assertSame($subjectId, ClassRoom::find($ownClassId)->subject_id);
+        $post = ClassPost::where('class_id', $ownClassId)->firstOrFail();
+        // The owner's section was ticked too, but isn't the collaborator's to post into.
+        $this->assertSame(0, ClassPost::where('class_id', $this->classId)->where('title', 'Isotopes')->count());
 
         $this->actingAs($collaborator)->getJson('/professor/quiz-studio/lessons')
             ->assertOk()
             ->assertJsonCount(1, 'classes')
-            ->assertJsonPath('classes.0.id', $this->classId)
-            ->assertJsonPath('classes.0.lessons.0.id', $this->post->id);
+            ->assertJsonPath('classes.0.id', $ownClassId)
+            ->assertJsonPath('classes.0.has_subject', true)
+            ->assertJsonPath('classes.0.lessons.0.id', $post->id);
 
-        $this->actingAs($collaborator)->getJson($this->url('/studio'))->assertOk()->assertJsonCount(4, 'questions');
-        $this->actingAs($collaborator)->putJson($this->url('/settings'), $this->settings())->assertOk();
-        $this->actingAs($collaborator)->putJson($reviewUrl, ['verdict' => 'approved'])->assertOk();
-        $this->actingAs($collaborator)->getJson($trainingUrl)->assertOk();
+        $studioUrl = "/professor/classes/{$ownClassId}/posts/{$post->id}/quiz";
+        $this->actingAs($collaborator)->getJson("{$studioUrl}/studio")
+            ->assertOk()
+            ->assertJsonPath('competencies.0.id', $this->competencyId);
+        $this->actingAs($collaborator)->putJson("{$studioUrl}/settings", $this->settings(['max_attempts' => 2]))->assertOk();
+        $this->actingAs($collaborator)->getJson("/professor/quiz-studio/training?class_id={$ownClassId}")
+            ->assertOk()
+            ->assertJsonPath('subject.id', $subjectId);
 
-        // Removing the collaborator revokes access again.
-        $this->actingAs($this->professor)
-            ->deleteJson("/professor/subjects/{$subjectId}/collaborators/{$collaborator->id}")
-            ->assertNoContent();
-
-        $this->actingAs($collaborator)->getJson('/professor/quiz-studio/lessons')->assertOk()->assertJsonCount(0, 'classes');
-        $this->actingAs($collaborator)->getJson($this->url('/studio'))->assertNotFound();
-        $this->actingAs($collaborator)->getJson($trainingUrl)->assertNotFound();
-    }
-
-    public function test_students_can_take_a_quiz_set_up_by_a_collaborator(): void
-    {
-        $collaborator = User::factory()->create(['role' => 'professor']);
-        $subjectId = ClassRoom::find($this->classId)->subject_id;
-        $this->actingAs($this->professor)
-            ->postJson("/professor/subjects/{$subjectId}/collaborators", ['email' => $collaborator->email])
-            ->assertCreated();
-
-        // A lesson the collaborator posted into the owner's section, with a
-        // quiz the collaborator configured and reviewed.
-        $post = ClassPost::create([
-            'class_id' => $this->classId,
-            'author_id' => $collaborator->id,
-            'type' => 'lesson',
-            'quarter' => '1st Quarter',
-            'title' => 'Isotopes',
-            'attachment_path' => 'class-posts/isotopes.pdf',
-            'attachment_name' => 'isotopes.pdf',
-        ]);
+        // A student of the collaborator's class can take the lesson's quiz.
         $quiz = Quiz::create(['class_post_id' => $post->id, 'model' => 'llama-3.3-70b-instruct', 'generated_at' => now()]);
-        $kept = $quiz->questions()->create([
+        $question = $quiz->questions()->create([
             'competency_id' => $this->competencyId,
             'question_text' => 'Isotopes differ in the number of what?',
             'choices' => ['Neutrons', 'Protons', 'Electrons', 'Shells'],
@@ -291,38 +289,23 @@ class QuizStudioTest extends TestCase
             'difficulty' => 'easy',
             'order_index' => 0,
         ]);
-        $rejected = $quiz->questions()->create([
-            'competency_id' => $this->competencyId,
-            'question_text' => 'Which is an isotope?',
-            'choices' => ['A', 'B', 'C', 'D'],
-            'correct_answer' => 'A',
-            'explanation' => 'Unclear.',
-            'difficulty' => 'easy',
-            'order_index' => 1,
-        ]);
 
-        $this->actingAs($collaborator)
-            ->putJson($this->url('/settings', $post), $this->settings(['max_attempts' => 2, 'time_limit_minutes' => 15]))
-            ->assertOk();
-        $this->actingAs($collaborator)
-            ->putJson($this->url("/questions/{$rejected->id}/review", $post), ['verdict' => 'rejected', 'reason' => 'unclear'])
-            ->assertOk();
+        $student = User::factory()->create(['role' => 'student']);
+        $this->actingAs($student)->postJson('/student/classes/join', ['code' => ClassRoom::find($ownClassId)->code])->assertCreated();
+        $quizUrl = "/student/classes/{$ownClassId}/posts/{$post->id}/quiz";
 
-        $quizUrl = "/student/classes/{$this->classId}/posts/{$post->id}/quiz";
+        $res = $this->actingAs($student)->getJson($quizUrl)->assertOk()->assertJsonPath('settings.max_attempts', 2);
+        $this->assertSame([$question->id], array_column($res->json('questions'), 'id'));
 
-        $res = $this->actingAs($this->student)->getJson($quizUrl)
-            ->assertOk()
-            ->assertJsonPath('settings.max_attempts', 2)
-            ->assertJsonPath('settings.time_limit_seconds', 900);
-        $this->assertSame([$kept->id], array_column($res->json('questions'), 'id'));
-
-        $this->actingAs($this->student)
-            ->postJson("{$quizUrl}/attempts", ['answers' => [['question_id' => $kept->id, 'selected_index' => 0]]])
+        $this->actingAs($student)
+            ->postJson("{$quizUrl}/attempts", ['answers' => [['question_id' => $question->id, 'selected_index' => 0]]])
             ->assertCreated()
             ->assertJsonPath('score.correct', 1);
 
-        // The answer still feeds BKT for the question's competency.
-        $this->assertDatabaseHas('quiz_answers', ['quiz_question_id' => $kept->id, 'competency_id' => $this->competencyId]);
+        // The class now has the subject's competencies for mastery.
+        $this->actingAs($student)->getJson("/student/classes/{$ownClassId}/mastery")
+            ->assertOk()
+            ->assertJsonPath('competency_count', 1);
     }
 
     /* ── Review ── */

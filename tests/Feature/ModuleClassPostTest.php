@@ -217,7 +217,7 @@ class ModuleClassPostTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_collaborator_uploading_module_targeted_at_owners_class_still_creates_a_post(): void
+    public function test_collaborator_can_only_post_a_module_into_their_own_sections(): void
     {
         Storage::fake('local');
 
@@ -237,17 +237,80 @@ class ModuleClassPostTest extends TestCase
             'email' => $collaborator->email,
         ])->assertCreated();
 
+        $ownClass = $this->createClass($collaborator, 'Chemistry - STEM 7');
+        $otherSubjectId = $this->actingAs($collaborator)->postJson('/professor/subjects', ['name' => 'Physics'])->json('id');
+        $otherSubjectClass = $this->actingAs($collaborator)
+            ->postJson("/professor/subjects/{$otherSubjectId}/sections", ['name' => 'Physics - STEM 7', 'section' => 'STEM 7'])->json('id');
+
+        // The upload dialog offers each professor only what they may tick.
+        $this->assertSame(
+            [$ownClass],
+            array_column($this->actingAs($collaborator)->getJson("/professor/subjects/{$subjectId}")->json('targetable_sections'), 'id'),
+        );
+        $this->assertSame(
+            [$sectionId],
+            array_column($this->actingAs($owner)->getJson("/professor/subjects/{$subjectId}")->json('targetable_sections'), 'id'),
+        );
+
         $pdf = UploadedFile::fake()->create('lesson.pdf', 500, 'application/pdf');
         $res = $this->actingAs($collaborator)->post("/professor/subjects/{$subjectId}/modules", [
             'title' => 'Module 1',
             'attachment' => $pdf,
-            'section_ids' => [$sectionId],
+            'section_ids' => [$sectionId, $ownClass, $otherSubjectClass],
         ]);
         $res->assertCreated();
+        $moduleId = $res->json('id');
 
-        $post = ClassPost::where('class_id', $sectionId)->first();
-        $this->assertNotNull($post);
-        $this->assertSame($collaborator->id, $post->author_id);
+        // Only the collaborator's own class is targeted, and it joins the subject.
+        $this->assertSame([$ownClass], array_column($res->json('target_sections'), 'id'));
+        $this->assertNull(ClassPost::where('class_id', $sectionId)->first());
+        $this->assertNull(ClassPost::where('class_id', $otherSubjectClass)->first());
+        $this->assertSame($collaborator->id, ClassPost::where('class_id', $ownClass)->first()->author_id);
+        $this->assertDatabaseHas('classes', ['id' => $ownClass, 'subject_id' => $subjectId]);
+        $this->assertDatabaseHas('classes', ['id' => $otherSubjectClass, 'subject_id' => $otherSubjectId]);
+
+        // The owner adds their section without dropping the collaborator's,
+        // and the collaborator can't remove the owner's.
+        $res = $this->actingAs($owner)->post("/professor/subjects/{$subjectId}/modules/{$moduleId}", [
+            '_method' => 'PUT',
+            'title' => 'Module 1',
+            'section_ids' => [$sectionId, $ownClass],
+        ])->assertOk();
+        $this->assertEqualsCanonicalizing([$sectionId, $ownClass], array_column($res->json('target_sections'), 'id'));
+
+        $res = $this->actingAs($collaborator)->post("/professor/subjects/{$subjectId}/modules/{$moduleId}", [
+            '_method' => 'PUT',
+            'title' => 'Module 1',
+        ])->assertOk();
+        $this->assertSame([$sectionId], array_column($res->json('target_sections'), 'id'));
+    }
+
+    public function test_backfill_links_standalone_classes_that_already_have_module_lessons(): void
+    {
+        $professor = User::factory()->create(['role' => 'professor']);
+        $classA = $this->createClass($professor, 'Class A');
+        $mixed = $this->createClass($professor, 'Mixed');
+        $biology = $this->actingAs($professor)->postJson('/professor/subjects', ['name' => 'Biology'])->json('id');
+        $physics = $this->actingAs($professor)->postJson('/professor/subjects', ['name' => 'Physics'])->json('id');
+
+        $module = fn (int $subjectId) => \App\Models\Module::create([
+            'subject_id' => $subjectId, 'uploaded_by' => $professor->id, 'title' => 'M',
+            'file_path' => 'x.pdf', 'file_name' => 'x.pdf', 'file_size' => 1,
+        ])->id;
+        $post = fn (int $classId, int $moduleId) => ClassPost::create([
+            'class_id' => $classId, 'author_id' => $professor->id, 'module_id' => $moduleId,
+            'type' => 'lesson', 'quarter' => '1st Quarter', 'title' => 'M',
+        ]);
+
+        $post($classA, $module($biology));
+        $post($mixed, $module($biology));
+        $post($mixed, $module($physics));
+
+        (require database_path('migrations/2026_10_02_000001_link_module_target_classes_to_subject.php'))->up();
+
+        $this->assertDatabaseHas('classes', ['id' => $classA, 'subject_id' => $biology]);
+        // Lessons from two subjects: left alone.
+        $this->assertDatabaseHas('classes', ['id' => $mixed, 'subject_id' => null]);
     }
 
     public function test_quarter_defaults_to_1st_quarter_when_omitted(): void

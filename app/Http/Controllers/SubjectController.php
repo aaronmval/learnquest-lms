@@ -53,7 +53,13 @@ class SubjectController extends Controller
             'modules' => fn ($q) => $q->with(['uploader:id,name,avatar_path', 'targetSections:id,name,section'])->latest(),
         ]);
 
-        return response()->json($subject);
+        // The classes this professor may tick when uploading a module.
+        $targetable = $subject->targetableSectionsFor($request->user())
+            ->orderBy('name')
+            ->orderBy('section')
+            ->get(['id', 'name', 'section']);
+
+        return response()->json($subject->toArray() + ['targetable_sections' => $targetable]);
     }
 
     /**
