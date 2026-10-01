@@ -125,8 +125,16 @@ return [
 
         // Dedicated channel for the AI pipeline (Routeway/Llama calls, PDF
         // extraction, summary validation) — kept separate from laravel.log
-        // so it's easy to tail on its own while troubleshooting.
+        // so it's easy to tail on its own while troubleshooting. LOG_AI_STACK
+        // picks where it goes (comma-separated channels): the ai.log file by
+        // default, or e.g. "stderr" on hosts that only collect process output.
         'ai' => [
+            'driver' => 'stack',
+            'channels' => explode(',', (string) env('LOG_AI_STACK', 'ai_file')),
+            'ignore_exceptions' => true,
+        ],
+
+        'ai_file' => [
             'driver' => 'single',
             'path' => storage_path('logs/ai.log'),
             'level' => env('LOG_AI_LEVEL', 'debug'),
