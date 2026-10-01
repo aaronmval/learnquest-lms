@@ -147,39 +147,12 @@
             <section class="charts-grid">
                 <div class="chart-card chart-card-main-radar">
                     <div class="chart-header">
-                        <h3 class="chart-title">Mastery Level by Subject</h3>
-                        <span class="active-filter-badge" id="radarBadge">
-                            <i class="fas fa-filter"></i>
-                            <span id="radarBadgeText"></span>
-                        </span>
-                    </div>
-                    <div class="chart-canvas-wrap">
-                        <canvas id="radarChart" data-chart-zoom></canvas>
-                    </div>
-                    <ul class="chart-key">
-                        <li>
-                            <span class="chart-key-swatch" style="background-color: #60a5fa"></span>
-                            Shaded area: your mastery level (BKT estimate)
-                        </li>
-                        <li>
-                            <i class="fas fa-circle-dot"></i>
-                            Each point: one subject. Click a point to see its sub-topics
-                        </li>
-                        <li>
-                            <i class="fas fa-bullseye"></i>
-                            Rings: 0% at the centre, 100% at the outer edge
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="chart-card chart-card-mini-radar">
-                    <div class="chart-header">
                         <div>
                             <h3 class="chart-title">
                                 Sub-topic Mastery Breakdown
                             </h3>
                             <p class="chart-subtitle" id="subjectRadarTitle">
-                                Select a subject from the radar chart
+                                Select a subject from the Mastery Level by Subject chart below
                             </p>
                         </div>
                         <span class="active-filter-badge" id="subjectBadge">
@@ -198,6 +171,33 @@
                         <li>
                             <i class="fas fa-circle-dot"></i>
                             Each point: one competency of the selected subject
+                        </li>
+                        <li>
+                            <i class="fas fa-bullseye"></i>
+                            Rings: 0% at the centre, 100% at the outer edge
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="chart-card chart-card-mini-radar">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Mastery Level by Subject</h3>
+                        <span class="active-filter-badge" id="radarBadge">
+                            <i class="fas fa-filter"></i>
+                            <span id="radarBadgeText"></span>
+                        </span>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="radarChart" data-chart-zoom></canvas>
+                    </div>
+                    <ul class="chart-key">
+                        <li>
+                            <span class="chart-key-swatch" style="background-color: #60a5fa"></span>
+                            Shaded area: your mastery level (BKT estimate)
+                        </li>
+                        <li>
+                            <i class="fas fa-circle-dot"></i>
+                            Each point: one subject. Click a point to see its sub-topics above
                         </li>
                         <li>
                             <i class="fas fa-bullseye"></i>

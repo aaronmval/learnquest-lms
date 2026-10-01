@@ -251,7 +251,7 @@ function renderCompetencyRadar() {
     const subject = radarSubjects().find((s) => s.class_id === selectedClassId);
 
     if (!subject) {
-        if (subtitle) subtitle.textContent = "Select a subject from the radar chart";
+        if (subtitle) subtitle.textContent = "Select a subject from the Mastery Level by Subject chart below";
         setEmptyState("subjectRadarChart", subjectsEmptyMessage());
         return;
     }

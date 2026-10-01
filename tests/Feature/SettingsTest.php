@@ -229,7 +229,13 @@ class SettingsTest extends TestCase
 
         $this->actingAs($professor)->getJson('/settings')
             ->assertJsonPath('general_preferences.deck_slide_count', 12)
-            ->assertJsonPath('general_preferences.deck_theme', 'learnquest');
+            ->assertJsonPath('general_preferences.deck_theme', 'learnquest')
+            ->assertJsonPath('general_preferences.quiz_setup_tour_seen', false);
+
+        $this->actingAs($professor)->putJson('/settings/general', ['quiz_setup_tour_seen' => true])
+            ->assertOk()
+            ->assertJsonPath('general_preferences.quiz_setup_tour_seen', true);
+        $this->actingAs($student)->putJson('/settings/general', ['quiz_setup_tour_seen' => true])->assertStatus(422);
 
         $this->actingAs($professor)->putJson('/settings/general', ['deck_slide_count' => 20, 'deck_theme' => 'emerald'])
             ->assertOk()

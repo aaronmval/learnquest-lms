@@ -91,6 +91,8 @@ class User extends Authenticatable
         if ($role === 'professor') {
             $options['deck_slide_count'] = ['values' => SlideDeckGenerationService::SLIDE_COUNTS, 'default' => 12];
             $options['deck_theme'] = ['values' => array_keys(PresentationBuilderService::THEMES), 'default' => 'learnquest'];
+            // Set once the Quiz & AI Setup guided tour has been finished or skipped.
+            $options['quiz_setup_tour_seen'] = ['values' => [true, false], 'default' => false];
         }
 
         return $options;

@@ -103,8 +103,144 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dom.sectionSelect.addEventListener('change', () => selectClass(Number(dom.sectionSelect.value)));
 
-    loadLessons();
+    document.getElementById('tourBtn')?.addEventListener('click', startSetupTour);
+
+    // The first-open tour waits for the lesson list so it can point at it.
+    loadLessons().then(() => {
+        if (!tourSeen()) startSetupTour();
+    });
 });
+
+/* GUIDED TOUR — walks through the page in the order it is used. Shown once
+   per account (flag saved with the general settings) and replayable from
+   the hero's "Take the tour" button. It only reads the page and, at the
+   lessons step, opens a lesson; it never saves or generates anything. */
+function shellPreferences() {
+    try {
+        return (window.parent.LQ_HOST_CONFIG || {}).preferences || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function tourSeen() {
+    const preferences = shellPreferences();
+    // Outside the shell there is nowhere to remember it, so don't auto-start.
+    return !preferences || preferences.quiz_setup_tour_seen === true;
+}
+
+function markTourSeen() {
+    const preferences = shellPreferences();
+    if (!preferences || preferences.quiz_setup_tour_seen === true) return;
+
+    preferences.quiz_setup_tour_seen = true;
+    apiRequest('/settings/general', { method: 'PUT', body: { quiz_setup_tour_seen: true } }).catch(() => {
+        /* Not saved: the tour will simply be offered again next time. */
+    });
+}
+
+function waitUntil(check, timeoutMs = 5000) {
+    return new Promise(resolve => {
+        const started = Date.now();
+        (function poll() {
+            if (check() || Date.now() - started > timeoutMs) resolve();
+            else setTimeout(poll, 100);
+        })();
+    });
+}
+
+/* Make sure a lesson is open so the settings, review and feedback panels
+   exist for the steps that explain them. */
+async function openALessonForTour() {
+    if (!state.activePostId) {
+        const first = findClass(state.activeClassId)?.lessons?.[0];
+        if (!first) return;
+        selectLesson(first.id);
+    }
+    await waitUntil(() => !dom.settingsCard.classList.contains('is-hidden'));
+}
+
+function startSetupTour() {
+    if (!window.LQGuidedTour) return;
+
+    const noLesson = 'This appears once you open a lesson. Post a lesson with a PDF to one of your classes, then pick it from the Lessons list.';
+    const noQuiz = 'This appears once the lesson has a generated quiz. Open a lesson and choose Generate quiz to see it.';
+
+    window.LQGuidedTour.start([
+        {
+            title: 'Welcome to Quiz & AI Setup',
+            body: 'This page is where you set up the AI quiz for each lesson, then check the questions QuestAI wrote. This short tour follows the order you would work in. Nothing is saved or generated while you look around.',
+        },
+        {
+            target: '#sectionSelect',
+            title: 'Choose a section',
+            body: 'Start by picking the class section you want to set up. The lesson list below changes to match.',
+        },
+        {
+            target: '#materialsList',
+            advanceOn: '.material-item',
+            title: 'Pick a lesson',
+            body: 'Every lesson with a PDF attachment gets an AI quiz. The chip shows where each one stands: no quiz yet, needs review, or reviewed. Click a lesson now, or press Next and the first one opens for you.',
+            fallback: 'Lessons with a PDF attachment are listed here, each with a status chip. There are none in this section yet: post a lesson with a PDF to a class and it will appear.',
+        },
+        {
+            before: openALessonForTour,
+            target: '#settingsCard .panel-title-row',
+            title: 'Quiz settings for this lesson',
+            body: 'These settings belong to the lesson you opened. The chip on the right tells you whether your changes are saved.',
+            fallback: noLesson,
+        },
+        {
+            // The first three fields sit side by side: count, timer, attempts.
+            target: () => ['questionCount', 'timerEnabled', 'maxAttempts']
+                .map(id => document.getElementById(id)?.closest('.setting-field'))
+                .filter(Boolean),
+            title: 'Questions, timer and attempts',
+            body: 'Set how many questions each student gets, an optional time limit, and how many attempts are allowed. These apply the next time a student opens the quiz.',
+            fallback: noLesson,
+        },
+        {
+            target: () => document.querySelector('#settingsForm .mix-header')?.closest('.setting-field') || null,
+            title: 'Difficulty mix',
+            body: 'Choose what share of the quiz is easy, medium and hard. Drag a slider and the others rebalance to 100%, or use a preset: Balanced, Easier or Harder.',
+            fallback: noLesson,
+        },
+        {
+            target: '#settingsForm .adaptive-box',
+            title: 'Adapt to each student',
+            body: 'With this on, each student gets a mix shifted to their mastery of the lesson\'s competencies: easier when mastery is low, harder when it is high. Mastery comes from Bayesian Knowledge Tracing on their past answers, not from the AI. The preview shows the mix each group would get.',
+            fallback: noLesson,
+        },
+        {
+            target: '#settingsCard .validator-actions',
+            title: 'Save, then generate',
+            body: 'Save settings keeps your choices. Generate quiz has QuestAI write the question bank from the lesson\'s PDF; once a quiz exists, the same button regenerates it.',
+            fallback: noLesson,
+        },
+        {
+            target: '#reviewCard',
+            title: 'Review the AI\'s questions',
+            body: 'Review is optional: students already see these questions. Approve good ones, reject wrong or unclear ones with a reason (they are hidden from students at once), correct difficulty labels, and check each question\'s competency, since it decides which skill an answer counts toward.',
+            fallback: noQuiz,
+        },
+        {
+            target: '#feedbackCard',
+            title: 'Student feedback',
+            body: 'After submitting, students rate the quiz and say if it felt too easy, just right or too hard. Results are grouped by mastery level so you can see whether the difficulty suits each group.',
+            fallback: noQuiz,
+        },
+        {
+            target: '#trainingCard',
+            title: 'QuestAI training',
+            body: 'This shows what QuestAI has learned for the subject: the questions you approved, why you rejected others, your difficulty corrections, and how students really scored. All of it is fed into the next quiz it writes.',
+            fallback: 'Once you have reviewed some questions, a QuestAI training panel appears at the bottom of the page showing what it has learned from your reviews and from student results.',
+        },
+        {
+            title: 'You\'re all set',
+            body: 'That is the whole workflow: section, lesson, settings, generate, review. You can replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ], { onFinish: markTourSeen });
+}
 
 /* LESSONS */
 async function loadLessons({ keepSelection = false } = {}) {
