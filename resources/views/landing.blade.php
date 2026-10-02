@@ -147,6 +147,15 @@
         </ul>
       </div>
 
+      <div class="footer-col footer-contact">
+        <h4>Contact the developers</h4>
+        <ul>
+          <li><a href="mailto:valiente_aaronmark@plpasig.edu.ph"><i class="fas fa-envelope"></i> valiente_aaronmark@plpasig.edu.ph</a></li>
+          <li><a href="mailto:nebasa_harlene@plpasig.edu.ph"><i class="fas fa-envelope"></i> nebasa_harlene@plpasig.edu.ph</a></li>
+          <li><a href="mailto:mendoza_rashid@plpasig.edu.ph"><i class="fas fa-envelope"></i> mendoza_rashid@plpasig.edu.ph</a></li>
+        </ul>
+      </div>
+
       <div class="footer-cta">
         <h4>Ready to start learning?</h4>
         <p>Log in to pick up where you left off, or create an account to join your class.</p>

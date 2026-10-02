@@ -247,7 +247,7 @@ footer.site-footer{
 }
 .footer-top{
   display:grid;
-  grid-template-columns:1.4fr 0.8fr 1fr;
+  grid-template-columns:1.2fr 0.6fr 1.5fr 1fr;
   gap:40px;
   padding-bottom:40px;
   border-bottom:1px solid rgba(255,255,255,0.08);
@@ -257,6 +257,9 @@ footer.site-footer{
 .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:11px;}
 .footer-col a{color:#93a3bd;font-size:0.9rem;transition:color .15s;}
 .footer-col a:hover{color:#fff;}
+/* Developer contact emails: long addresses wrap instead of overflowing. */
+.footer-contact a{display:inline-flex;align-items:flex-start;gap:8px;overflow-wrap:anywhere;}
+.footer-contact a i{font-size:0.8rem;margin-top:4px;flex-shrink:0;}
 .footer-cta h4{color:#fff;font-size:0.95rem;margin-bottom:6px;}
 .footer-cta p{color:#93a3bd;font-size:0.85rem;margin-bottom:16px;line-height:1.5;}
 .footer-actions{display:flex;flex-direction:column;gap:10px;}
