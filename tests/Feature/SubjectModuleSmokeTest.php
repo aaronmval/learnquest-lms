@@ -49,7 +49,9 @@ class SubjectModuleSmokeTest extends TestCase
         // Collaborator can now see and manage the subject
         $res = $this->actingAs($collaborator)->getJson("/professor/subjects/{$subjectId}");
         $res->assertOk();
-        $this->assertCount(1, $res->json('sections'));
+        // ...but each professor sees only the sections they own.
+        $this->assertCount(0, $res->json('sections'));
+        $this->assertCount(1, $this->actingAs($owner)->getJson("/professor/subjects/{$subjectId}")->json('sections'));
 
         // Collaborator uploads a module PDF. The owner's section isn't theirs
         // to post into, so ticking it is ignored.

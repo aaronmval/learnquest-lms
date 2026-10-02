@@ -283,6 +283,23 @@ class ModuleClassPostTest extends TestCase
             'title' => 'Module 1',
         ])->assertOk();
         $this->assertSame([$sectionId], array_column($res->json('target_sections'), 'id'));
+
+        // The collaborator's class is now a section of the subject, but the
+        // owner still sees, counts and posts into only their own section.
+        $ownerView = $this->actingAs($owner)->getJson("/professor/subjects/{$subjectId}")->assertOk();
+        $this->assertSame([$sectionId], array_column($ownerView->json('sections'), 'id'));
+        $this->assertSame([$sectionId], array_column($ownerView->json('targetable_sections'), 'id'));
+        $this->assertSame(1, $this->actingAs($owner)->getJson('/professor/subjects')->json('0.sections_count'));
+        $this->assertSame([$ownClass], array_column(
+            $this->actingAs($collaborator)->getJson("/professor/subjects/{$subjectId}")->json('sections'), 'id',
+        ));
+
+        $res = $this->actingAs($owner)->post("/professor/subjects/{$subjectId}/modules/{$moduleId}", [
+            '_method' => 'PUT',
+            'title' => 'Module 1',
+            'section_ids' => [$sectionId, $ownClass],
+        ])->assertOk();
+        $this->assertSame([$sectionId], array_column($res->json('target_sections'), 'id'));
     }
 
     public function test_backfill_links_standalone_classes_that_already_have_module_lessons(): void

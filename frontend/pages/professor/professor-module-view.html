@@ -65,9 +65,6 @@
                             <i class="fas fa-user-plus"></i> Invite
                             Collaborator
                         </button>
-                        <button id="addSectionBtn" class="mv-action-btn">
-                            <i class="fas fa-plus"></i> Add Section
-                        </button>
                         <button
                             id="uploadModuleBtn"
                             class="mv-action-btn mv-action-primary"
@@ -83,8 +80,9 @@
                     <h2 class="mv-section-title">Sections</h2>
                     <div id="sectionsStrip" class="mv-sections-strip"></div>
                     <p id="sectionsEmpty" class="mat-search-empty hidden">
-                        <i class="fas fa-chalkboard"></i> No sections yet —
-                        click "Add Section" to create one.
+                        <i class="fas fa-chalkboard"></i> None of your classes
+                        are in this subject yet. Post a module to one of your
+                        classes and it will appear here.
                     </p>
                 </section>
 
@@ -186,10 +184,9 @@
                         <label class="cc-label">Post to classes</label>
                         <div id="umSectionChecks" class="mv-section-checks"></div>
                         <p class="mat-field-hint">
-                            Choose from this subject's sections or any of your
-                            other classes. Leave everything unchecked to keep
-                            it in this subject's library without posting it to
-                            any class.
+                            Choose from your own sections and classes. Leave
+                            everything unchecked to keep it in this subject's
+                            library without posting it to any class.
                         </p>
                     </div>
 
@@ -214,6 +211,52 @@
                         </button>
                         <button id="umSubmitBtn" class="modal-btn cc-create-btn">
                             <span id="umSubmitLabel">Upload</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POST TO CLASSES MODAL -->
+            <div id="postModuleModal" class="modal-overlay">
+                <div id="postModuleModalCard" class="cc-card mv-wide-card">
+                    <div class="cc-modal-header">
+                        <h3 class="modal-title cc-modal-title">
+                            Post to classes
+                        </h3>
+                        <button
+                            id="pmCloseBtn"
+                            class="jc-close-btn"
+                            aria-label="Close"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label">Module</label>
+                        <p id="pmModuleTitle" class="mv-post-module-title"></p>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label">Your classes</label>
+                        <div id="pmSectionChecks" class="mv-section-checks"></div>
+                        <p id="pmEmpty" class="mat-field-hint hidden">
+                            You have no classes to post to yet. Create a class
+                            from the Home page first.
+                        </p>
+                        <p class="mat-field-hint">
+                            The module appears as a lesson in each checked
+                            class. Unchecking a class later does not remove a
+                            lesson that was already posted there.
+                        </p>
+                    </div>
+
+                    <div class="modal-actions cc-modal-actions">
+                        <button id="pmCancelBtn" class="modal-btn cc-cancel-btn">
+                            Cancel
+                        </button>
+                        <button id="pmConfirmBtn" class="modal-btn cc-create-btn">
+                            Post
                         </button>
                     </div>
                 </div>
@@ -280,63 +323,52 @@
                 </div>
             </div>
 
-            <!-- ADD SECTION MODAL -->
-            <div id="addSectionModal" class="modal-overlay">
-                <div id="addSectionModalCard" class="cc-card">
+            <!-- REQUEST A CHANGE MODAL (collaborator → subject owner) -->
+            <div id="requestChangeModal" class="modal-overlay">
+                <div id="requestChangeModalCard" class="cc-card mv-wide-card">
                     <div class="cc-modal-header">
-                        <h3 class="modal-title cc-modal-title">Add Section</h3>
+                        <h3 id="rqModalTitle" class="modal-title cc-modal-title">
+                            Request an edit
+                        </h3>
                         <button
-                            id="addSectionCloseBtn"
+                            id="rqCloseBtn"
                             class="jc-close-btn"
                             aria-label="Close"
                         >
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
+                    <p id="rqIntro" class="mat-field-hint"></p>
 
                     <div class="cc-field">
-                        <label class="cc-label" for="asecSection"
-                            >Section<span class="cc-required-star"
+                        <label class="cc-label">Module</label>
+                        <p id="rqModuleTitle" class="mv-post-module-title"></p>
+                    </div>
+
+                    <div class="cc-field">
+                        <label class="cc-label" for="rqNote"
+                            >Note to the owner<span class="cc-required-star"
                                 >*</span
                             ></label
                         >
-                        <input
-                            id="asecSection"
-                            class="cc-input"
-                            type="text"
-                            placeholder="e.g. STEM 4"
-                            maxlength="60"
-                            autocomplete="off"
-                        />
-                        <p id="asecSectionError" class="cc-error hidden">
-                            *Section is required
+                        <textarea
+                            id="rqNote"
+                            class="cc-input mv-textarea"
+                            rows="3"
+                            maxlength="500"
+                            placeholder="What should be changed, and why?"
+                        ></textarea>
+                        <p id="rqNoteError" class="cc-error hidden">
+                            *Please write a note
                         </p>
                     </div>
 
-                    <div class="cc-field">
-                        <label class="cc-label" for="asecRoom">Room</label>
-                        <input
-                            id="asecRoom"
-                            class="cc-input"
-                            type="text"
-                            placeholder="e.g. Room 204 (optional)"
-                            maxlength="40"
-                            autocomplete="off"
-                        />
-                    </div>
-
                     <div class="modal-actions cc-modal-actions">
-                        <button
-                            id="addSectionCancelBtn"
-                            class="modal-btn cc-cancel-btn"
-                        >
+                        <button id="rqCancelBtn" class="modal-btn cc-cancel-btn">
                             Cancel
                         </button>
-                        <button
-                            id="addSectionConfirmBtn"
-                            class="modal-btn cc-create-btn"
-                        >
-                            Create
+                        <button id="rqConfirmBtn" class="modal-btn cc-create-btn">
+                            Send request
                         </button>
                     </div>
                 </div>

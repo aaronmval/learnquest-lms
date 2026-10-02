@@ -4,10 +4,13 @@ namespace App\Services\Notifications;
 
 use App\Models\ClassPost;
 use App\Models\ClassRoom;
+use App\Models\Module;
 use App\Models\QuizFeedback;
+use App\Models\Subject;
 use App\Models\User;
 use App\Notifications\ClassPostPublished;
 use App\Notifications\MasteryLevelChanged;
+use App\Notifications\ModuleChangeRequested;
 use App\Notifications\QuizFeedbackReceived;
 use App\Notifications\StudentJoinedClass;
 use App\Notifications\StudentNeedsIntervention;
@@ -44,6 +47,14 @@ class AlertService
     {
         $this->safely('student_joined', function () use ($class, $student) {
             $this->professorOf($class)?->notify(new StudentJoinedClass($class, $student));
+        });
+    }
+
+    /** Collaborator asks for a module to be edited or deleted → the subject's owner. */
+    public function moduleChangeRequested(Subject $subject, Module $module, User $requester, string $action, string $note): void
+    {
+        $this->safely('module_change_requested', function () use ($subject, $module, $requester, $action, $note) {
+            User::find($subject->owner_id)?->notify(new ModuleChangeRequested($subject, $module, $requester, $action, $note));
         });
     }
 

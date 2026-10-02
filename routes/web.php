@@ -227,6 +227,10 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
             ->name('modules.update'); // sent as POST with _method=PUT (multipart), spoofed to a real PUT for routing
         Route::delete('/{subject}/modules/{module}', [ModuleController::class, 'destroy'])
             ->name('modules.destroy');
+        Route::put('/{subject}/modules/{module}/sections', [ModuleController::class, 'updateSections'])
+            ->name('modules.sections.update');
+        Route::post('/{subject}/modules/{module}/change-requests', [ModuleController::class, 'requestChange'])
+            ->middleware('throttle:10,1')->name('modules.change-requests.store');
         Route::get('/{subject}/modules/{module}/attachment', [ModuleController::class, 'attachment'])
             ->name('modules.attachment');
 

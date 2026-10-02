@@ -292,11 +292,56 @@ body.dark .mv-module-card {
     border-color: #334155;
 }
 
+/* Cards are selectable: click to select, double-click to preview. */
+.mv-module-card {
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.mv-module-card:hover { border-color: #cbd5e1; }
+
+.mv-module-card:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.mv-module-card.selected,
+.mv-module-card.selected:hover {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+body.dark .mv-module-card:hover { border-color: #475569; }
+
+body.dark .mv-module-card.selected,
+body.dark .mv-module-card.selected:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
 .mv-module-icon-row {
     display: flex;
     align-items: center;
     gap: 10px;
 }
+
+/* Three-dot menu, pushed to the card's top right. */
+.mv-module-kebab {
+    margin-left: auto;
+    align-self: flex-start;
+}
+
+.mv-module-kebab .post-kebab-btn { cursor: pointer; }
+
+.mv-module-kebab .post-kebab-item {
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.mv-module-kebab .post-kebab-item.danger { color: #dc2626; }
+
+body.dark .mv-module-kebab .post-kebab-item.danger { color: #f87171; }
 
 .mv-module-icon {
     width: 36px;
@@ -361,11 +406,48 @@ body.dark .mv-module-tag {
     color: #93c5fd;
 }
 
+.mv-module-tag-muted {
+    color: #64748b;
+    background-color: #f1f5f9;
+}
+
+body.dark .mv-module-tag-muted {
+    color: #94a3b8;
+    background-color: #0f172a;
+}
+
 .mv-module-actions {
     display: flex;
     gap: 8px;
-    margin-top: 4px;
+    /* Keeps the Post button on the card's bottom edge in a row of uneven cards. */
+    margin-top: auto;
+    padding-top: 4px;
 }
+
+.mv-module-post-btn {
+    color: #2563eb;
+    border-color: #bfdbfe;
+    background-color: #eff6ff;
+}
+
+.mv-module-post-btn:hover { background-color: #dbeafe; }
+
+body.dark .mv-module-post-btn {
+    color: #93c5fd;
+    border-color: rgba(37, 99, 235, 0.45);
+    background-color: rgba(37, 99, 235, 0.15);
+}
+
+body.dark .mv-module-post-btn:hover { background-color: rgba(37, 99, 235, 0.3); }
+
+.mv-post-module-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0f172a;
+    word-break: break-word;
+}
+
+body.dark .mv-post-module-title { color: #f1f5f9; }
 
 .mv-module-action-btn {
     flex: 1;
@@ -394,8 +476,6 @@ body.dark .mv-module-action-btn {
 
 body.dark .mv-module-action-btn:hover { background-color: #334155; }
 
-.mv-module-action-danger { color: #dc2626; }
-body.dark .mv-module-action-danger { color: #f87171; }
 
 
 /* MODALS — upload dropzone, section checks, collaborator list */

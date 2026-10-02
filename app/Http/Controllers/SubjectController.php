@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSubjectRequest;
+use App\Models\Module;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,8 @@ class SubjectController extends Controller
         $subjects = Subject::where('owner_id', $userId)
             ->orWhereHas('collaborators', fn ($q) => $q->where('user_id', $userId))
             ->with(['owner:id,name,email,avatar_path', 'collaborators:id,name,email,avatar_path'])
-            ->withCount(['sections', 'modules'])
+            // Each professor's own sections only, even on a shared subject.
+            ->withCount(['sections' => fn ($q) => $q->where('professor_id', $userId), 'modules'])
             ->withSum('modules', 'file_size')
             ->withMax('modules', 'created_at')
             ->latest()
@@ -40,7 +42,8 @@ class SubjectController extends Controller
     }
 
     /**
-     * Show a single subject, its sections, modules, and collaborators.
+     * Show a single subject, its modules and collaborators, and the
+     * sections of it that this professor owns.
      */
     public function show(Request $request, Subject $subject): JsonResponse
     {
@@ -49,17 +52,22 @@ class SubjectController extends Controller
         $subject->load([
             'owner:id,name,email,avatar_path',
             'collaborators:id,name,email,avatar_path',
-            'sections' => fn ($q) => $q->withCount('students'),
+            'sections' => fn ($q) => $q->where('professor_id', $request->user()->id)->withCount('students'),
             'modules' => fn ($q) => $q->with(['uploader:id,name,avatar_path', 'targetSections:id,name,section'])->latest(),
         ]);
 
-        // The classes this professor may tick when uploading a module.
+        // The classes this professor may post a module into.
         $targetable = $subject->targetableSectionsFor($request->user())
             ->orderBy('name')
             ->orderBy('section')
             ->get(['id', 'name', 'section']);
 
-        return response()->json($subject->toArray() + ['targetable_sections' => $targetable]);
+        // Editing/deleting a module is for the subject owner and its uploader.
+        $modules = $subject->modules->map(
+            fn (Module $module) => $module->toArray() + ['can_edit' => $module->canBeModifiedBy($request->user(), $subject)]
+        );
+
+        return response()->json(['modules' => $modules, 'targetable_sections' => $targetable] + $subject->toArray());
     }
 
     /**

@@ -1,6 +1,5 @@
 let SUBJECT_ID = null;
 let subjectData = null;
-let professorClasses = [];
 let currentSectionFilter = "";
 
 let umMode = "create"; // 'create' | 'edit'
@@ -170,23 +169,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    async function loadProfessorClasses() {
-        try {
-            const res = await fetch("/professor/classes", {
-                credentials: "same-origin",
-                headers: { Accept: "application/json" },
-            });
-            professorClasses = res.ok ? await res.json() : [];
-        } catch (e) {
-            professorClasses = [];
-        }
-
-        // loadSubject() may already have rendered before this resolved (both
-        // fetches fire in parallel) — re-render the sections strip so it
-        // picks up the professor's classes whichever finishes last.
-        if (subjectData) renderSections();
-    }
-
     function showNotFound() {
         subjectNotFound?.classList.remove("hidden");
         subjectWrap?.classList.add("hidden");
@@ -217,12 +199,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderSections() {
         if (!sectionsStrip || !subjectData) return;
 
-        const seen = new Set();
-        const sections = [...(subjectData.sections || []), ...professorClasses].filter((c) => {
-            if (seen.has(c.id)) return false;
-            seen.add(c.id);
-            return true;
-        });
+        // The server sends only the sections this professor owns.
+        const sections = subjectData.sections || [];
         sectionsStrip.innerHTML = sections
             .map((section) => {
                 const studentsCount = section.students_count || 0;
@@ -270,10 +248,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* MODULES */
-    function sectionLabelById(id) {
-        const all = [...(subjectData?.sections || []), ...professorClasses];
-        const match = all.find((s) => String(s.id) === String(id));
-        return match ? match.section || match.name : "Unknown section";
+    /* This professor's own classes the module is posted to (co-teachers'
+       sections of a shared subject are theirs to see, not ours). */
+    function ownTargets(module) {
+        const ownIds = (subjectData?.targetable_sections || []).map((s) => String(s.id));
+        return (module.target_sections || []).filter((t) => ownIds.includes(String(t.id)));
+    }
+
+    function findModule(id) {
+        return (subjectData?.modules || []).find((m) => String(m.id) === String(id)) || null;
     }
 
     function renderModules() {
@@ -299,16 +282,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function buildModuleCard(module) {
-        const targetIds = module.target_sections || [];
-        const tags = targetIds.length
-            ? targetIds.map((t) => `<span class="mv-module-tag">${escapeHtml(t.section || t.name || sectionLabelById(t.id))}</span>`).join("")
-            : '<span class="mv-module-tag">No sections assigned</span>';
+        const targets = ownTargets(module);
+        const tags = targets.length
+            ? targets.map((t) => `<span class="mv-module-tag">${escapeHtml(t.section || t.name)}</span>`).join("")
+            : '<span class="mv-module-tag mv-module-tag-muted">Not posted to your classes</span>';
 
         return `
-            <article class="mv-module-card" data-id="${module.id}">
+            <article class="mv-module-card" data-id="${module.id}" tabindex="0" title="Double-click to preview">
                 <div class="mv-module-icon-row">
                     <div class="mv-module-icon"><i class="fas fa-file-pdf"></i></div>
                     <h3 class="mv-module-title">${escapeHtml(module.title)}</h3>
+                    <div class="post-kebab-wrap mv-module-kebab">
+                        <button class="post-kebab-btn" type="button" aria-label="${escapeHtml(module.title)} options" aria-haspopup="true">
+                            <i class="fas fa-ellipsis-vertical"></i>
+                        </button>
+                        <div class="post-kebab-menu">
+                            <button class="post-kebab-item" type="button" data-action="preview" data-id="${module.id}">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            ${
+                                module.can_edit
+                                    ? `<button class="post-kebab-item" type="button" data-action="edit" data-id="${module.id}">
+                                <i class="fas fa-pen"></i> Edit
+                            </button>
+                            <button class="post-kebab-item danger" type="button" data-action="delete" data-id="${module.id}">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>`
+                                    : `<button class="post-kebab-item" type="button" data-action="request-edit" data-id="${module.id}">
+                                <i class="fas fa-pen-to-square"></i> Request edit
+                            </button>
+                            <button class="post-kebab-item danger" type="button" data-action="request-delete" data-id="${module.id}">
+                                <i class="fas fa-trash-can"></i> Request delete
+                            </button>`
+                            }
+                        </div>
+                    </div>
                 </div>
                 ${module.description ? `<p class="mv-module-desc">${escapeHtml(module.description)}</p>` : ""}
                 <div class="mv-module-meta">
@@ -319,30 +327,51 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="mv-module-tags">${tags}</div>
                 <div class="mv-module-actions">
-                    <button class="mv-module-action-btn" data-action="preview" data-id="${module.id}">
-                        <i class="fas fa-eye"></i> Preview
-                    </button>
-                    <button class="mv-module-action-btn" data-action="edit" data-id="${module.id}">
-                        <i class="fas fa-pen"></i> Edit
-                    </button>
-                    <button class="mv-module-action-btn mv-module-action-danger" data-action="delete" data-id="${module.id}">
-                        <i class="fas fa-trash-alt"></i>
+                    <button class="mv-module-action-btn mv-module-post-btn" type="button" data-action="post" data-id="${module.id}">
+                        <i class="fas fa-paper-plane"></i> Post to classes
                     </button>
                 </div>
             </article>`;
     }
 
-    moduleGrid?.addEventListener("click", (e) => {
-        const btn = e.target.closest("button[data-action]");
-        if (!btn) return;
+    function closeModuleMenus() {
+        moduleGrid?.querySelectorAll(".post-kebab-menu.open").forEach((m) => m.classList.remove("open"));
+    }
 
-        const module = (subjectData?.modules || []).find(
-            (m) => String(m.id) === String(btn.dataset.id),
-        );
+    function selectModuleCard(card) {
+        moduleGrid?.querySelectorAll(".mv-module-card.selected").forEach((c) => {
+            if (c !== card) c.classList.remove("selected");
+        });
+        card?.classList.add("selected");
+    }
+
+    moduleGrid?.addEventListener("click", (e) => {
+        const kebabBtn = e.target.closest(".mv-module-kebab .post-kebab-btn");
+        if (kebabBtn) {
+            const menu = kebabBtn.nextElementSibling;
+            const wasOpen = menu.classList.contains("open");
+            closeModuleMenus();
+            menu.classList.toggle("open", !wasOpen);
+            return;
+        }
+
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) {
+            // A plain click on the card selects it.
+            closeModuleMenus();
+            selectModuleCard(e.target.closest(".mv-module-card"));
+            return;
+        }
+
+        closeModuleMenus();
+        const module = findModule(btn.dataset.id);
         if (!module) return;
 
         if (btn.dataset.action === "preview") openPdfModal(module);
         else if (btn.dataset.action === "edit") openUploadModal("edit", module);
+        else if (btn.dataset.action === "post") openPostModal(module);
+        else if (btn.dataset.action === "request-edit") openRequestModal(module, "edit");
+        else if (btn.dataset.action === "request-delete") openRequestModal(module, "delete");
         else if (btn.dataset.action === "delete") {
             openConfirm(
                 "Delete module?",
@@ -350,6 +379,175 @@ document.addEventListener("DOMContentLoaded", () => {
                 () => deleteModule(module.id),
             );
         }
+    });
+
+    /* Double-click (or Enter on a focused card) opens the preview. */
+    moduleGrid?.addEventListener("dblclick", (e) => {
+        if (e.target.closest("button")) return;
+        const module = findModule(e.target.closest(".mv-module-card")?.dataset.id);
+        if (module) openPdfModal(module);
+    });
+
+    moduleGrid?.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" || !e.target.classList.contains("mv-module-card")) return;
+        const module = findModule(e.target.dataset.id);
+        if (module) openPdfModal(module);
+    });
+
+    /* Clicking anywhere outside the cards closes the menus and clears the selection. */
+    document.addEventListener("click", (e) => {
+        if (e.target.closest(".mv-module-card")) return;
+        closeModuleMenus();
+        selectModuleCard(null);
+    });
+
+    /* POST TO CLASSES MODAL — choose which of your classes get this module */
+    const postModuleModal = document.getElementById("postModuleModal");
+    const postModuleModalCard = document.getElementById("postModuleModalCard");
+    const pmModuleTitle = document.getElementById("pmModuleTitle");
+    const pmSectionChecks = document.getElementById("pmSectionChecks");
+    const pmEmpty = document.getElementById("pmEmpty");
+    const pmConfirmBtn = document.getElementById("pmConfirmBtn");
+    let pmModuleId = null;
+
+    function openPostModal(module) {
+        pmModuleId = module.id;
+        pmModuleTitle.textContent = module.title;
+
+        const options = subjectData?.targetable_sections || [];
+        const checkedIds = ownTargets(module).map((t) => String(t.id));
+        pmSectionChecks.innerHTML = options
+            .map(
+                (c) => `
+                <label class="mv-section-check-item">
+                    <input type="checkbox" value="${c.id}" ${checkedIds.includes(String(c.id)) ? "checked" : ""} />
+                    ${escapeHtml(c.section || c.name)}
+                </label>`,
+            )
+            .join("");
+
+        pmEmpty.classList.toggle("hidden", options.length > 0);
+        pmConfirmBtn.disabled = options.length === 0;
+
+        openModal(postModuleModal, postModuleModalCard);
+    }
+
+    function closePostModal() {
+        closeModal(postModuleModal, postModuleModalCard);
+        pmModuleId = null;
+    }
+
+    pmConfirmBtn?.addEventListener("click", async () => {
+        const module = findModule(pmModuleId);
+        if (!module) return;
+
+        // Only the target classes are sent; the module itself is unchanged
+        // (this works for collaborators who can't edit it).
+        const formData = new FormData();
+        formData.append("_method", "PUT");
+        pmSectionChecks
+            .querySelectorAll("input:checked")
+            .forEach((el) => formData.append("section_ids[]", el.value));
+
+        pmConfirmBtn.disabled = true;
+        const result = await postModule(`/professor/subjects/${SUBJECT_ID}/modules/${module.id}/sections`, formData);
+        pmConfirmBtn.disabled = false;
+
+        if (result.ok) {
+            await loadSubject();
+            closePostModal();
+            showToast("Module posted to the selected classes");
+        } else {
+            showToast(result.message);
+        }
+    });
+
+    /* REQUEST A CHANGE MODAL — a collaborator can't edit or delete a module
+       that isn't theirs, so they ask the subject's owner (a System Alert). */
+    const requestChangeModal = document.getElementById("requestChangeModal");
+    const requestChangeModalCard = document.getElementById("requestChangeModalCard");
+    const rqModalTitle = document.getElementById("rqModalTitle");
+    const rqIntro = document.getElementById("rqIntro");
+    const rqModuleTitle = document.getElementById("rqModuleTitle");
+    const rqNote = document.getElementById("rqNote");
+    const rqNoteError = document.getElementById("rqNoteError");
+    const rqConfirmBtn = document.getElementById("rqConfirmBtn");
+    let rqModuleId = null;
+    let rqAction = "edit"; // 'edit' | 'delete'
+
+    function ownerName() {
+        return subjectData?.owner?.name || "the subject owner";
+    }
+
+    function openRequestModal(module, action) {
+        rqModuleId = module.id;
+        rqAction = action;
+
+        rqModalTitle.textContent = action === "delete" ? "Request a deletion" : "Request an edit";
+        rqIntro.textContent = `Only ${ownerName()} or the uploader can ${action} this module. Your note is sent to ${ownerName()} as an alert.`;
+        rqModuleTitle.textContent = module.title;
+        rqNote.value = "";
+        hideFieldError(rqNoteError, rqNote);
+
+        openModal(requestChangeModal, requestChangeModalCard);
+        setTimeout(() => rqNote.focus(), 50);
+    }
+
+    function closeRequestModal() {
+        closeModal(requestChangeModal, requestChangeModalCard);
+        rqModuleId = null;
+    }
+
+    rqConfirmBtn?.addEventListener("click", async () => {
+        if (rqModuleId === null) return;
+
+        const note = rqNote.value.trim();
+        if (!note) {
+            rqNoteError.classList.remove("hidden");
+            rqNote.classList.add("error");
+            rqNote.focus();
+            return;
+        }
+        hideFieldError(rqNoteError, rqNote);
+
+        rqConfirmBtn.disabled = true;
+
+        try {
+            const res = await fetch(`/professor/subjects/${SUBJECT_ID}/modules/${rqModuleId}/change-requests`, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-XSRF-TOKEN": getCsrfToken(),
+                },
+                body: JSON.stringify({ action: rqAction, note }),
+            });
+
+            if (!res.ok) {
+                showToast(await extractErrorMessage(res, "Could not send the request."));
+                return;
+            }
+
+            closeRequestModal();
+            showToast(`Request sent to ${ownerName()}`);
+        } catch (e) {
+            showToast("Could not send the request. Please try again.");
+        } finally {
+            rqConfirmBtn.disabled = false;
+        }
+    });
+
+    document.getElementById("rqCloseBtn")?.addEventListener("click", closeRequestModal);
+    document.getElementById("rqCancelBtn")?.addEventListener("click", closeRequestModal);
+    requestChangeModal?.addEventListener("click", (e) => {
+        if (e.target === requestChangeModal) closeRequestModal();
+    });
+
+    document.getElementById("pmCloseBtn")?.addEventListener("click", closePostModal);
+    document.getElementById("pmCancelBtn")?.addEventListener("click", closePostModal);
+    postModuleModal?.addEventListener("click", (e) => {
+        if (e.target === postModuleModal) closePostModal();
     });
 
     async function deleteModule(moduleId) {
@@ -454,8 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hideFieldError(umFileError, umDropzone);
 
         const checkedIds = (module?.target_sections || []).map((t) => String(t.id));
-        // Only the sections this professor may post into (a collaborator
-        // gets just their own); the server enforces the same list.
+        // Only this professor's own classes; the server enforces the same list.
         const options = subjectData?.targetable_sections || [];
         umSectionChecks.innerHTML = options
             .map(
@@ -959,77 +1156,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target === inviteCollabModal) closeInviteModal();
     });
 
-    /* ADD SECTION MODAL */
-    const addSectionModal = document.getElementById("addSectionModal");
-    const addSectionModalCard = document.getElementById("addSectionModalCard");
-    const asecSection = document.getElementById("asecSection");
-    const asecSectionError = document.getElementById("asecSectionError");
-    const asecRoom = document.getElementById("asecRoom");
-    const addSectionConfirmBtn = document.getElementById("addSectionConfirmBtn");
-
-    function openAddSectionModal() {
-        asecSection.value = "";
-        asecRoom.value = "";
-        hideFieldError(asecSectionError, asecSection);
-        openModal(addSectionModal, addSectionModalCard);
-    }
-
-    function closeAddSectionModal() {
-        closeModal(addSectionModal, addSectionModalCard);
-    }
-
-    addSectionConfirmBtn?.addEventListener("click", async () => {
-        const section = asecSection.value.trim();
-        if (!section) {
-            asecSectionError.classList.remove("hidden");
-            asecSection.classList.add("error");
-            asecSection.focus();
-            return;
-        }
-        hideFieldError(asecSectionError, asecSection);
-
-        addSectionConfirmBtn.disabled = true;
-
-        try {
-            const res = await fetch(`/professor/subjects/${SUBJECT_ID}/sections`, {
-                method: "POST",
-                credentials: "same-origin",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-XSRF-TOKEN": getCsrfToken(),
-                },
-                body: JSON.stringify({
-                    name: `${subjectData.name} - ${section}`,
-                    section,
-                    room: asecRoom.value.trim() || null,
-                }),
-            });
-
-            if (!res.ok) {
-                const message = await extractErrorMessage(res, "Could not create the section.");
-                showToast(message);
-                return;
-            }
-
-            const created = await res.json();
-            await loadSubject();
-            closeAddSectionModal();
-            showToast(`Section added. Invite code: ${created.code}`);
-        } catch (e) {
-            showToast("Could not create the section. Please try again.");
-        } finally {
-            addSectionConfirmBtn.disabled = false;
-        }
-    });
-
-    document.getElementById("addSectionBtn")?.addEventListener("click", openAddSectionModal);
-    document.getElementById("addSectionCloseBtn")?.addEventListener("click", closeAddSectionModal);
-    document.getElementById("addSectionCancelBtn")?.addEventListener("click", closeAddSectionModal);
-    addSectionModal?.addEventListener("click", (e) => {
-        if (e.target === addSectionModal) closeAddSectionModal();
-    });
-
     /* GENERIC CONFIRM MODAL */
     const confirmActionModal = document.getElementById("confirmActionModal");
     const confirmActionTitle = document.getElementById("confirmActionTitle");
@@ -1076,11 +1202,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key !== "Escape") return;
         closePdfModal();
         closeUploadModal();
+        closePostModal();
+        closeRequestModal();
+        closeModuleMenus();
         closeInviteModal();
-        closeAddSectionModal();
         closeConfirm();
     });
 
-    loadProfessorClasses();
     loadSubject();
 });

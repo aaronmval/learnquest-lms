@@ -58,25 +58,16 @@ class Subject extends Model
 
     /**
      * The active classes the given user may post this subject's modules
-     * into. The owner can use every section of the subject; a collaborator
-     * only the sections they created. Either can also use their own
-     * standalone classes (which get linked to this subject when targeted),
-     * but never a class that belongs to a different subject.
+     * into: only classes they created, owner and collaborators alike. That
+     * is their sections of this subject plus their standalone classes
+     * (which get linked to this subject when targeted), but never a class
+     * that belongs to a different subject.
      */
     public function targetableSectionsFor(User $user): Builder
     {
-        $isOwner = $this->owner_id === $user->id;
-
         return ClassRoom::query()
             ->whereNull('archived_at')
-            ->where(function (Builder $query) use ($user, $isOwner) {
-                $query->where(fn (Builder $q) => $q
-                    ->where('professor_id', $user->id)
-                    ->where(fn (Builder $own) => $own->where('subject_id', $this->id)->orWhereNull('subject_id')));
-
-                if ($isOwner) {
-                    $query->orWhere('subject_id', $this->id);
-                }
-            });
+            ->where('professor_id', $user->id)
+            ->where(fn (Builder $q) => $q->where('subject_id', $this->id)->orWhereNull('subject_id'));
     }
 }

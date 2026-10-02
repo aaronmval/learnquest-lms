@@ -7,6 +7,7 @@ use App\Models\ClassPost;
 use App\Models\ClassRoom;
 use App\Models\Module;
 use App\Models\Subject;
+use App\Notifications\ModuleChangeRequested;
 use App\Services\Notifications\AlertService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ModuleController extends Controller
 {
@@ -33,7 +35,7 @@ class ModuleController extends Controller
             ->latest()
             ->get();
 
-        return response()->json($modules);
+        return response()->json($modules->map(fn (Module $module) => $this->present($request, $subject, $module)));
     }
 
     /**
@@ -58,9 +60,7 @@ class ModuleController extends Controller
         $module = $subject->modules()->create($data);
         $targetedClassIds = $this->syncTargetSections($request, $module, $subject, $request->input('section_ids'));
         $this->createLessonPostsForNewlyTargetedClasses($request, $module, $targetedClassIds);
-        $module->load(['uploader:id,name,avatar_path', 'targetSections:id,name,section']);
-
-        return response()->json($module, 201);
+        return response()->json($this->present($request, $subject, $module), 201);
     }
 
     /**
@@ -71,6 +71,7 @@ class ModuleController extends Controller
     {
         $this->authorizeManager($request, $subject);
         $this->authorizeModuleBelongsToSubject($subject, $module);
+        $this->authorizeModify($request, $subject, $module);
 
         $data = $request->safe()->except(['attachment', 'section_ids']);
 
@@ -86,9 +87,56 @@ class ModuleController extends Controller
         $module->update($data);
         $targetedClassIds = $this->syncTargetSections($request, $module, $subject, $request->input('section_ids'));
         $this->createLessonPostsForNewlyTargetedClasses($request, $module, $targetedClassIds);
-        $module->load(['uploader:id,name,avatar_path', 'targetSections:id,name,section']);
 
-        return response()->json($module);
+        return response()->json($this->present($request, $subject, $module));
+    }
+
+    /**
+     * Post the module to the professor's own classes ("Post to classes").
+     * Open to every manager of the subject, including collaborators who
+     * can't edit the module itself; nothing else about it changes.
+     */
+    public function updateSections(Request $request, Subject $subject, Module $module): JsonResponse
+    {
+        $this->authorizeManager($request, $subject);
+        $this->authorizeModuleBelongsToSubject($subject, $module);
+
+        $data = $request->validate([
+            'section_ids' => ['nullable', 'array'],
+            'section_ids.*' => ['integer'],
+        ]);
+
+        $targetedClassIds = $this->syncTargetSections($request, $module, $subject, $data['section_ids'] ?? []);
+        $this->createLessonPostsForNewlyTargetedClasses($request, $module, $targetedClassIds);
+
+        return response()->json($this->present($request, $subject, $module));
+    }
+
+    /**
+     * A collaborator who can't edit or delete this module asks the
+     * subject's owner to, with a note. Delivered as a System Alert.
+     */
+    public function requestChange(Request $request, Subject $subject, Module $module): JsonResponse
+    {
+        $this->authorizeManager($request, $subject);
+        $this->authorizeModuleBelongsToSubject($subject, $module);
+
+        abort_if(
+            $module->canBeModifiedBy($request->user(), $subject),
+            422,
+            'You can edit or delete this module yourself.',
+        );
+
+        $data = $request->validate([
+            'action' => ['required', Rule::in([ModuleChangeRequested::ACTION_EDIT, ModuleChangeRequested::ACTION_DELETE])],
+            'note' => ['required', 'string', 'max:500'],
+        ], [
+            'note.required' => 'Tell the owner what you would like changed.',
+        ]);
+
+        $this->alerts->moduleChangeRequested($subject, $module, $request->user(), $data['action'], trim($data['note']));
+
+        return response()->json(['message' => 'Request sent.'], 201);
     }
 
     /**
@@ -98,6 +146,7 @@ class ModuleController extends Controller
     {
         $this->authorizeManager($request, $subject);
         $this->authorizeModuleBelongsToSubject($subject, $module);
+        $this->authorizeModify($request, $subject, $module);
 
         Storage::disk()->delete($module->file_path);
         $module->delete();
@@ -133,6 +182,24 @@ class ModuleController extends Controller
     private function authorizeModuleBelongsToSubject(Subject $subject, Module $module): void
     {
         abort_unless($module->subject_id === $subject->id, 404);
+    }
+
+    /** Editing and deleting are for the subject's owner and the module's uploader. */
+    private function authorizeModify(Request $request, Subject $subject, Module $module): void
+    {
+        abort_unless(
+            $module->canBeModifiedBy($request->user(), $subject),
+            403,
+            'Only the subject owner or the uploader can change this module.',
+        );
+    }
+
+    /** The module as the page needs it, with whether this professor may edit it. */
+    private function present(Request $request, Subject $subject, Module $module): array
+    {
+        $module->load(['uploader:id,name,avatar_path', 'targetSections:id,name,section']);
+
+        return $module->toArray() + ['can_edit' => $module->canBeModifiedBy($request->user(), $subject)];
     }
 
     /**

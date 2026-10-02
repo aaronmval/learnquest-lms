@@ -33,6 +33,15 @@ class Module extends Model
     }
 
     /**
+     * Whether the user may edit or delete this module: the owner of its
+     * subject, or whoever uploaded it. Other collaborators ask the owner.
+     */
+    public function canBeModifiedBy(User $user, Subject $subject): bool
+    {
+        return $subject->owner_id === $user->id || $this->uploaded_by === $user->id;
+    }
+
+    /**
      * The sections (classes) this module is posted to. No rows means it is
      * not assigned to any section yet (it only lives in the subject library).
      */
