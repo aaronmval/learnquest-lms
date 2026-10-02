@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LearnQuest | Your LMS</title>
+  <title>LearnQuest</title>
   <link rel="icon" type="image/svg+xml" href="/assets/images/LearnQuestLogo.svg">
 
 
@@ -42,7 +42,7 @@
     <div>
       <span class="eyebrow">LearnQuest: Adaptive Learning Management System</span>
       <h1>Learn with <span>lessons that adapt to you.</span></h1>
-      <p class="lede">LearnQuest turns your teacher's lessons into AI-generated summaries and quizzes, then tracks your mastery of each competency to decide what you practise next.</p>
+      <p class="lede">LearnQuest turns your teacher's lessons into AI-generated summaries and quizzes, then tracks your mastery of each competency to decide what you practice next.</p>
       <div class="hero-ctas">
         <a href="/login" class="btn btn-lg btn-white">Log in</a>
         <a href="/login#signup" class="btn btn-lg btn-dark">Sign up</a>
@@ -136,7 +136,7 @@
           <div class="brand-mark"><i class="fas fa-graduation-cap"></i></div>
           <span class="brand-name">LearnQuest</span>
         </div>
-        <p>An adaptive learning management system for the students and teachers of Kapitolyo High School.</p>
+        <p>An adaptive learning management system for students and teachers</p>
       </div>
 
       <div class="footer-col">
