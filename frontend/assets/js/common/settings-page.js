@@ -220,7 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
-    /* MY CLASSES (read-only) */
+    /* MY CLASSES — read-only for students; a professor can edit each class's
+       details in place (same fields and request as the class page). */
+    let myClasses = [];
+
     async function loadClasses() {
         const list = document.getElementById('myClassesList');
         if (!list) return;
@@ -229,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const classes = await api(isProfessor ? '/professor/classes' : '/student/classes');
+            myClasses = classes;
 
             if (!classes.length) {
                 list.innerHTML = `<p class="settings-field-hint">${
@@ -251,11 +255,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     return `
-                        <div class="notif-row">
+                        <div class="notif-row" data-class-id="${c.id}">
                             <div class="notif-row-text">
                                 <span class="notif-row-label">${escapeHtml(title)}</span>
                                 <span class="notif-row-desc">${escapeHtml(details.filter(Boolean).join(' · '))}</span>
                             </div>
+                            ${
+                                isProfessor
+                                    ? `<button type="button" class="class-edit-btn" data-action="edit-class" aria-label="Edit ${escapeHtml(title)}">
+                                           <i class="fas fa-pen"></i> Edit
+                                       </button>`
+                                    : ''
+                            }
                         </div>`;
                 })
                 .join('');
@@ -263,6 +274,110 @@ document.addEventListener('DOMContentLoaded', () => {
             list.innerHTML = '<p class="settings-field-hint">Could not load your classes.</p>';
         }
     }
+
+    function classEditFormHtml(c) {
+        const field = (key, label, value, max, placeholder) => `
+            <div class="settings-field">
+                <label for="classEdit-${key}-${c.id}">${label}</label>
+                <input id="classEdit-${key}-${c.id}" data-field="${key}" type="text" maxlength="${max}"
+                       autocomplete="off" placeholder="${placeholder}" value="${escapeHtml(value || '')}" />
+            </div>`;
+
+        return `
+            <div class="class-edit-form" data-class-id="${c.id}">
+                <div class="class-edit-grid">
+                    ${field('name', 'Class title', c.name, 60, 'e.g. General Chemistry 2')}
+                    ${field('subject', 'Subject', c.subject, 60, 'e.g. Chemistry (optional)')}
+                    ${field('section', 'Section', c.section, 60, 'e.g. STEM 4 (optional)')}
+                    ${field('room', 'Room', c.room, 40, 'e.g. 204 (optional)')}
+                </div>
+                <p class="settings-field-hint">Students keep their enrollment and the invite code stays the same.</p>
+                <div class="class-edit-actions">
+                    <button type="button" class="class-edit-cancel-btn" data-action="cancel-class">Cancel</button>
+                    <button type="button" class="settings-save-btn" data-action="save-class">
+                        <i class="fas fa-floppy-disk"></i> Save
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    (function initClassEditing() {
+        const list = document.getElementById('myClassesList');
+        if (!list) return;
+
+        list.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+
+            if (btn.dataset.action === 'edit-class') {
+                const row = btn.closest('.notif-row');
+                const cls = myClasses.find((c) => String(c.id) === row.dataset.classId);
+                if (!cls) return;
+
+                // One class is edited at a time.
+                list.querySelectorAll('.class-edit-form').forEach((form) => form.remove());
+                list.querySelectorAll('.notif-row[hidden]').forEach((r) => { r.hidden = false; });
+
+                row.hidden = true;
+                row.insertAdjacentHTML('afterend', classEditFormHtml(cls));
+                row.nextElementSibling.querySelector('[data-field="name"]')?.focus();
+                return;
+            }
+
+            const form = btn.closest('.class-edit-form');
+            if (!form) return;
+
+            if (btn.dataset.action === 'cancel-class') {
+                const row = form.previousElementSibling;
+                if (row) row.hidden = false;
+                form.remove();
+                return;
+            }
+
+            if (btn.dataset.action === 'save-class') {
+                const value = (key) => form.querySelector(`[data-field="${key}"]`).value.trim();
+                const name = value('name');
+                if (!name) {
+                    showToast('Class title is required.', 'error');
+                    form.querySelector('[data-field="name"]').focus();
+                    return;
+                }
+
+                setButtonSaving(btn, true);
+                try {
+                    await api(`/professor/classes/${form.dataset.classId}`, {
+                        method: 'PUT',
+                        json: {
+                            name,
+                            subject: value('subject') || null,
+                            section: value('section') || null,
+                            room: value('room') || null,
+                        },
+                    });
+                    await loadClasses();
+                    showToast('Class details updated.', 'success');
+
+                    // The sidebar's My Classes list lives in the parent shell.
+                    try {
+                        window.parent?.LQ_refreshClasses?.();
+                    } catch (err) {
+                        /* Not inside the shell. */
+                    }
+                } catch (err) {
+                    showToast(err.message, 'error');
+                    setButtonSaving(btn, false);
+                }
+            }
+        });
+
+        // Enter saves, Escape cancels, while typing in the form.
+        list.addEventListener('keydown', (e) => {
+            const form = e.target.closest('.class-edit-form');
+            if (!form) return;
+            if (e.key === 'Enter') form.querySelector('[data-action="save-class"]')?.click();
+            else if (e.key === 'Escape') form.querySelector('[data-action="cancel-class"]')?.click();
+        });
+    })();
 
     /* GENERAL SETTINGS — display and behaviour, saved on the account. Each
        control carries data-general="<setting key>". */
