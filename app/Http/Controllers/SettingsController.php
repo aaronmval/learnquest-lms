@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Account\AccountDeletionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -109,6 +111,30 @@ class SettingsController extends Controller
         $request->user()->update(['password' => $request->input('password')]);
 
         return response()->json(['message' => 'Password updated.']);
+    }
+
+    /**
+     * Permanently delete the signed-in user's own account. They must
+     * re-enter their password; afterwards the session is ended.
+     */
+    public function destroyAccount(Request $request, AccountDeletionService $accounts): JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'current_password'],
+        ], [
+            'password.required' => 'Enter your password to delete your account.',
+            'password.current_password' => 'That password is incorrect.',
+        ]);
+
+        $user = $request->user();
+
+        Auth::logout();
+        $accounts->delete($user);
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['redirect' => route('login')]);
     }
 
     public function uploadAvatar(Request $request): JsonResponse

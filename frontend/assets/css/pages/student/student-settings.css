@@ -1017,3 +1017,136 @@ body.dark .settings-reset-btn:hover {
         flex-wrap: wrap;
     }
 }
+
+/* DELETE ACCOUNT — danger card on Profile Info and its confirm dialog */
+.danger-card { border-color: #fecaca; }
+
+body.dark .danger-card { border-color: rgba(220, 38, 38, 0.45); }
+
+.danger-card .settings-card-title { color: #b91c1c; }
+
+body.dark .danger-card .settings-card-title { color: #f87171; }
+
+.danger-btn,
+.danger-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 11px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.danger-btn {
+    color: #fff;
+    background-color: #dc2626;
+    border: none;
+}
+
+.danger-btn:hover:not(:disabled) { background-color: #b91c1c; }
+
+.danger-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.danger-cancel-btn {
+    color: #334155;
+    background-color: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+}
+
+.danger-cancel-btn:hover { background-color: #e2e8f0; }
+
+body.dark .danger-cancel-btn {
+    color: #cbd5e1;
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+body.dark .danger-cancel-btn:hover { background-color: #334155; }
+
+.danger-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(15, 23, 42, 0.55);
+    padding: 20px;
+}
+
+.danger-modal.open { display: flex; }
+
+.danger-modal-card {
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background-color: #fff;
+    border-radius: 18px;
+    padding: 26px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+body.dark .danger-modal-card { background-color: #1e293b; }
+
+.danger-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #b91c1c;
+}
+
+body.dark .danger-modal-title { color: #f87171; }
+
+.danger-modal-text,
+.danger-modal-list {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #475569;
+}
+
+body.dark .danger-modal-text,
+body.dark .danger-modal-list { color: #cbd5e1; }
+
+.danger-modal-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.danger-modal-kept {
+    list-style: none;
+    margin: 8px 0 0 -20px;
+    color: #64748b;
+    font-style: italic;
+}
+
+body.dark .danger-modal-kept { color: #94a3b8; }
+
+.danger-modal-error {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.danger-modal-error[hidden] { display: none; }
+
+body.dark .danger-modal-error { color: #f87171; }
+
+.danger-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}

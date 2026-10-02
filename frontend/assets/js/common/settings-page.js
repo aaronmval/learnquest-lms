@@ -645,6 +645,157 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
+    /* DELETE ACCOUNT — a card at the bottom of Profile Info and a confirm
+       dialog that asks for the password. Built here so the student and
+       professor pages share one copy. */
+    (function initDeleteAccount() {
+        const panel = document.getElementById('panel-profile-info');
+        if (!panel) return;
+
+        panel.insertAdjacentHTML('beforeend', `
+            <div class="settings-card danger-card">
+                <div class="settings-card-header">
+                    <h3 class="settings-card-title">Delete Account</h3>
+                    <p class="settings-card-desc">Permanently remove your LearnQuest account and its data. This can't be undone.</p>
+                </div>
+                <div class="settings-card-footer">
+                    <button id="deleteAccountBtn" type="button" class="danger-btn">
+                        <i class="fas fa-trash-can"></i> Delete my account
+                    </button>
+                </div>
+            </div>`);
+
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="deleteAccountModal" class="danger-modal" role="dialog" aria-modal="true" aria-labelledby="deleteAccountTitle">
+                <div class="danger-modal-card">
+                    <h3 id="deleteAccountTitle" class="danger-modal-title">
+                        <i class="fas fa-triangle-exclamation"></i> Delete your account?
+                    </h3>
+                    <p class="danger-modal-text">This is permanent. The following will be deleted:</p>
+                    <ul id="deleteAccountList" class="danger-modal-list"></ul>
+                    <div class="settings-field">
+                        <label for="deleteAccountPassword">Enter your password to confirm</label>
+                        <div class="password-input-wrap">
+                            <input id="deleteAccountPassword" type="password" autocomplete="current-password" />
+                            <button type="button" id="deleteAccountPasswordToggle" class="password-toggle-btn" aria-label="Show password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <span id="deleteAccountError" class="danger-modal-error" hidden></span>
+                    </div>
+                    <div class="danger-modal-actions">
+                        <button id="deleteAccountCancelBtn" type="button" class="danger-cancel-btn">Cancel</button>
+                        <button id="deleteAccountConfirmBtn" type="button" class="danger-btn" disabled>
+                            <i class="fas fa-trash-can"></i> Delete permanently
+                        </button>
+                    </div>
+                </div>
+            </div>`);
+
+        const modal = document.getElementById('deleteAccountModal');
+        const list = document.getElementById('deleteAccountList');
+        const password = document.getElementById('deleteAccountPassword');
+        const toggle = document.getElementById('deleteAccountPasswordToggle');
+        const error = document.getElementById('deleteAccountError');
+        const confirmBtn = document.getElementById('deleteAccountConfirmBtn');
+
+        const CONSEQUENCES = {
+            student: [
+                'Your profile, photo and sign-in',
+                'Your class enrollments',
+                'Your quiz attempts, results and mastery progress',
+                'Your QuestAI conversations and alerts',
+            ],
+            professor: [
+                'Your profile, photo and sign-in',
+                'Every class you own, with its posts and lesson files',
+                "Your students' quiz attempts and results in those classes",
+                'Subjects only you use, with their modules and competencies',
+                'Your QuestAI conversations and alerts',
+            ],
+        };
+
+        function showError(message) {
+            error.textContent = message;
+            error.hidden = !message;
+        }
+
+        function open() {
+            const items = [...(CONSEQUENCES[settings?.role] || CONSEQUENCES.student)];
+            list.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
+                + (settings?.role === 'professor'
+                    ? '<li class="danger-modal-kept">Subjects you share with co-teachers are kept and handed to a co-teacher.</li>'
+                    : '');
+
+            password.value = '';
+            password.type = 'password';
+            confirmBtn.disabled = true;
+            showError('');
+            modal.classList.add('open');
+            setTimeout(() => password.focus(), 50);
+        }
+
+        function close() {
+            modal.classList.remove('open');
+            password.value = '';
+        }
+
+        async function confirmDelete() {
+            if (!password.value) return;
+
+            setButtonSaving(confirmBtn, true);
+            showError('');
+
+            try {
+                const data = await api('/settings/account', { method: 'DELETE', json: { password: password.value } });
+
+                // Forget the shell's saved page so the next sign-in starts clean.
+                try {
+                    sessionStorage.removeItem('LQ_LAST_PAGE');
+                    window.parent?.sessionStorage?.removeItem('LQ_LAST_PAGE');
+                    localStorage.removeItem('LQ_USER_ROLE');
+                } catch (e) {
+                    /* Storage unavailable. */
+                }
+
+                (window.top || window).location.href = data?.redirect || '/login';
+            } catch (err) {
+                setButtonSaving(confirmBtn, false);
+                showError(err.status === 429 ? 'Too many attempts. Please wait a minute and try again.' : err.message);
+                password.focus();
+                password.select();
+            }
+        }
+
+        document.getElementById('deleteAccountBtn').addEventListener('click', open);
+        document.getElementById('deleteAccountCancelBtn').addEventListener('click', close);
+        confirmBtn.addEventListener('click', confirmDelete);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) close();
+        });
+
+        password.addEventListener('input', () => {
+            confirmBtn.disabled = password.value === '';
+            showError('');
+        });
+
+        password.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') confirmDelete();
+        });
+
+        toggle.addEventListener('click', () => {
+            const isHidden = password.type === 'password';
+            password.type = isHidden ? 'text' : 'password';
+            toggle.querySelector('i').className = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+            toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('open')) close();
+        });
+    })();
+
     /* CONTENT WIDTH — inside the shell there's no sidebar in this document */
     (function initContentWidth() {
         const settingsWrap = document.querySelector('.settings-wrap');

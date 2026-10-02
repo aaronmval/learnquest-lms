@@ -80,6 +80,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/general', [SettingsController::class, 'resetGeneral'])->name('general.reset');
         Route::put('/password', [SettingsController::class, 'updatePassword'])
             ->middleware('throttle:6,1')->name('password');
+        Route::delete('/account', [SettingsController::class, 'destroyAccount'])
+            ->middleware('throttle:6,1')->name('account.destroy');
         Route::get('/avatar', [SettingsController::class, 'showAvatar'])->name('avatar.show');
         Route::post('/avatar', [SettingsController::class, 'uploadAvatar'])->name('avatar.upload');
         Route::delete('/avatar', [SettingsController::class, 'deleteAvatar'])->name('avatar.delete');
