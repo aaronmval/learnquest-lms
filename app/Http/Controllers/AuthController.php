@@ -51,7 +51,7 @@ class AuthController extends Controller
 
         if (!Auth::attempt($credentials, $remember)) {
             return back()
-                ->withInput($request->only('email'))
+                ->withInput($request->only('email', 'remember'))
                 ->withErrors(['email' => 'The provided credentials do not match our records.'], 'login');
         }
 
