@@ -272,10 +272,8 @@
         <div class="error-message show">{{ $errors->getBag('login')->first() }}</div>
       @endif
 
+      {{-- The message is shown once, in the box above. --}}
       <input type="email" name="email" placeholder="EMAIL" value="{{ old('email') }}" required>
-      @error('email', 'login')
-        <small class="error-text">{{ $message }}</small>
-      @enderror
 
       <div class="password-wrapper">
         <input type="password"

@@ -308,6 +308,32 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
     border: 1px solid green !important;
 }
 
+/* DESKTOP — the two forms share one grid cell (left half) instead of being
+   absolutely positioned, so the card grows with whichever form is taller
+   (e.g. when error messages appear) rather than clipping it. The slide
+   animation is unchanged: translateX(100%) still moves a form one half over. */
+@media (min-width: 769px) {
+    .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .form-container {
+        position: relative;
+        grid-area: 1 / 1;
+        width: 100%;
+        height: auto;
+        min-height: 520px;
+        display: flex;
+    }
+
+    .form-container form {
+        flex: 1;
+        height: auto;
+        padding: 32px 50px;
+    }
+}
+
 /* MOBILE RESPONSIVE — the card stacks in normal flow (the active form on
    top, its switch panel underneath) so it grows with its content instead
    of clipping it inside fixed heights. */
