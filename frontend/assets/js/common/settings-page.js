@@ -453,7 +453,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (resetBtn) {
             resetBtn.addEventListener('click', async () => {
-                if (!window.confirm('Reset all General settings to their defaults?')) return;
+                const confirmed = await LQDialog.confirm({
+                    title: 'Reset General settings?',
+                    message: 'Every General setting goes back to its default.',
+                    confirmLabel: 'Reset',
+                    danger: true,
+                });
+                if (!confirmed) return;
 
                 resetBtn.disabled = true;
                 try {

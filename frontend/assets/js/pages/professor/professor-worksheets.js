@@ -619,14 +619,15 @@ async function saveSettings({ quiet = false } = {}) {
 async function generateQuiz() {
     const hasQuiz = Boolean(state.studio?.quiz);
 
-    if (
-        hasQuiz &&
-        !window.confirm(
-            'Generate a new version of this quiz with these settings?\n\n' +
+    if (hasQuiz) {
+        const confirmed = await LQDialog.confirm({
+            title: 'Generate a new version?',
+            message:
+                'This replaces the quiz with new questions using these settings.\n\n' +
                 'Students will get the new questions. Past attempts, scores and mastery are kept.',
-        )
-    ) {
-        return;
+            confirmLabel: 'Generate',
+        });
+        if (!confirmed) return;
     }
 
     if (!(await saveSettings({ quiet: true }))) return;

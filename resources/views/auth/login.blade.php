@@ -385,7 +385,47 @@
   </div>
 </div>
 
+<!-- MESSAGE MODAL (replaces the browser's alert for sign-up form checks) -->
+<div class="role-modal" id="messageModal" role="alertdialog" aria-modal="true" aria-labelledby="messageModalTitle">
+  <div class="role-modal-content">
+    <h2 id="messageModalTitle">Check your details</h2>
+    <p id="messageModalText"></p>
+    <div class="role-modal-buttons">
+      <button type="button" class="btn-confirm" id="messageModalOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
 <script>
+
+  // MESSAGE MODAL
+  const messageModal = document.getElementById('messageModal');
+  const messageModalText = document.getElementById('messageModalText');
+  const messageModalOkBtn = document.getElementById('messageModalOkBtn');
+  let messageModalFocusTarget = null;
+
+  function showMessage(message, focusTarget = null) {
+    messageModalText.textContent = message;
+    messageModalFocusTarget = focusTarget;
+    messageModal.classList.add('show');
+    messageModalOkBtn.focus();
+  }
+
+  function closeMessage() {
+    if (!messageModal.classList.contains('show')) return;
+    messageModal.classList.remove('show');
+    // Put the cursor in the field that needs fixing.
+    if (messageModalFocusTarget) messageModalFocusTarget.focus();
+    messageModalFocusTarget = null;
+  }
+
+  messageModalOkBtn.addEventListener('click', closeMessage);
+  messageModal.addEventListener('click', (e) => {
+    if (e.target === messageModal) closeMessage();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMessage();
+  });
 
   const signUpButton = document.getElementById('signUp');
   const signInButton = document.getElementById('signIn');
@@ -446,23 +486,29 @@
     e.preventDefault();
 
     // Validate form before showing modal
-    const name = document.querySelector('.sign-up-container input[name="name"]').value.trim();
-    const email = document.querySelector('.sign-up-container input[name="email"]').value.trim();
-    const password = document.getElementById('signupPassword').value.trim();
-    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    const nameInput = document.querySelector('.sign-up-container input[name="name"]');
+    const emailInput = document.querySelector('.sign-up-container input[name="email"]');
+    const passwordInput = document.getElementById('signupPassword');
+    const confirmInput = document.getElementById('confirmPassword');
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    const confirmPassword = confirmInput.value.trim();
 
     if (!name || !email || !password || !confirmPassword) {
-      alert('Please fill in all fields');
+      const firstEmpty = [nameInput, emailInput, passwordInput, confirmInput].find(input => !input.value.trim());
+      showMessage('Please fill in all fields.', firstEmpty);
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      showMessage('The passwords do not match.', confirmInput);
       return;
     }
 
     if (password.length < 8) {
-      alert('Password must be at least 8 characters');
+      showMessage('Your password must be at least 8 characters.', passwordInput);
       return;
     }
 
