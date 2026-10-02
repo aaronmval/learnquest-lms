@@ -361,8 +361,6 @@
       <input type="hidden" name="role" id="roleField" value="">
 
       <button type="button" id="signupSubmitBtn">SIGN UP</button>
-
-      @include('auth.partials.google-button')
     </form>
   </div>
 
