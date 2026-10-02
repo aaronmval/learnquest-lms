@@ -38,6 +38,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
+        'google_id',
         'password',
         'remember_token',
         'avatar_path',

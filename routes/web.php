@@ -12,6 +12,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassPostController;
 use App\Http\Controllers\CompetencyController;
 use App\Http\Controllers\FrontendShellController;
+use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OtpController;
@@ -39,6 +40,15 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1')->name('register');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// "Continue with Google" (only when GOOGLE_CLIENT_ID is set)
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
+    ->middleware('throttle:20,1')->name('google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+    ->middleware('throttle:20,1')->name('google.callback');
+Route::get('/auth/google/role', [GoogleAuthController::class, 'showRoleForm'])->name('google.role');
+Route::post('/auth/google/role', [GoogleAuthController::class, 'completeSignup'])
+    ->middleware('throttle:6,1')->name('google.role.store');
 
 // Forgot Password Routes
 Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');

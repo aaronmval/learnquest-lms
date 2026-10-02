@@ -35,6 +35,14 @@ return [
         ],
     ],
 
+    // "Continue with Google" on the login page. Leave the client id blank to
+    // turn Google sign-in off (the button is hidden and the routes 404).
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
+    ],
+
     'routeway' => [
         'api_key' => env('LLAMA_API_KEY'),
         'base_url' => env('LLAMA_API_URL', 'https://api.routeway.ai/v1'),

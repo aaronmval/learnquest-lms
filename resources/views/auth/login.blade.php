@@ -199,6 +199,56 @@
     .success-message.show {
       display: block;
     }
+
+    /* Google sign-in button and its "or" divider */
+    .google-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      margin: 12px 0 10px;
+      color: #9ca3af;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .google-divider::before,
+    .google-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background-color: #e0e0e0;
+    }
+
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      background-color: #fff;
+      color: #1f2937;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .google-btn:hover {
+      background-color: #f8fafc;
+      border-color: #4a90e2;
+    }
+
+    .google-btn:focus-visible {
+      outline: 2px solid #4a90e2;
+      outline-offset: 2px;
+    }
+
+    .google-btn svg { flex-shrink: 0; }
   </style>
   <script src="/assets/js/auth-background.js" defer></script>
 </head>
@@ -248,6 +298,8 @@
       <a href="{{ route('password.request') }}" class="forgot-password-link">
         Forgot Password?
       </a>
+
+      @include('auth.partials.google-button')
     </form>
   </div>
 
@@ -309,6 +361,8 @@
       <input type="hidden" name="role" id="roleField" value="">
 
       <button type="button" id="signupSubmitBtn">SIGN UP</button>
+
+      @include('auth.partials.google-button')
     </form>
   </div>
 
