@@ -15,6 +15,8 @@ class OtpService
 {
     public const PURPOSE_REGISTRATION = 'registration';
     public const PURPOSE_PASSWORD_RESET = 'password_reset';
+    public const PURPOSE_SESSION_UNLOCK = 'session_unlock';
+    public const PURPOSE_LOGIN = 'login';
 
     public const ISSUE_SENT = 'sent';
     public const ISSUE_COOLDOWN = 'cooldown';

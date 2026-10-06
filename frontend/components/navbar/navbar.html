@@ -70,6 +70,10 @@
                 <span class="join-class-text">Create Class</span>
             </button>
 
+            <button id="appTourBtn" class="icon-btn" type="button" title="Take the tour" aria-label="Take the tour" style="display: none;">
+                <i class="fas fa-circle-question"></i>
+            </button>
+
             <div class="noti-btn">
                 <button id="notiBtn" class="icon-btn" aria-label="Notifications">
                     <i class="fas fa-bell"></i>
@@ -81,12 +85,33 @@
                 <i id="darkModeIcon" class="fas fa-moon"></i>
             </button>
 
-            <div class="profile-cluster">
+            <button id="profileMenuBtn" class="profile-cluster" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="profileMenu" aria-label="Account menu">
                 <div id="headerAvatar" class="avatar">A</div>
                 <div class="profile-text">
                     <div id="headerProfileName" class="profile-name">Welcome, Aaron!</div>
                     <div id="headerProfileRole" class="profile-role">Student</div>
                 </div>
+                <i class="fas fa-chevron-down profile-chevron" aria-hidden="true"></i>
+            </button>
+
+            <!-- PROFILE MENU (fixed, positioned under the button by navbar.js) -->
+            <div id="profileMenu" class="profile-menu" role="menu" aria-labelledby="profileMenuBtn" hidden>
+                <div class="profile-menu-head">
+                    <div id="profileMenuAvatar" class="avatar profile-menu-avatar"></div>
+                    <div class="profile-menu-who">
+                        <div id="profileMenuName" class="profile-menu-name"></div>
+                        <div id="profileMenuEmail" class="profile-menu-email"></div>
+                        <div id="profileMenuRole" class="profile-menu-role"></div>
+                    </div>
+                </div>
+                <div class="profile-menu-sep"></div>
+                <button type="button" class="profile-menu-item" role="menuitem" data-profile-action="settings">
+                    <i class="fas fa-user-gear"></i> Account Settings
+                </button>
+                <div class="profile-menu-sep"></div>
+                <button type="button" class="profile-menu-item danger" role="menuitem" data-profile-action="signout">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
             </div>
 
         </div>

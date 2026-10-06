@@ -103,42 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dom.sectionSelect.addEventListener('change', () => selectClass(Number(dom.sectionSelect.value)));
 
-    document.getElementById('tourBtn')?.addEventListener('click', startSetupTour);
-
     // The first-open tour waits for the lesson list so it can point at it.
-    loadLessons().then(() => {
-        if (!tourSeen()) startSetupTour();
-    });
+    window.LQPageTour?.init({ key: 'quiz_setup_tour_seen', steps: setupTourSteps, ready: loadLessons() });
 });
 
 /* GUIDED TOUR — walks through the page in the order it is used. Shown once
-   per account (flag saved with the general settings) and replayable from
-   the hero's "Take the tour" button. It only reads the page and, at the
-   lessons step, opens a lesson; it never saves or generates anything. */
-function shellPreferences() {
-    try {
-        return (window.parent.LQ_HOST_CONFIG || {}).preferences || null;
-    } catch (e) {
-        return null;
-    }
-}
-
-function tourSeen() {
-    const preferences = shellPreferences();
-    // Outside the shell there is nowhere to remember it, so don't auto-start.
-    return !preferences || preferences.quiz_setup_tour_seen === true;
-}
-
-function markTourSeen() {
-    const preferences = shellPreferences();
-    if (!preferences || preferences.quiz_setup_tour_seen === true) return;
-
-    preferences.quiz_setup_tour_seen = true;
-    apiRequest('/settings/general', { method: 'PUT', body: { quiz_setup_tour_seen: true } }).catch(() => {
-        /* Not saved: the tour will simply be offered again next time. */
-    });
-}
-
+   per account (common/page-tour.js) and replayable from the hero's "Take
+   the tour" button. It only reads the page and, at the lessons step, opens
+   a lesson; it never saves or generates anything. */
 function waitUntil(check, timeoutMs = 5000) {
     return new Promise(resolve => {
         const started = Date.now();
@@ -160,13 +132,11 @@ async function openALessonForTour() {
     await waitUntil(() => !dom.settingsCard.classList.contains('is-hidden'));
 }
 
-function startSetupTour() {
-    if (!window.LQGuidedTour) return;
-
+function setupTourSteps() {
     const noLesson = 'This appears once you open a lesson. Post a lesson with a PDF to one of your classes, then pick it from the Lessons list.';
     const noQuiz = 'This appears once the lesson has a generated quiz. Open a lesson and choose Generate quiz to see it.';
 
-    window.LQGuidedTour.start([
+    return [
         {
             title: 'Welcome to Quiz & AI Setup',
             body: 'This page is where you set up the AI quiz for each lesson, then check the questions QuestAI wrote. This short tour follows the order you would work in. Nothing is saved or generated while you look around.',
@@ -239,7 +209,7 @@ function startSetupTour() {
             title: 'You\'re all set',
             body: 'That is the whole workflow: section, lesson, settings, generate, review. You can replay this tour any time with the "Take the tour" button at the top of the page.',
         },
-    ], { onFinish: markTourSeen });
+    ];
 }
 
 /* LESSONS */

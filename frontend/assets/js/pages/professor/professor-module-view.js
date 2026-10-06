@@ -1209,5 +1209,56 @@ document.addEventListener("DOMContentLoaded", () => {
         closeConfirm();
     });
 
-    loadSubject();
+    // No tour on the "Subject not found" screen; otherwise the first-visit
+    // tour waits for the materials so it can point at them.
+    loadSubject().then(() => {
+        if (subjectWrap?.classList.contains("hidden")) return;
+        window.LQPageTour?.init({ key: "tour_seen_module_view", steps: moduleViewTourSteps });
+    });
 });
+
+/* GUIDED TOUR — common/page-tour.js */
+function moduleViewTourSteps() {
+    return [
+        {
+            title: "Inside a subject",
+            body: "This is where a subject's lesson files live. Upload them here, then post them to the classes that need them.",
+        },
+        {
+            target: "#uploadModuleBtn",
+            title: "Upload a module",
+            body: "Add one or more lesson PDFs. QuestAI uses each PDF to write the lesson's summary and quiz, so upload the material you actually teach from.",
+        },
+        {
+            target: "#manageCompetenciesLink",
+            title: "Competencies",
+            body: "List the skills this subject's lessons teach. Every quiz question is tied to one, and each student's mastery is tracked per competency.",
+        },
+        {
+            target: "#inviteCollabBtn",
+            title: "Collaborators",
+            body: "Invite other teachers to share this subject's materials. They can use the files and ask you to edit or delete one.",
+        },
+        {
+            target: ".mv-sections-section",
+            title: "Sections",
+            body: "Your classes in this subject. Click one to open that class.",
+        },
+        {
+            // Just the first card, not the whole grid.
+            target: () => document.querySelector(".mv-module-card"),
+            title: "A module",
+            body: 'Each card shows who uploaded the file, when, and which classes it is posted to. "Post to classes" adds it as a lesson in the classes you tick; the ⋮ menu has Preview, Edit and Delete. Double-click a card to preview it.',
+            fallback: 'Uploaded files appear here as cards. Click "Upload Module" to add your first PDF.',
+        },
+        {
+            target: "#sectionFilter",
+            title: "Filter by section",
+            body: "Show only the materials posted to one of your sections.",
+        },
+        {
+            title: "That's the subject page",
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}

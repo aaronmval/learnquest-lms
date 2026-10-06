@@ -539,5 +539,45 @@
         closeDeleteModal();
     });
 
-    init();
+    // No tour on the "Subject not found" screen; otherwise the first-visit
+    // tour waits for the list so it can point at it.
+    init().then(() => {
+        if (competenciesWrap.classList.contains("hidden")) return;
+        window.LQPageTour?.init({ key: "tour_seen_competencies", steps: tourSteps });
+    });
+
+    /* GUIDED TOUR — common/page-tour.js */
+    function tourSteps() {
+        return [
+            {
+                title: "Manage competencies",
+                body: "Competencies are the skills a subject teaches. Every AI-generated quiz question is tagged with one, so each student's mastery can be tracked skill by skill.",
+            },
+            {
+                target: "#suggestCompetenciesBtn",
+                title: "Suggest with AI",
+                body: "QuestAI reads this subject's uploaded modules and proposes a list. You review it and untick anything you don't want before it is added.",
+            },
+            {
+                target: "#addCompetencyBtn",
+                title: "Add your own",
+                body: "Add a competency by hand, with a name and an optional description.",
+            },
+            {
+                // Just the first row, not the whole list.
+                target: () => document.querySelector(".pc-row"),
+                title: "Your competencies",
+                body: "Edit or delete each one with the buttons on its right. Use the search box above to find one in a long list.",
+                fallback: "Your competencies will be listed here. Add one yourself or use Suggest with AI to get started.",
+            },
+            {
+                title: "Why it matters",
+                body: "Bayesian Knowledge Tracing updates a student's mastery of a competency after every answer to a question tagged with it. That mastery appears on your Dashboard and, for quizzes set to adapt, decides how hard each student's next quiz is.",
+            },
+            {
+                title: "That's competencies",
+                body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+            },
+        ];
+    }
 })();

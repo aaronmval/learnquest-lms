@@ -287,14 +287,41 @@ a.logo {
     display: none;
 }
 
-/* Profile cluster */
+/* Profile cluster — a button that opens the profile menu */
 .profile-cluster {
     display: flex;
     align-items: center;
     gap: 12px;
+    border: none;
     border-left: 1px solid rgba(100, 116, 139, 0.6);
-    padding: 0 12px;
+    padding: 6px 12px;
     user-select: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.profile-cluster:hover,
+.profile-cluster[aria-expanded="true"] {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.profile-cluster:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+.profile-chevron {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    transition: transform 0.2s;
+}
+
+.profile-cluster[aria-expanded="true"] .profile-chevron {
+    transform: rotate(180deg);
 }
 
 .avatar-img {
@@ -341,6 +368,156 @@ a.logo {
     font-weight: 500;
     line-height: 1;
     margin-top: 2px;
+}
+
+/* Profile menu (opened from .profile-cluster; placed by navbar.js) */
+.profile-menu {
+    position: fixed;
+    z-index: 45;
+    width: min(260px, calc(100vw - 24px));
+    padding: 6px;
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+    color: #1e293b;
+    animation: profile-menu-in 0.14s ease-out;
+}
+
+.profile-menu[hidden] {
+    display: none;
+}
+
+body.dark .profile-menu {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+@keyframes profile-menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+html.lq-reduced-motion .profile-menu {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .profile-menu {
+        animation: none;
+    }
+}
+
+.profile-menu-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 10px 12px;
+}
+
+.profile-menu-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+}
+
+.profile-menu-who {
+    min-width: 0;
+}
+
+.profile-menu-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-menu-email {
+    font-size: 0.75rem;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-menu-role {
+    margin-top: 2px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #2563eb;
+}
+
+body.dark .profile-menu-email {
+    color: #94a3b8;
+}
+
+body.dark .profile-menu-role {
+    color: #93c5fd;
+}
+
+.profile-menu-sep {
+    height: 1px;
+    margin: 4px 6px;
+    background-color: #e2e8f0;
+}
+
+body.dark .profile-menu-sep {
+    background-color: #334155;
+}
+
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 9px;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.profile-menu-item i {
+    width: 16px;
+    text-align: center;
+    color: #64748b;
+}
+
+.profile-menu-item:hover,
+.profile-menu-item:focus-visible {
+    background-color: #f1f5f9;
+    outline: none;
+}
+
+body.dark .profile-menu-item:hover,
+body.dark .profile-menu-item:focus-visible {
+    background-color: #334155;
+}
+
+.profile-menu-item.danger,
+.profile-menu-item.danger i {
+    color: #dc2626;
+}
+
+body.dark .profile-menu-item.danger,
+body.dark .profile-menu-item.danger i {
+    color: #f87171;
 }
 
 /* BODY AREA */

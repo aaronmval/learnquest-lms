@@ -57,28 +57,6 @@ body {
     padding-right: 0.5rem;
 }
 
-/* "Take the tour" button in the hero */
-.hero-tour-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 0.9rem;
-    padding: 9px 16px;
-    border: 1.5px solid rgba(255, 255, 255, 0.45);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    font-family: inherit;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background-color 0.15s;
-}
-
-.hero-tour-btn:hover {
-    background: rgba(255, 255, 255, 0.26);
-}
-
 /* LAYOUT */
 .validator-layout {
     display: grid;

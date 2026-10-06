@@ -7,6 +7,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
+use App\Services\Auth\LoginChallengeService;
 use App\Services\Auth\OtpService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
@@ -38,7 +39,7 @@ class AuthController extends Controller
         return $this->sendVerificationOtp($request, $user, $otp);
     }
 
-    public function login(LoginRequest $request, OtpService $otp): RedirectResponse
+    public function login(LoginRequest $request, OtpService $otp, LoginChallengeService $challenge): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -49,21 +50,26 @@ class AuthController extends Controller
 
         $remember = (bool) ($validated['remember'] ?? false);
 
-        if (!Auth::attempt($credentials, $remember)) {
+        // Check the password without signing in yet: an unverified account or
+        // a sign-in code (Settings → Security) may still be needed.
+        if (!Auth::validate($credentials)) {
             return back()
                 ->withInput($request->only('email', 'remember'))
                 ->withErrors(['email' => 'The provided credentials do not match our records.'], 'login');
         }
 
         /** @var User $user */
-        $user = $request->user();
+        $user = Auth::getLastAttempted();
 
         if ($user->email_verified_at === null) {
-            Auth::logout();
-
             return $this->sendVerificationOtp($request, $user, $otp);
         }
 
+        if ($challenge->required($user)) {
+            return $challenge->begin($request, $user, $remember);
+        }
+
+        Auth::login($user, $remember);
         $request->session()->regenerate();
 
         return $this->redirectToRoleHome($user->role);

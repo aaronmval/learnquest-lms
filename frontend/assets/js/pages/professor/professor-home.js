@@ -31,11 +31,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     hidePageLoader();
     updateHeroName();
-    loadClasses();
-    loadStats();
-    loadArchivedTeaser();
+
+    // The first-visit tour waits for the class cards so it can point at them.
+    const loaded = Promise.all([loadClasses(), loadStats(), loadArchivedTeaser()]);
+    window.LQPageTour?.init({ key: 'tour_seen_home', steps: homeTourSteps, ready: loaded });
 
 });
+
+
+/* GUIDED TOUR — common/page-tour.js */
+function homeTourSteps() {
+    return [
+        {
+            title: 'Welcome to Home',
+            body: 'Home is your starting point: a summary of your teaching and quick access to every class.',
+        },
+        {
+            target: '.prof-stats-section',
+            title: 'Your numbers',
+            body: 'How many students you teach, the learning materials you have posted, your active sections and your subjects.',
+        },
+        {
+            target: '#classGrid',
+            title: 'My Classes',
+            body: 'One card per class. Click a card to open the class and post lessons and announcements. The archive button on a card moves a class to Archived Classes.',
+            fallback: 'Your classes will appear here as cards. Use "Create Class" at the top of the screen to make your first one.',
+        },
+        {
+            target: '#heroAnnouncementBtn',
+            title: 'Post an announcement',
+            body: 'A shortcut to your class page, where you can post an announcement for your students.',
+            fallback: 'Once you have a class, a "Post an Announcement" button appears at the top of this page.',
+        },
+        {
+            target: '.prof-archive-section',
+            title: 'Archived classes',
+            body: 'Classes from previous school years. Open "View all archived classes" to see their records.',
+        },
+        {
+            title: 'That\'s Home',
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
 
 
 /* PAGE LOADER */

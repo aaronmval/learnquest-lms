@@ -562,5 +562,42 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = `professor-module-view.html?subject=${encodeURIComponent(id)}`;
     });
 
-    loadSubjects();
+    // The first-visit tour waits for the subject cards so it can point at them.
+    window.LQPageTour?.init({ key: "tour_seen_modules", steps: modulesTourSteps, ready: loadSubjects() });
 });
+
+/* GUIDED TOUR — common/page-tour.js */
+function modulesTourSteps() {
+    return [
+        {
+            title: "Welcome to Modules",
+            body: "Modules is your library of learning materials. Upload a lesson file once and use it in any of your sections.",
+        },
+        {
+            target: ".mat-stats-section",
+            title: "Your library at a glance",
+            body: "How many materials you have, the storage they use, how many sections they reach and when you last uploaded.",
+        },
+        {
+            target: "#addSubjectBtn",
+            title: "Add a subject",
+            body: "Materials are grouped by subject, such as Chemistry. Start by adding the subjects you teach.",
+        },
+        {
+            target: ".mat-search-wrap",
+            title: "Search",
+            body: "Type to find a subject quickly when your list grows.",
+        },
+        {
+            // Just the first card, not the whole grid.
+            target: () => document.querySelector(".mat-subject-card"),
+            title: "Open a subject",
+            body: "Click a subject to upload its lesson PDFs, post them to your classes and manage the competencies they teach. The ⋮ menu lets you rename it.",
+            fallback: 'Your subjects will appear here as cards. Click "Add New Subject" to create your first one.',
+        },
+        {
+            title: "That's Modules",
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}

@@ -39,13 +39,22 @@
                         Manage your classes, review student submissions, and
                         post announcements — all in one place.
                     </p>
-                    <a
-                        id="heroAnnouncementBtn"
-                        href="professor-class.html"
-                        class="hero-btn hidden"
-                    >
-                        <i class="fas fa-bullhorn"></i> Post an Announcement
-                    </a>
+                    <div class="hero-actions">
+                        <a
+                            id="heroAnnouncementBtn"
+                            href="professor-class.html"
+                            class="hero-btn hidden"
+                        >
+                            <i class="fas fa-bullhorn"></i> Post an Announcement
+                        </a>
+                        <button
+                            type="button"
+                            class="hero-tour-btn"
+                            data-tour-start
+                        >
+                            <i class="fas fa-route"></i> Take the tour
+                        </button>
+                    </div>
                 </div>
                 <div class="hero-illustration">
                     <i class="fas fa-flask"></i>
@@ -135,6 +144,8 @@
                 <span id="homeToastMessage"></span>
             </div>
         </main>
+        <script src="../../assets/js/common/guided-tour.js"></script>
+        <script src="../../assets/js/common/page-tour.js"></script>
         <script src="../../assets/js/pages/professor/professor-home.js"></script>
     </body>
 </html>

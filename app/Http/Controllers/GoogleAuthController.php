@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Auth\LoginChallengeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,8 +18,9 @@ use Throwable;
 
 /**
  * "Continue with Google" on the login page. Google proves the email, so no
- * OTP is sent; a first-time user still chooses a role before the account
- * is created.
+ * verification OTP is sent (only the sign-in code, if the user turned that
+ * on in Settings → Security); a first-time user still chooses a role
+ * before the account is created.
  */
 class GoogleAuthController extends Controller
 {
@@ -177,6 +179,12 @@ class GoogleAuthController extends Controller
 
     private function signIn(Request $request, User $user): RedirectResponse
     {
+        // Settings → Security can still ask for an emailed code first.
+        $challenge = app(LoginChallengeService::class);
+        if ($challenge->required($user)) {
+            return $challenge->begin($request, $user, remember: true);
+        }
+
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 

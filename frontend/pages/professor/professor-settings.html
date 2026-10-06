@@ -41,6 +41,13 @@
                             <p class="hero-subtitle">
                                 Manage your profile, classes, alerts, and password.
                             </p>
+                            <button
+                                type="button"
+                                class="hero-tour-btn"
+                                data-tour-start
+                            >
+                                <i class="fas fa-route"></i> Take the tour
+                            </button>
                         </div>
                         <div class="hero-illustration">
                             <i class="fas fa-user"></i>
@@ -408,6 +415,46 @@
                                     class="settings-panel"
                                     role="tabpanel"
                                 >
+                                    <div class="settings-card">
+                                        <div class="settings-card-header">
+                                            <h3 class="settings-card-title">Sign-in &amp; Screen Lock</h3>
+                                            <p class="settings-card-desc">
+                                                Protect your account on shared or school computers.
+                                            </p>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <label class="notif-row-label" for="securityIdleLock">Lock After Inactivity</label>
+                                                <span class="notif-row-desc">When you have been inactive this long, LearnQuest locks and emails you a code to continue.</span>
+                                            </div>
+                                            <select id="securityIdleLock" class="settings-select">
+                                                <option value="0">Off</option>
+                                                <option value="15">15 minutes</option>
+                                                <option value="30">30 minutes</option>
+                                                <option value="60">1 hour</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="notif-row">
+                                            <div class="notif-row-text">
+                                                <span class="notif-row-label">Code on Every Sign-in</span>
+                                                <span class="notif-row-desc">After your password (or Google), also enter a code we email you. Also applies when "Remember me" signs you back in.</span>
+                                            </div>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="securityOtpOnLogin" aria-label="Code on Every Sign-in" />
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="settings-card-footer">
+                                            <span id="securitySaveStatus" class="settings-save-status"></span>
+                                            <button id="securitySaveBtn" type="button" class="settings-save-btn">
+                                                <i class="fas fa-floppy-disk"></i> Save
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <form
                                         id="passwordForm"
                                         class="settings-card"
@@ -546,6 +593,9 @@
             </main>
     <script src="../../assets/js/common/dialog.js"></script>
     <script src="../../assets/js/common/settings-page.js"></script>
+    <script src="../../assets/js/common/guided-tour.js"></script>
+    <script src="../../assets/js/common/page-tour.js"></script>
+    <script src="../../assets/js/pages/professor/professor-settings.js"></script>
     </body>
 </html>
 

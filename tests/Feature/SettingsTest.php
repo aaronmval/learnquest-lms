@@ -41,6 +41,8 @@ class SettingsTest extends TestCase
                     'chart_labels' => true,
                     'dashboard_lock' => true,
                 ],
+                'idle_lock_minutes' => 0,
+                'otp_on_login' => false,
             ]);
 
         $this->actingAs($professor)->getJson('/settings')
@@ -288,6 +290,31 @@ class SettingsTest extends TestCase
 
         $this->actingAs($student)->putJson('/settings/general', ['deck_theme' => 'emerald'])->assertStatus(422);
         $this->actingAs($student)->getJson('/settings')->assertJsonMissingPath('general_preferences.deck_theme');
+    }
+
+    public function test_guided_tour_flags_are_professor_only(): void
+    {
+        $professor = User::factory()->create(['role' => 'professor']);
+        $student = User::factory()->create(['role' => 'student']);
+
+        $response = $this->actingAs($professor)->getJson('/settings')->assertOk();
+        foreach (User::PROFESSOR_TOURS as $tour) {
+            $response->assertJsonPath("general_preferences.{$tour}", false);
+        }
+
+        $this->actingAs($professor)->putJson('/settings/general', ['app_tour_seen' => true, 'tour_seen_dashboard' => true])
+            ->assertOk()
+            ->assertJsonPath('general_preferences.app_tour_seen', true)
+            ->assertJsonPath('general_preferences.tour_seen_dashboard', true)
+            ->assertJsonPath('general_preferences.tour_seen_home', false);
+
+        // Resetting General settings brings the tours back.
+        $this->actingAs($professor)->deleteJson('/settings/general')
+            ->assertOk()
+            ->assertJsonPath('general_preferences.app_tour_seen', false);
+
+        $this->actingAs($student)->putJson('/settings/general', ['app_tour_seen' => true])->assertStatus(422);
+        $this->actingAs($student)->getJson('/settings')->assertJsonMissingPath('general_preferences.app_tour_seen');
     }
 
     public function test_general_settings_reset_to_defaults(): void

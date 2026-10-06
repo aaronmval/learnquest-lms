@@ -1,0 +1,160 @@
+/* Idle-lock overlay (common/session-lock.js), shown by the app shell over
+   the whole window when Settings → Security locks the session. */
+.lq-lock-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-family: "Inter", sans-serif;
+}
+
+.lq-lock-card {
+    width: min(400px, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 24px 22px;
+    background-color: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.35);
+    color: #1e293b;
+    text-align: center;
+}
+
+body.dark .lq-lock-card {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.lq-lock-icon {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: #fff;
+    font-size: 1.3rem;
+}
+
+.lq-lock-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.lq-lock-text {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: #475569;
+}
+
+body.dark .lq-lock-text {
+    color: #cbd5e1;
+}
+
+.lq-lock-text strong {
+    color: inherit;
+}
+
+.lq-lock-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.lq-lock-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.4em;
+    text-align: center;
+}
+
+.lq-lock-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+body.dark .lq-lock-input {
+    border-color: #475569;
+}
+
+.lq-lock-error {
+    min-height: 1.1em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+body.dark .lq-lock-error {
+    color: #f87171;
+}
+
+.lq-lock-submit {
+    padding: 11px 16px;
+    border: none;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.lq-lock-submit:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.lq-lock-links {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 2px;
+}
+
+.lq-lock-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: #2563eb;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.lq-lock-link:disabled {
+    color: #94a3b8;
+    cursor: default;
+}
+
+body.dark .lq-lock-link:not(:disabled) {
+    color: #93c5fd;
+}
+
+.lq-lock-submit:focus-visible,
+.lq-lock-link:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}

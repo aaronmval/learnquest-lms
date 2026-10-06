@@ -30,6 +30,8 @@ class User extends Authenticatable
         'avatar_path',
         'notification_preferences',
         'general_preferences',
+        'idle_lock_minutes',
+        'otp_on_login',
     ];
 
     /**
@@ -61,6 +63,28 @@ class User extends Authenticatable
     ];
 
     /**
+     * Settings → Security choices for the idle lock, in minutes (0 = off).
+     */
+    public const IDLE_LOCK_OPTIONS = [0, 15, 30, 60];
+
+    /**
+     * Guided tours a professor sees once (General settings flags): the app
+     * tour of the header and sidebar, then one per page.
+     */
+    public const PROFESSOR_TOURS = [
+        'app_tour_seen',
+        'tour_seen_home',
+        'tour_seen_dashboard',
+        'tour_seen_class',
+        'tour_seen_modules',
+        'tour_seen_module_view',
+        'tour_seen_competencies',
+        'tour_seen_archive',
+        'tour_seen_quest_ai',
+        'tour_seen_settings',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -72,6 +96,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'notification_preferences' => 'array',
             'general_preferences' => 'array',
+            'idle_lock_minutes' => 'integer',
+            'otp_on_login' => 'boolean',
         ];
     }
 
@@ -101,6 +127,10 @@ class User extends Authenticatable
             $options['deck_theme'] = ['values' => array_keys(PresentationBuilderService::THEMES), 'default' => 'learnquest'];
             // Set once the Quiz & AI Setup guided tour has been finished or skipped.
             $options['quiz_setup_tour_seen'] = ['values' => [true, false], 'default' => false];
+            // Same for the app tour (header + sidebar) and each page's own tour.
+            foreach (self::PROFESSOR_TOURS as $tour) {
+                $options[$tour] = ['values' => [true, false], 'default' => false];
+            }
         }
 
         return $options;

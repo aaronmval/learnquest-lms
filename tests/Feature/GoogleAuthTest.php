@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Mail\OtpCodeMail;
 use App\Models\User;
+use App\Services\Auth\OtpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
 use Laravel\Socialite\Facades\Socialite;
@@ -65,6 +68,18 @@ class GoogleAuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
         $this->assertSame('google-123', $user->fresh()->google_id);
         $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_a_user_who_wants_a_sign_in_code_gets_one_after_google(): void
+    {
+        Mail::fake();
+        User::factory()->create(['role' => 'student', 'email' => 'maria@example.com', 'otp_on_login' => true]);
+        $this->fakeGoogleUser();
+
+        $this->get('/auth/google/callback')->assertRedirect(route('otp.show'));
+
+        $this->assertGuest();
+        Mail::assertSent(OtpCodeMail::class, fn (OtpCodeMail $mail) => $mail->purpose === OtpService::PURPOSE_LOGIN);
     }
 
     public function test_an_unverified_existing_account_becomes_verified_without_an_otp(): void

@@ -28,6 +28,7 @@ class OtpController extends Controller
         $attemptsLeft = $this->otp->attemptsRemaining($email, $purpose);
 
         return view('auth.otp-verification', [
+            'heading' => $purpose === OtpService::PURPOSE_LOGIN ? 'Sign-in Verification' : 'OTP Verification',
             'email' => $email,
             'length' => (int) config('otp.length'),
             'attemptsLeft' => $attemptsLeft,
@@ -55,12 +56,21 @@ class OtpController extends Controller
             }]);
         }
 
+        $remember = (bool) $request->session()->get('otp.remember', false);
         $request->session()->forget('otp');
 
         $user = User::query()->where('email', $email)->first();
 
         if ($user === null) {
             return redirect()->route('login');
+        }
+
+        // Settings → Security sign-in code: the password was already checked.
+        if ($purpose === OtpService::PURPOSE_LOGIN) {
+            Auth::login($user, $remember);
+            $request->session()->regenerate();
+
+            return redirect()->route($user->role === 'professor' ? 'professor.dashboard' : 'student.dashboard');
         }
 
         if ($purpose === OtpService::PURPOSE_PASSWORD_RESET) {

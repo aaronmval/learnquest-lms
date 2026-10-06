@@ -1,9 +1,22 @@
+{{-- Shared by sign-up / password-reset verification and the idle-lock
+     unlock screen (SessionLockController), which passes its own form
+     targets, heading and a sign-out link instead of "Back to Login". --}}
+@php
+  $heading = $heading ?? 'OTP Verification';
+  $verifyAction = $verifyAction ?? route('otp.verify');
+  $resendAction = $resendAction ?? route('otp.resend');
+  $signOut = $signOut ?? false;
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  @if ($signOut)
+    {{-- A locked page load inside the app's frame: show this full-window. --}}
+    <script>if (window.top !== window.self) window.top.location.replace(window.location.href);</script>
+  @endif
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OTP Verification | LearnQuest</title>
+  <title>{{ $heading }} | LearnQuest</title>
   <link rel="icon" type="image/svg+xml" href="/assets/images/LearnQuestLogo.svg">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
@@ -13,7 +26,10 @@
 <body>
 
   <div class="otp-container">
-    <h1>OTP Verification</h1>
+    <h1>{{ $heading }}</h1>
+    @if ($signOut)
+      <p class="subtitle">Your session is locked to keep your account safe.</p>
+    @endif
     <p class="subtitle">Your verification code has been sent to<br><span id="emailDisplay" style="font-weight: 600;">{{ $email }}</span></p>
 
     @if ($errors->has('code') && !$locked)
@@ -32,7 +48,7 @@
       <i class="fas fa-lock"></i> Too many failed attempts. Please request a new code to continue.
     </div>
 
-    <form method="POST" action="{{ route('otp.verify') }}" id="otpForm" autocomplete="off">
+    <form method="POST" action="{{ $verifyAction }}" id="otpForm" autocomplete="off">
       @csrf
       <input type="hidden" name="code" id="codeInput">
 
@@ -57,16 +73,25 @@
 
     <div class="resend-section">
       Didn't receive the OTP code?
-      <form method="POST" action="{{ route('otp.resend') }}">
+      <form method="POST" action="{{ $resendAction }}">
         @csrf
         <button type="submit" class="resend-link {{ $locked ? 'pulse' : '' }}" id="resendBtn">Resend OTP</button>
       </form>
       <span class="resend-timer" id="resendTimer">Resend available in <span id="timerCount">{{ $resendIn }}</span>s</span>
     </div>
 
-    <a href="{{ route('login') }}" class="back-link">
-      <i class="fas fa-arrow-left"></i> Back to Login
-    </a>
+    @if ($signOut)
+      <form method="POST" action="{{ route('logout') }}" id="signOutForm">
+        @csrf
+      </form>
+      <a href="{{ route('login') }}" class="back-link" onclick="event.preventDefault(); document.getElementById('signOutForm').submit();">
+        <i class="fas fa-sign-out-alt"></i> Sign out instead
+      </a>
+    @else
+      <a href="{{ route('login') }}" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Login
+      </a>
+    @endif
   </div>
 
   <script>

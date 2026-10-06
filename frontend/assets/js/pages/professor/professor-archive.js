@@ -39,11 +39,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     hidePageLoader();
     wireMyClassesDropdown();
-    loadArchivedClasses();
+    const loaded = loadArchivedClasses();
     wireArchiveFilters();
     wireConfirmModal();
 
+    // The first-visit tour waits for the list so it can point at it.
+    window.LQPageTour?.init({ key: 'tour_seen_archive', steps: archiveTourSteps, ready: loaded });
+
 });
+
+
+/* GUIDED TOUR — common/page-tour.js */
+function archiveTourSteps() {
+    return [
+        {
+            title: 'Welcome to Archived Classes',
+            body: 'Classes you have archived, such as sections from previous school years, are kept here with their records.',
+        },
+        {
+            target: '.prof-stats-section',
+            title: 'Archive summary',
+            body: 'How many classes you have archived, how many students they had, and the subjects and sections they cover.',
+        },
+        {
+            target: '.archive-filter-bar',
+            title: 'Find a class',
+            body: 'Search by class name or section, or filter by subject and section. Reset clears the filters.',
+        },
+        {
+            // Just the first card's buttons, not every card's.
+            target: () => document.querySelector('.archive-card-actions'),
+            title: 'Restore or delete',
+            body: 'Restore puts a class back on your Home page. Delete removes it for good, so you are asked to confirm first.',
+            fallback: 'Each archived class appears here as a card with Restore and Delete buttons. Archive a class from its card on Home to see it here.',
+        },
+        {
+            title: 'That\'s the archive',
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
 
 
 /* PAGE LOADER */

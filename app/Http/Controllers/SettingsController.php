@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\Account\AccountDeletionService;
+use App\Services\Auth\IdleLockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +49,29 @@ class SettingsController extends Controller
 
         $preferences = array_merge($user->notification_preferences ?? [], array_map('boolval', $validated));
         $user->update(['notification_preferences' => $preferences]);
+
+        return response()->json($this->payload($user));
+    }
+
+    /**
+     * Security tab: how many idle minutes before the session locks (0 = off)
+     * and whether every sign-in needs an emailed code.
+     */
+    public function updateSecurity(Request $request, IdleLockService $idleLock): JsonResponse
+    {
+        $validated = $request->validate([
+            'idle_lock_minutes' => ['required_without:otp_on_login', 'integer', Rule::in(User::IDLE_LOCK_OPTIONS)],
+            'otp_on_login' => ['required_without:idle_lock_minutes', 'boolean'],
+        ]);
+
+        $user = $request->user();
+        $user->update(array_filter([
+            'idle_lock_minutes' => isset($validated['idle_lock_minutes']) ? (int) $validated['idle_lock_minutes'] : null,
+            'otp_on_login' => isset($validated['otp_on_login']) ? (bool) $validated['otp_on_login'] : null,
+        ], fn ($value) => $value !== null));
+
+        // Start the idle clock now, so turning the lock on never locks at once.
+        $idleLock->touch($request->session());
 
         return response()->json($this->payload($user));
     }
@@ -209,6 +233,8 @@ class SettingsController extends Controller
             'avatar_url' => $user->avatarUrl(),
             'notification_preferences' => $user->alertPreferences(),
             'general_preferences' => $user->generalPreferences(),
+            'idle_lock_minutes' => (int) $user->idle_lock_minutes,
+            'otp_on_login' => (bool) $user->otp_on_login,
         ];
     }
 }

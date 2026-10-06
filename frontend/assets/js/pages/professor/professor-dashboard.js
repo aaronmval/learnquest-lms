@@ -58,7 +58,9 @@ function initDashboard() {
     wireMyClassesDropdown();
 
     updateFilterBadges("");
-    loadDashboard();
+    // The first-visit tour waits for the charts so it can point at them.
+    const loaded = loadDashboard();
+    window.LQPageTour?.init({ key: "tour_seen_dashboard", steps: dashboardTourSteps, ready: loaded });
 
     setTimeout(() => {
         const loader = document.getElementById("pageLoader");
@@ -71,6 +73,61 @@ if (window.LQDashboardLock) {
     window.LQDashboardLock.whenUnlocked(initDashboard);
 } else {
     document.addEventListener("DOMContentLoaded", initDashboard);
+}
+
+/* GUIDED TOUR — common/page-tour.js. Started only after the privacy cover
+   is dismissed, since initDashboard runs then. */
+function dashboardTourSteps() {
+    return [
+        {
+            title: "Welcome to your Dashboard",
+            body: "This page shows how your classes are doing: mastery per lesson, quiz results over time, and which students may need help. Here is a quick look around.",
+        },
+        {
+            target: ".filter-controls .filter-group",
+            title: "Filter the records",
+            body: "Narrow everything on the page to a date range, a subject, a section or a quarter. All the charts and lists below update together.",
+        },
+        {
+            target: ".filter-actions",
+            title: "Export or reset",
+            body: "Export downloads what you are viewing as a CSV file. Reset clears the filters.",
+        },
+        {
+            target: ".chart-card-main",
+            title: "Average class mastery by lesson",
+            body: "Each point is a lesson; the further out, the higher the class's mastery. Mastery is estimated by Bayesian Knowledge Tracing from every answer students give, so it is not the same as a quiz percentage. Use the − and + buttons (or Ctrl + scroll) to zoom in on crowded labels.",
+        },
+        {
+            target: ".chart-card-performance",
+            title: "Quiz scores over time",
+            body: "The class's average raw quiz score over time. Use it to spot trends; a dip often shows which period needs review.",
+        },
+        {
+            target: ".chart-card-mastery-overview",
+            title: "Average mastery per lesson",
+            body: "The same mastery estimates as numbers, one box per lesson, so you can compare lessons at a glance.",
+        },
+        {
+            target: ".student-mastery-card",
+            title: "Student mastery level",
+            body: "Every student ranked by overall mastery. Change the sort order with the button, and click a student to see their quiz average, strongest lesson and the lesson to work on next.",
+        },
+        {
+            target: ".analysis-card",
+            title: "Strengths vs weaknesses",
+            body: "Lessons where the class is strong and where it is weak, based on the mastery estimates. The notes below are written by QuestAI from those results, as suggestions for where to focus.",
+        },
+        {
+            target: ".hero-actions",
+            title: "QuestAI Coach and privacy",
+            body: 'Launch QuestAI Coach to ask about these results. If the dashboard cover is on, "Lock now" hides the page again until you choose to show it.',
+        },
+        {
+            title: "That's the Dashboard",
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
 }
 
 /* DATA LOADING */

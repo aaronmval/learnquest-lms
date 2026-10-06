@@ -16,6 +16,7 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OtpController;
+use App\Http\Controllers\SessionLockController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ProfessorClassController;
 use App\Http\Controllers\ProfessorDashboardController;
@@ -70,6 +71,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/assets/{path}', [FrontendShellController::class, 'frontendAsset'])
         ->where('path', '.*');
 
+    // Settings → Security idle lock (EnforceIdleLock lets these through while locked)
+    Route::get('/session-locked', [SessionLockController::class, 'show'])->name('session-lock.show');
+    Route::post('/session-locked', [SessionLockController::class, 'verify'])
+        ->middleware('throttle:6,1')->name('session-lock.verify');
+    Route::post('/session-locked/resend', [SessionLockController::class, 'resend'])
+        ->middleware('throttle:6,1')->name('session-lock.resend');
+    Route::post('/session/lock', [SessionLockController::class, 'lock'])
+        ->middleware('throttle:10,1')->name('session-lock.lock');
+    Route::get('/session/status', [SessionLockController::class, 'status'])->name('session-lock.status');
+    Route::post('/session/heartbeat', [SessionLockController::class, 'heartbeat'])->name('session-lock.heartbeat');
+
     // System Alerts drawer (shared by every role)
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])
@@ -88,6 +100,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/notifications', [SettingsController::class, 'updateNotifications'])->name('notifications');
         Route::put('/general', [SettingsController::class, 'updateGeneral'])->name('general');
         Route::delete('/general', [SettingsController::class, 'resetGeneral'])->name('general.reset');
+        Route::put('/security', [SettingsController::class, 'updateSecurity'])->name('security');
         Route::put('/password', [SettingsController::class, 'updatePassword'])
             ->middleware('throttle:6,1')->name('password');
         Route::delete('/account', [SettingsController::class, 'destroyAccount'])

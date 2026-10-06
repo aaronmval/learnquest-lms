@@ -12,11 +12,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Sequential on purpose: the local dev server handles one request at a
     // time, and the chips/banner are what the professor needs first.
-    await loadContext();
+    // The first-visit tour waits for the subject chips so it can point at them.
+    const loaded = loadContext();
+    window.LQPageTour?.init({ key: 'tour_seen_quest_ai', steps: questAiTourSteps, ready: loaded });
+    await loaded;
     await loadConversations();
     loadSideInsights();
 
 });
+
+
+/* GUIDED TOUR — common/page-tour.js */
+function questAiTourSteps() {
+    return [
+        {
+            title: 'Welcome to QuestAI Coach',
+            body: 'QuestAI is your AI teaching assistant. On this page you can ask it about your classes, or have it draft a slide deck from a reading.',
+        },
+        {
+            target: '#subjectChips',
+            title: 'Pick a class',
+            body: 'Choose which class QuestAI should focus on. It answers using that class\'s lessons and students\' progress.',
+        },
+        {
+            target: '#chatInputBar',
+            title: 'Ask a question',
+            body: 'Type a question, such as which competencies your class is struggling with or how to explain a topic another way.',
+        },
+        {
+            target: '#quickAskChips',
+            title: 'Quick questions',
+            body: 'Not sure what to ask? Click one of these to send a ready-made question.',
+        },
+        {
+            target: '#qaiGeneratorPanel',
+            title: 'Generate a presentation',
+            body: 'Upload a PDF or pick one of your modules, and QuestAI drafts a slide deck you can download. "Targeted focus" gives a class\'s weakest competencies extra slides.',
+        },
+        {
+            target: '.qai-side-tools',
+            title: 'Insights and history',
+            body: 'AI Insights suggests where to focus based on your classes\' results; Session History keeps your recent questions so you can pick up where you left off.',
+        },
+        {
+            title: 'That\'s QuestAI Coach',
+            body: 'QuestAI can make mistakes, so check its answers against your materials. Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
 
 
 /* PAGE LOADER */

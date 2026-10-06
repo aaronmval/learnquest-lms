@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderProfile();
         renderGeneral();
         renderPreferences();
+        renderSecurity();
         loadClasses();
     }
 
@@ -475,6 +476,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    })();
+
+    /* SIGN-IN & SCREEN LOCK — Security tab. Locks the session after this
+       many idle minutes until an emailed code is entered
+       (common/session-lock.js), and optionally asks for a code on every
+       sign-in. */
+    function renderSecurity() {
+        const select = document.getElementById('securityIdleLock');
+        const otpToggle = document.getElementById('securityOtpOnLogin');
+        if (select) select.value = String(settings.idle_lock_minutes ?? 0);
+        if (otpToggle) otpToggle.checked = Boolean(settings.otp_on_login);
+    }
+
+    (function initSecurityPrefs() {
+        const select = document.getElementById('securityIdleLock');
+        const otpToggle = document.getElementById('securityOtpOnLogin');
+        const saveBtn = document.getElementById('securitySaveBtn');
+        const saveStatus = document.getElementById('securitySaveStatus');
+        if (!select || !saveBtn) return;
+
+        saveBtn.addEventListener('click', async () => {
+            setButtonSaving(saveBtn, true);
+            try {
+                settings = await api('/settings/security', {
+                    method: 'PUT',
+                    json: {
+                        idle_lock_minutes: Number(select.value),
+                        otp_on_login: Boolean(otpToggle?.checked),
+                    },
+                });
+                renderSecurity();
+                try {
+                    window.parent.LQ_applySecurity?.(settings.idle_lock_minutes);
+                } catch (e) {
+                    /* not inside the shell */
+                }
+                flashSaveStatus(saveStatus, 'Settings saved.');
+                showToast('Security settings saved.', 'success');
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                setButtonSaving(saveBtn, false);
+            }
+        });
     })();
 
     /* NOTIFICATION PREFERENCES */

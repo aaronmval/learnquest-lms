@@ -20,6 +20,7 @@ const pageLoader = document.getElementById("pageLoader");
 const contentFrame = document.getElementById("contentFrame");
 const roleSelector = document.getElementById("roleSelector");
 const createClassBtn = document.getElementById("createClassBtn");
+const appTourBtn = document.getElementById("appTourBtn");
 const createClassModal = document.getElementById("createClassModal");
 const createClassModalCard = document.getElementById("createClassModalCard");
 const createClassCloseBtn = document.getElementById("createClassCloseBtn");
@@ -34,6 +35,8 @@ const logoLink = document.getElementById("nav-logo-link");
 const headerAvatar = document.getElementById("headerAvatar");
 const headerProfileName = document.getElementById("headerProfileName");
 const headerProfileRole = document.getElementById("headerProfileRole");
+const profileMenuBtn = document.getElementById("profileMenuBtn");
+const profileMenu = document.getElementById("profileMenu");
 
 function getHostConfig() {
     return window.LQ_HOST_CONFIG || {};
@@ -205,6 +208,8 @@ document.addEventListener("DOMContentLoaded", () => {
     on("darkModeBtn", "click", toggleDarkMode);
     on("notiBtn", "click", toggleNotifications);
     on("createClassBtn", "click", openCreateClassModal);
+    on("appTourBtn", "click", startAppTour);
+    initProfileMenu();
 
     if (createClassCloseBtn) {
         createClassCloseBtn.addEventListener("click", closeCreateClassModal);
@@ -593,6 +598,9 @@ function applyHostRole(role) {
     if (createClassBtn) {
         createClassBtn.style.display = role === "professor" ? "" : "none";
     }
+    if (appTourBtn) {
+        appTourBtn.style.display = role === "professor" ? "" : "none";
+    }
     if (document.getElementById("joinClassBtn")) {
         document.getElementById("joinClassBtn").style.display =
             role === "student" ? "" : "none";
@@ -694,6 +702,12 @@ function initHostShell() {
             pruneIframeSharedShell();
             if (pageLoader) pageLoader.classList.add("hidden");
         });
+
+        // First visit: introduce the header and sidebar once the first page
+        // has loaded. That page's own tour follows when this one ends.
+        if (role === "professor" && getPreferences().app_tour_seen !== true) {
+            contentFrame.addEventListener("load", startAppTour, { once: true });
+        }
     }
 
     loadDefaultFramePage();
@@ -774,6 +788,148 @@ function toggleDesktopSidebar() {
     localStorage.setItem(
         "sidebarState",
         isCollapsed ? "collapsed" : "expanded",
+    );
+}
+
+/* APP TOUR (professor) — introduces the header and sidebar with
+   common/guided-tour.js. Shown once per account (app_tour_seen in General
+   settings) and replayable from the header's ? button. When it ends, the
+   current page's own tour (common/page-tour.js) gets its turn. */
+function startAppTour() {
+    if (!window.LQGuidedTour || !professorSidebar) return;
+
+    // Replaying while a page tour runs would stack two tours.
+    try {
+        if (contentFrame?.contentWindow?.LQGuidedTour?.isActive()) return;
+    } catch (e) {
+        // ignore same-origin framing issues
+    }
+
+    const wasCollapsed = professorSidebar.classList.contains("collapsed");
+    const wasOpen = professorSidebar.classList.contains("open");
+
+    // Show the sidebar's labels for the tour without saving that as the
+    // user's sidebar state; it is put back when the tour ends.
+    function showSidebar() {
+        if (window.matchMedia("(min-width: 768px)").matches) {
+            professorSidebar.classList.remove("collapsed");
+        } else {
+            openMobileSidebar();
+        }
+        // Let the 0.3s slide/resize finish before the spotlight measures it.
+        return new Promise((resolve) => setTimeout(resolve, 350));
+    }
+
+    function restoreSidebar() {
+        professorSidebar.classList.toggle("collapsed", wasCollapsed);
+        if (!wasOpen) closeMobileSidebar();
+    }
+
+    function onFinish() {
+        restoreSidebar();
+
+        const preferences = getHostConfig().preferences;
+        if (preferences && preferences.app_tour_seen !== true) {
+            preferences.app_tour_seen = true;
+            fetch("/settings/general", {
+                method: "PUT",
+                credentials: "same-origin",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    "X-XSRF-TOKEN": getCsrfToken(),
+                },
+                body: JSON.stringify({ app_tour_seen: true }),
+            }).catch(() => {
+                // Not saved: the tour will simply be offered again next time.
+            });
+        }
+
+        try {
+            contentFrame?.contentWindow?.LQPageTour?.autoStart();
+        } catch (e) {
+            // ignore same-origin framing issues
+        }
+    }
+
+    window.LQGuidedTour.start(
+        [
+            {
+                title: "Welcome to LearnQuest",
+                body: "This quick tour shows where everything is on the teacher side: the menu on the left and the buttons along the top. Each page also has its own short tour.",
+            },
+            {
+                before: showSidebar,
+                target: "#nav-home-prof",
+                title: "Home",
+                body: "Your classes at a glance. Open a class to post lessons and announcements, and see who has joined.",
+            },
+            {
+                target: "#nav-dashboard-prof",
+                title: "Dashboard",
+                body: "Class analytics: each lesson's mastery (estimated by Bayesian Knowledge Tracing from students' answers), quiz scores over time, and the students who may need help.",
+            },
+            {
+                target: "#myClassesToggleBtn",
+                title: "My Classes",
+                body: "A shortcut to each of your classes. Click it to open the list and jump straight to a class.",
+            },
+            {
+                target: "#nav-modules-prof",
+                title: "Modules",
+                body: "Your lesson PDFs, organised by subject. Upload a file once, post it to any of your classes, and manage the competencies each lesson teaches.",
+            },
+            {
+                target: "#nav-archive",
+                title: "Archived Classes",
+                body: "Classes you have archived. Their records are kept here and you can restore them at any time.",
+            },
+            {
+                target: "#nav-worksheets-prof",
+                title: "Quiz & AI Setup",
+                body: "QuestAI writes each lesson's quiz from its PDF. Here you set how the quiz works and review the questions it generated.",
+            },
+            {
+                target: "#nav-questai-prof",
+                title: "QuestAI Coach",
+                body: "Your AI teaching assistant. Ask it about your classes and students' progress, or have it draft a slide deck from a lesson PDF.",
+            },
+            {
+                target: "#nav-settings-prof",
+                title: "Settings",
+                body: "Your profile, password, notifications and display options such as theme, text size and start page.",
+            },
+            {
+                target: "#createClassBtn",
+                title: "Create a class",
+                body: "Start a new class. Students join it with the class code it gets.",
+            },
+            {
+                target: "#notiBtn",
+                title: "Notifications",
+                body: "System alerts such as new enrolments, students at risk and quiz feedback. Choose which ones you get in Settings.",
+            },
+            {
+                target: "#darkModeBtn",
+                title: "Light or dark",
+                body: "Switch between light and dark mode. Your choice is saved to your account.",
+            },
+            {
+                target: "#profileMenuBtn",
+                title: "Your account",
+                body: "Click your name for Account Settings and to sign out.",
+            },
+            {
+                target: "#appTourBtn",
+                title: "Replay this tour",
+                body: "Click here any time to see this tour again.",
+            },
+            {
+                title: "You're all set",
+                body: 'Every page has its own short tour too. It starts the first time you open the page, and you can replay it with the "Take the tour" button at the top of the page.',
+            },
+        ],
+        { onFinish },
     );
 }
 
@@ -1337,18 +1493,138 @@ function renderEnrolledDropdown() {
 let currentProfileName = getHostConfig().profileName || "";
 
 function renderHeaderAvatar(name, avatarUrl) {
-    if (!headerAvatar) return;
+    fillAvatar(headerAvatar, name, avatarUrl);
+    renderProfileMenuHead(name, avatarUrl);
+}
 
-    headerAvatar.textContent = "";
+/* Photo if there is one, otherwise the name's first letter. */
+function fillAvatar(el, name, avatarUrl) {
+    if (!el) return;
+
+    el.textContent = "";
     if (avatarUrl) {
         const img = document.createElement("img");
         img.src = avatarUrl;
         img.alt = "";
         img.className = "avatar-img";
-        headerAvatar.appendChild(img);
+        el.appendChild(img);
     } else {
-        headerAvatar.textContent = (name || "?").trim().charAt(0).toUpperCase();
+        el.textContent = (name || "?").trim().charAt(0).toUpperCase();
     }
+}
+
+/* PROFILE MENU — the avatar/name button at the top right opens a small
+   menu with Account Settings and Sign Out. */
+function renderProfileMenuHead(name, avatarUrl) {
+    if (!profileMenu) return;
+
+    fillAvatar(document.getElementById("profileMenuAvatar"), name, avatarUrl);
+
+    const nameEl = document.getElementById("profileMenuName");
+    const emailEl = document.getElementById("profileMenuEmail");
+    const roleEl = document.getElementById("profileMenuRole");
+    if (nameEl) nameEl.textContent = name || "";
+    if (emailEl) emailEl.textContent = getHostConfig().email || "";
+    if (roleEl) roleEl.textContent = (getStoredRole() || getHostConfig().role) === "professor" ? "Professor" : "Student";
+}
+
+function profileMenuItems() {
+    return profileMenu ? Array.from(profileMenu.querySelectorAll(".profile-menu-item")) : [];
+}
+
+function isProfileMenuOpen() {
+    return Boolean(profileMenu && !profileMenu.hidden);
+}
+
+function openProfileMenu({ focusFirst = false } = {}) {
+    if (!profileMenu || !profileMenuBtn) return;
+
+    closeNotifications();
+    profileMenu.hidden = false;
+    profileMenuBtn.setAttribute("aria-expanded", "true");
+    positionProfileMenu();
+
+    if (focusFirst) profileMenuItems()[0]?.focus();
+}
+
+function closeProfileMenu({ returnFocus = false } = {}) {
+    if (!isProfileMenuOpen()) return;
+
+    profileMenu.hidden = true;
+    profileMenuBtn?.setAttribute("aria-expanded", "false");
+    if (returnFocus) profileMenuBtn?.focus();
+}
+
+function toggleProfileMenu(event) {
+    if (isProfileMenuOpen()) {
+        closeProfileMenu();
+    } else {
+        // A keyboard "click" has no pointer position (detail 0).
+        openProfileMenu({ focusFirst: event?.detail === 0 });
+    }
+}
+
+/* Right-aligned under the button, never past the window's edge. */
+function positionProfileMenu() {
+    if (!isProfileMenuOpen() || !profileMenuBtn) return;
+
+    const rect = profileMenuBtn.getBoundingClientRect();
+    const gutter = 12;
+    const right = Math.max(gutter, window.innerWidth - rect.right);
+
+    profileMenu.style.top = `${rect.bottom + 8}px`;
+    profileMenu.style.right = `${right}px`;
+}
+
+function runProfileAction(action) {
+    closeProfileMenu();
+
+    if (action === "settings") {
+        const role = getStoredRole() || getHostConfig().role;
+        document.getElementById(role === "professor" ? "nav-settings-prof" : "nav-settings")?.click();
+    } else if (action === "signout") {
+        openLogoutModal();
+    }
+}
+
+function initProfileMenu() {
+    if (!profileMenuBtn || !profileMenu) return;
+
+    profileMenuBtn.addEventListener("click", toggleProfileMenu);
+
+    profileMenu.addEventListener("click", (e) => {
+        const item = e.target.closest("[data-profile-action]");
+        if (item) runProfileAction(item.dataset.profileAction);
+    });
+
+    profileMenu.addEventListener("keydown", (e) => {
+        const items = profileMenuItems();
+        const index = items.indexOf(document.activeElement);
+
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const step = e.key === "ArrowDown" ? 1 : -1;
+            items[(index + step + items.length) % items.length]?.focus();
+        } else if (e.key === "Tab") {
+            closeProfileMenu();
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && isProfileMenuOpen()) closeProfileMenu({ returnFocus: true });
+    });
+
+    // Clicks elsewhere in the shell close it…
+    document.addEventListener("click", (e) => {
+        if (!isProfileMenuOpen()) return;
+        if (profileMenu.contains(e.target) || profileMenuBtn.contains(e.target)) return;
+        closeProfileMenu();
+    });
+
+    // …and clicks inside the page never reach the shell, but they do move
+    // focus into the iframe, which blurs this window.
+    window.addEventListener("blur", () => closeProfileMenu());
+    window.addEventListener("resize", positionProfileMenu);
 }
 
 /* Called by the Settings page (inside the content iframe) after a save. */
@@ -1408,6 +1684,7 @@ function initNotifications() {
 
 function toggleNotifications() {
     if (!notiDrawer) return;
+    closeProfileMenu();
     notiDrawer.classList.toggle("open");
     if (notiDrawer.classList.contains("open")) fetchNotifications();
 }
@@ -1419,6 +1696,8 @@ function closeNotifications() {
 async function notificationRequest(url, method = "GET") {
     const headers = { Accept: "application/json" };
     if (method !== "GET") headers["X-XSRF-TOKEN"] = getCsrfToken();
+    // Polling must not keep an idle session awake (Settings → Security lock).
+    else headers["X-LQ-Background"] = "1";
 
     const res = await fetch(url, { method, credentials: "same-origin", headers });
     if (!res.ok) throw new Error(`notification request failed (${res.status})`);

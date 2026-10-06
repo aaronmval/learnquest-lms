@@ -34,6 +34,47 @@ function getCsrfToken() {
 }
 
 /* LOAD — fetch the real class from the database, keyed by ?id= */
+/* GUIDED TOUR — common/page-tour.js */
+function classTourSteps() {
+    return [
+        {
+            title: "Welcome to your class",
+            body: "This is one class's page: the lessons and announcements you post, and the students who have joined.",
+        },
+        {
+            target: "#renameClassBtn",
+            title: "Class details",
+            body: "Edit the class name, section, subject and room.",
+        },
+        {
+            target: "#quickPostBtn",
+            title: "Create a post",
+            body: "Post an announcement, or a lesson with a PDF attached. Each lesson PDF gets an AI-generated summary and quiz for your students.",
+        },
+        {
+            // Just the first post, not the whole feed.
+            target: () => document.querySelector(".post-card"),
+            title: "The class feed",
+            body: "Your posts, newest first. On a lesson, the ⋮ menu has Quiz Feedback: how students rated the quiz and whether it felt too easy or too hard, with the option to regenerate it.",
+            fallback: 'Your posts will appear here. Use "Create a new post" to share your first lesson or announcement.',
+        },
+        {
+            target: () => document.getElementById("classSnapshotList")?.closest(".ai-insights-card"),
+            title: "Class snapshot",
+            body: "How many students are enrolled, how many posts you have made this quarter, and the latest activity. View Students lists everyone in the class.",
+        },
+        {
+            target: ".invite-code-card",
+            title: "Invite students",
+            body: "Students join with this code. Copy it to share, or generate a new one if the old code has spread too far; the old code then stops working.",
+        },
+        {
+            title: "That's your class",
+            body: 'To set up the AI quiz for a lesson, use Quiz & AI Setup in the sidebar. Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
+
 async function loadClassInfo() {
     const classId = new URLSearchParams(window.location.search).get("id");
 
@@ -1113,7 +1154,12 @@ function showToast(message) {
 
 /* INIT */
 document.addEventListener("DOMContentLoaded", () => {
-    loadClassInfo();
+    // No tour on the "Class not found" screen; otherwise the first-visit
+    // tour waits for the feed so it can point at a post.
+    loadClassInfo().then(() => {
+        if (!CLASS_ID) return;
+        window.LQPageTour?.init({ key: "tour_seen_class", steps: classTourSteps });
+    });
 
     /* The header's "Create Class" button belongs to the shared shell, not
        this page. The side-panel quick post button opens the announcement/
