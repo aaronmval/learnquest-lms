@@ -92,11 +92,15 @@ class CompetencySuggestionService
         } catch (InvalidAiResponseException $e) {
             $this->logInvalid($subject, $result, $e);
 
-            if (empty(config('services.routeway.fallback_model')) || $result['model'] === config('services.routeway.fallback_model')) {
+            // Only re-ask when the primary model wrote it: a reply from a
+            // fallback model already came after the primary failed, and
+            // re-running the fallback chain would overrun the time budget.
+            $hasFallback = ! empty(config('services.routeway.fallback_model')) || ! empty(config('services.routeway.last_resort_model'));
+            if (! $hasFallback || $result['model'] !== config('services.routeway.model')) {
                 throw $e;
             }
 
-            // The primary model answered but not in a usable shape — ask the fallback model once.
+            // The primary model answered but not in a usable shape — ask the fallback models once.
             $result = $this->llama->chat($messages, $options + ['fallback_only' => true]);
 
             try {

@@ -16,8 +16,9 @@ use Throwable;
 
 /**
  * Low-level client for chat-completions via the Routeway OpenAI-compatible
- * API. Handles auth, transport, retries, and a same-account fallback model
- * — no application-specific prompt or business logic belongs here.
+ * API. Handles auth, transport, retries, and a same-account model chain
+ * (Llama → DeepSeek → DeepSeek free) — no application-specific prompt or
+ * business logic belongs here.
  */
 class LlamaService
 {
@@ -28,7 +29,12 @@ class LlamaService
     private const RETRYABLE_STATUSES = [502, 503, 504];
 
     /** Per-call limit options consumed here — never sent to the API. */
-    private const LIMIT_OPTIONS = ['timeout', 'max_retries', 'fallback_timeout', 'fallback_max_retries', 'fallback_only'];
+    private const LIMIT_OPTIONS = [
+        'timeout', 'max_retries',
+        'fallback_timeout', 'fallback_max_retries',
+        'last_resort_timeout', 'last_resort_max_retries',
+        'fallback_only',
+    ];
 
     private Client $client;
 
@@ -41,17 +47,18 @@ class LlamaService
     }
 
     /**
-     * Send a chat-completion request. Tries the configured primary model
-     * (with retries on transient failures), then falls back to a secondary
-     * model on the same Routeway account if the primary is unavailable.
+     * Send a chat-completion request down the model chain: the primary model
+     * (with retries on transient failures), then the fallback model, then
+     * the last-resort model — all on the same Routeway account — moving on
+     * only when the one before fails.
      *
      * Latency-sensitive callers can tighten the limits per call with
-     * `timeout` / `max_retries` (primary) and `fallback_timeout` /
-     * `fallback_max_retries` (fallback), so a slow primary hands over to the
-     * fallback quickly. `fallback_only` skips the primary and asks the
-     * fallback model directly — for callers whose primary reply arrived but
-     * failed their own validation. Any other option is passed through to
-     * the API body.
+     * `timeout` / `max_retries` (primary), `fallback_timeout` /
+     * `fallback_max_retries` and `last_resort_timeout` /
+     * `last_resort_max_retries`, so a slow model hands over quickly.
+     * `fallback_only` skips the primary — for callers whose primary reply
+     * arrived but failed their own validation. Any other option is passed
+     * through to the API body.
      *
      * @param  array<int, array{role: string, content: string}>  $messages
      * @return array{content: string, model: string}
@@ -65,12 +72,8 @@ class LlamaService
 
         $limits = array_intersect_key($options, array_flip(self::LIMIT_OPTIONS));
         $options = array_diff_key($options, $limits);
-        $primaryLimits = ['timeout' => $limits['timeout'] ?? null, 'max_retries' => $limits['max_retries'] ?? null];
-        $fallbackLimits = ['timeout' => $limits['fallback_timeout'] ?? null, 'max_retries' => $limits['fallback_max_retries'] ?? null];
 
         $apiKey = config('services.routeway.api_key');
-        $primaryModel = config('services.routeway.model');
-        $fallbackModel = config('services.routeway.fallback_model');
 
         if (empty($apiKey)) {
             $log->error('[llama] Aborting: LLAMA_API_KEY is not set.', ['request_id' => $requestId]);
@@ -78,55 +81,88 @@ class LlamaService
             throw new LlamaApiException('Llama API key is not configured.');
         }
 
-        if (! empty($limits['fallback_only'])) {
-            if (empty($fallbackModel)) {
-                throw new LlamaApiException('No fallback AI model is configured.');
-            }
+        $chain = $this->modelChain($limits);
 
-            $log->info('[llama] Using fallback model directly.', [
-                'request_id' => $requestId,
-                'fallback_model' => $fallbackModel,
-            ]);
-
-            $content = $this->attemptWithRetries($fallbackModel, $messages, $options, $fallbackLimits, $apiKey, $requestId, $log);
-
-            return ['content' => $content, 'model' => $fallbackModel];
+        if (empty($chain)) {
+            throw new LlamaApiException('No fallback AI model is configured.');
         }
 
-        try {
-            $content = $this->attemptWithRetries($primaryModel, $messages, $options, $primaryLimits, $apiKey, $requestId, $log);
-
-            return ['content' => $content, 'model' => $primaryModel];
-        } catch (LlamaApiException $primaryError) {
-            if (empty($fallbackModel)) {
-                throw $primaryError;
-            }
-
-            $log->warning('[llama] Primary model failed — trying fallback model.', [
+        if (! empty($limits['fallback_only'])) {
+            $log->info('[llama] Skipping the primary model.', [
                 'request_id' => $requestId,
-                'primary_model' => $primaryModel,
-                'fallback_model' => $fallbackModel,
-                'primary_error' => $primaryError->getMessage(),
+                'model' => $chain[0]['model'],
             ]);
+        }
+
+        $lastError = null;
+
+        foreach ($chain as $i => $step) {
+            if ($lastError !== null) {
+                $log->warning('[llama] Model failed — trying the next one.', [
+                    'request_id' => $requestId,
+                    'failed_model' => $chain[$i - 1]['model'],
+                    'next_model' => $step['model'],
+                    'error' => $lastError->getMessage(),
+                ]);
+            }
 
             try {
-                $content = $this->attemptWithRetries($fallbackModel, $messages, $options, $fallbackLimits, $apiKey, $requestId, $log);
+                $content = $this->attemptWithRetries($step['model'], $messages, $options, $step, $apiKey, $requestId, $log);
 
-                return ['content' => $content, 'model' => $fallbackModel];
-            } catch (LlamaApiException $fallbackError) {
-                $log->error('[llama] Fallback model also failed — giving up.', [
-                    'request_id' => $requestId,
-                    'fallback_model' => $fallbackModel,
-                    'error' => $fallbackError->getMessage(),
-                ]);
-
-                throw new LlamaApiException(
-                    'AI service unavailable (primary and fallback models both failed).',
-                    0,
-                    $fallbackError,
-                );
+                return ['content' => $content, 'model' => $step['model']];
+            } catch (LlamaApiException $e) {
+                $lastError = $e;
             }
         }
+
+        if (count($chain) === 1) {
+            throw $lastError;
+        }
+
+        $log->error('[llama] Every model failed — giving up.', [
+            'request_id' => $requestId,
+            'models' => array_column($chain, 'model'),
+            'error' => $lastError->getMessage(),
+        ]);
+
+        throw new LlamaApiException('AI service unavailable (all models failed).', 0, $lastError);
+    }
+
+    /**
+     * The models to try, in order, each with its own limits (null = the
+     * configured default): primary, fallback, last resort. Blank or repeated
+     * models are left out; `fallback_only` drops the primary.
+     *
+     * @return list<array{model: string, timeout: ?int, max_retries: ?int}>
+     */
+    private function modelChain(array $limits): array
+    {
+        $steps = [
+            [
+                'model' => empty($limits['fallback_only']) ? config('services.routeway.model') : null,
+                'timeout' => $limits['timeout'] ?? null,
+                'max_retries' => $limits['max_retries'] ?? null,
+            ],
+            [
+                'model' => config('services.routeway.fallback_model'),
+                'timeout' => $limits['fallback_timeout'] ?? null,
+                'max_retries' => $limits['fallback_max_retries'] ?? null,
+            ],
+            [
+                'model' => config('services.routeway.last_resort_model'),
+                'timeout' => (int) ($limits['last_resort_timeout'] ?? config('services.routeway.last_resort_timeout', 45)),
+                'max_retries' => (int) ($limits['last_resort_max_retries'] ?? config('services.routeway.last_resort_max_retries', 0)),
+            ],
+        ];
+
+        $chain = [];
+        foreach ($steps as $step) {
+            if (! empty($step['model']) && ! in_array($step['model'], array_column($chain, 'model'), true)) {
+                $chain[] = $step;
+            }
+        }
+
+        return $chain;
     }
 
     /**
@@ -160,10 +196,7 @@ class LlamaService
             throw new LlamaApiException('Llama API key is not configured.');
         }
 
-        $rounds = array_filter([
-            empty($limits['fallback_only']) ? [config('services.routeway.model'), $limits['timeout'] ?? null] : null,
-            [config('services.routeway.fallback_model'), $limits['fallback_timeout'] ?? null],
-        ], fn ($round) => $round !== null && ! empty($round[0]));
+        $rounds = array_map(fn (array $step) => [$step['model'], $step['timeout']], $this->modelChain($limits));
 
         $pending = array_keys($conversations);
         $results = [];

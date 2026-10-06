@@ -419,7 +419,7 @@ class QuizStudioTest extends TestCase
         $llama->shouldReceive('chatConcurrent')->once()->andReturnUsing(function (array $conversations, array $options, callable $parse) {
             // 10 questions → two parallel batches of 5 with the mix dealt evenly.
             $this->assertCount(2, $conversations);
-            $this->assertSame(40, $options['timeout']);
+            $this->assertSame(35, $options['timeout']);
 
             foreach ($conversations as $i => $messages) {
                 $system = $messages[0]['content'];

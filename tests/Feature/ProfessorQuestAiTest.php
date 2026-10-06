@@ -106,7 +106,8 @@ class ProfessorQuestAiTest extends TestCase
             // Short limits so a slow Llama hands over to DeepSeek quickly.
             ->withArgs(fn (array $messages, array $options) => $options['timeout'] === 25
                 && $options['max_retries'] === 0
-                && $options['fallback_timeout'] === 45
+                && $options['fallback_timeout'] === 40
+                && $options['last_resort_timeout'] === 35
                 && ($assertMessages === null || $assertMessages($messages)))
             ->andReturn(['content' => 'Try a **mole-ratio relay**:\n- Pair students', 'model' => 'llama-3.3-70b-instruct']);
         $this->app->instance(LlamaService::class, $llama);

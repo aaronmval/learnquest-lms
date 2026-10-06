@@ -24,6 +24,9 @@ class LlamaServiceTest extends TestCase
             'services.routeway.api_key' => 'test-key',
             'services.routeway.model' => 'llama-3.3-70b-instruct',
             'services.routeway.fallback_model' => null, // opt in per-test
+            'services.routeway.last_resort_model' => null, // opt in per-test
+            'services.routeway.last_resort_timeout' => 45,
+            'services.routeway.last_resort_max_retries' => 0,
             'services.routeway.max_retries' => 2,
             'services.routeway.retry_delay_ms' => 1, // keep tests fast
         ]);
@@ -257,5 +260,153 @@ class LlamaServiceTest extends TestCase
         $this->assertSame(600, $body['max_tokens']);
         $this->assertArrayNotHasKey('timeout', $body);
         $this->assertArrayNotHasKey('fallback_max_retries', $body);
+    }
+
+    /* LAST RESORT (third model) */
+
+    private function withAllThreeModels(): void
+    {
+        config([
+            'services.routeway.fallback_model' => 'deepseek-v4-flash',
+            'services.routeway.last_resort_model' => 'deepseek-v4-flash:free',
+        ]);
+    }
+
+    /** @param  array<int, mixed>  $history */
+    private function serviceWithHistory(array $queue, array &$history): LlamaService
+    {
+        $stack = HandlerStack::create(new MockHandler($queue));
+        $stack->push(Middleware::history($history));
+
+        return new LlamaService(new Client(['handler' => $stack, 'base_uri' => 'https://api.routeway.ai/v1/']));
+    }
+
+    private function modelOf(array $entry): string
+    {
+        return json_decode((string) $entry['request']->getBody(), true)['model'];
+    }
+
+    public function test_last_resort_answers_when_primary_and_fallback_both_fail(): void
+    {
+        $this->withAllThreeModels();
+
+        $history = [];
+        $service = $this->serviceWithHistory([
+            new Response(503, [], 'down'),            // primary (no retries)
+            new Response(503, [], 'down'),            // fallback (no retries)
+            $this->successResponse('free tier reply'),
+        ], $history);
+
+        $result = $service->chat([['role' => 'user', 'content' => 'hi']], ['max_retries' => 0, 'fallback_max_retries' => 0]);
+
+        $this->assertSame('free tier reply', $result['content']);
+        $this->assertSame('deepseek-v4-flash:free', $result['model']);
+        $this->assertSame(
+            ['llama-3.3-70b-instruct', 'deepseek-v4-flash', 'deepseek-v4-flash:free'],
+            array_map(fn ($entry) => $this->modelOf($entry), $history),
+        );
+        // The configured default limit applies to the last resort.
+        $this->assertSame(45, $history[2]['options']['timeout']);
+    }
+
+    public function test_throws_when_every_model_fails(): void
+    {
+        $this->withAllThreeModels();
+
+        $service = $this->serviceWithQueue([
+            new Response(503, [], 'down'),
+            new Response(503, [], 'down'),
+            new Response(503, [], 'down'),
+        ]);
+
+        $this->expectException(LlamaApiException::class);
+        $this->expectExceptionMessage('all models failed');
+        $service->chat([['role' => 'user', 'content' => 'hi']], ['max_retries' => 0, 'fallback_max_retries' => 0]);
+    }
+
+    public function test_fallback_only_moves_on_to_the_last_resort_and_never_asks_the_primary(): void
+    {
+        $this->withAllThreeModels();
+
+        $history = [];
+        $service = $this->serviceWithHistory([
+            new Response(503, [], 'down'),
+            $this->successResponse('free tier reply'),
+        ], $history);
+
+        $result = $service->chat([['role' => 'user', 'content' => 'hi']], ['fallback_only' => 1, 'fallback_max_retries' => 0]);
+
+        $this->assertSame('deepseek-v4-flash:free', $result['model']);
+        $this->assertSame(
+            ['deepseek-v4-flash', 'deepseek-v4-flash:free'],
+            array_map(fn ($entry) => $this->modelOf($entry), $history),
+        );
+    }
+
+    public function test_per_call_last_resort_limits_apply_and_never_reach_the_api(): void
+    {
+        $this->withAllThreeModels();
+
+        $history = [];
+        $service = $this->serviceWithHistory([
+            new Response(503, [], 'down'),
+            new Response(503, [], 'down'),
+            new Response(502, [], 'gateway'),          // last resort, first try
+            $this->successResponse('second try'),      // last resort retry
+        ], $history);
+
+        $result = $service->chat([['role' => 'user', 'content' => 'hi']], [
+            'max_retries' => 0,
+            'fallback_max_retries' => 0,
+            'last_resort_timeout' => 12,
+            'last_resort_max_retries' => 1,
+        ]);
+
+        $this->assertSame('second try', $result['content']);
+        $this->assertCount(4, $history);
+        $this->assertSame(12, $history[3]['options']['timeout']);
+
+        $body = json_decode((string) $history[3]['request']->getBody(), true);
+        $this->assertArrayNotHasKey('last_resort_timeout', $body);
+        $this->assertArrayNotHasKey('last_resort_max_retries', $body);
+    }
+
+    public function test_a_blank_last_resort_keeps_the_two_model_chain(): void
+    {
+        config(['services.routeway.fallback_model' => 'deepseek-v4-flash']);
+
+        $history = [];
+        $service = $this->serviceWithHistory([
+            new Response(503, [], 'down'),
+            new Response(503, [], 'down'),
+        ], $history);
+
+        try {
+            $service->chat([['role' => 'user', 'content' => 'hi']], ['max_retries' => 0, 'fallback_max_retries' => 0]);
+            $this->fail('Expected the chat to fail.');
+        } catch (LlamaApiException $e) {
+            $this->assertCount(2, $history);
+        }
+    }
+
+    public function test_concurrent_requests_failing_twice_get_a_last_resort_round(): void
+    {
+        $this->withAllThreeModels();
+
+        $service = $this->serviceWithQueue([
+            $this->successResponse('a from llama'),
+            new Response(503, [], 'down'),                  // b on llama
+            new Response(503, [], 'down'),                  // b on deepseek
+            $this->successResponse('b from free'),
+        ]);
+
+        $results = $service->chatConcurrent([
+            'a' => [['role' => 'user', 'content' => 'a']],
+            'b' => [['role' => 'user', 'content' => 'b']],
+        ]);
+
+        $this->assertSame(['a', 'b'], array_keys($results));
+        $this->assertSame(['value' => 'a from llama', 'model' => 'llama-3.3-70b-instruct'], $results['a']);
+        $this->assertSame(['value' => 'b from free', 'model' => 'deepseek-v4-flash:free'], $results['b']);
     }
 }

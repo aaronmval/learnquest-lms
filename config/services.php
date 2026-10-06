@@ -55,53 +55,64 @@ return [
         'retry_delay_ms' => env('LLAMA_RETRY_DELAY_MS', 500),
         // Same Routeway account/key, different model — tried only after the
         // primary model exhausts its retries. Leave blank to disable. Uses
-        // the paid deepseek-v4-flash, not the ":free" tier — the free tier
-        // was observed returning degenerate, repeating output.
+        // the paid deepseek-v4-flash; its ":free" tier is kept for the last
+        // resort below.
         'fallback_model' => env('LLAMA_FALLBACK_MODEL', 'deepseek-v4-flash'),
-        // Tighter limits for the professor dashboard's class analysis, which
-        // a professor waits on: a slow Llama hands over to the fallback model
-        // (DeepSeek) after a few seconds instead of after the full default
-        // timeout x retries. Seconds; retries as above.
+        // Last resort after the primary and fallback models both fail. The
+        // free tier was once seen giving degenerate, repeating output, so it
+        // stays strictly last and callers still validate structured replies.
+        // It is rate-limited, so no retries by default. Leave blank to disable.
+        'last_resort_model' => env('LLAMA_LAST_RESORT_MODEL', 'deepseek-v4-flash:free'),
+        'last_resort_timeout' => env('LLAMA_LAST_RESORT_TIMEOUT', 45),
+        'last_resort_max_retries' => env('LLAMA_LAST_RESORT_MAX_RETRIES', 0),
+        // Per-feature limits below are sized so the worst case — every model
+        // timing out in turn (Llama, then DeepSeek, then DeepSeek free) —
+        // stays under PHP's 120s max_execution_time for web requests.
+        //
+        // Professor dashboard's class analysis, which a professor waits on: a
+        // slow Llama hands over after a few seconds. Worst case ~35s.
         'class_insights' => [
             'timeout' => env('LLAMA_INSIGHTS_TIMEOUT', 8),
             'max_retries' => env('LLAMA_INSIGHTS_MAX_RETRIES', 0),
             'fallback_timeout' => env('LLAMA_INSIGHTS_FALLBACK_TIMEOUT', 15),
             'fallback_max_retries' => env('LLAMA_INSIGHTS_FALLBACK_MAX_RETRIES', 0),
+            'last_resort_timeout' => env('LLAMA_INSIGHTS_LAST_RESORT_TIMEOUT', 12),
         ],
-        // Professor QuestAI Coach chat: the professor waits on the reply, so a
-        // slow or failing Llama hands over to the fallback model (DeepSeek)
-        // after one attempt instead of the full default timeout x retries.
+        // Professor QuestAI Coach chat: the professor waits on the reply, so
+        // each model gets one attempt. Worst case ~100s.
         'questai_coach' => [
             'timeout' => env('LLAMA_COACH_TIMEOUT', 25),
             'max_retries' => env('LLAMA_COACH_MAX_RETRIES', 0),
-            'fallback_timeout' => env('LLAMA_COACH_FALLBACK_TIMEOUT', 45),
+            'fallback_timeout' => env('LLAMA_COACH_FALLBACK_TIMEOUT', 40),
             'fallback_max_retries' => env('LLAMA_COACH_FALLBACK_MAX_RETRIES', 0),
+            'last_resort_timeout' => env('LLAMA_COACH_LAST_RESORT_TIMEOUT', 35),
         ],
-        // AI quiz generation: one Llama attempt per batch, then the fallback
-        // model, so the worst case stays well under PHP's 120s web limit.
+        // AI quiz generation: one attempt per model for each batch (batches
+        // run in parallel). Worst case ~110s.
         'quiz' => [
-            'timeout' => env('LLAMA_QUIZ_TIMEOUT', 40),
+            'timeout' => env('LLAMA_QUIZ_TIMEOUT', 35),
             'max_retries' => env('LLAMA_QUIZ_MAX_RETRIES', 0),
-            'fallback_timeout' => env('LLAMA_QUIZ_FALLBACK_TIMEOUT', 60),
+            'fallback_timeout' => env('LLAMA_QUIZ_FALLBACK_TIMEOUT', 40),
             'fallback_max_retries' => env('LLAMA_QUIZ_FALLBACK_MAX_RETRIES', 0),
+            'last_resort_timeout' => env('LLAMA_QUIZ_LAST_RESORT_TIMEOUT', 35),
         ],
-        // AI competency suggestions (from a subject's uploaded modules): Llama
-        // with one retry on a transient gateway error, then the fallback model,
-        // leaving room for PDF text extraction inside PHP's 120s web limit.
+        // AI competency suggestions (from a subject's uploaded modules): one
+        // attempt per model, leaving room for PDF text extraction. Worst
+        // case ~95s plus extraction.
         'competency_suggestions' => [
             'timeout' => env('LLAMA_COMPETENCY_TIMEOUT', 30),
-            'max_retries' => env('LLAMA_COMPETENCY_MAX_RETRIES', 1),
-            'fallback_timeout' => env('LLAMA_COMPETENCY_FALLBACK_TIMEOUT', 40),
+            'max_retries' => env('LLAMA_COMPETENCY_MAX_RETRIES', 0),
+            'fallback_timeout' => env('LLAMA_COMPETENCY_FALLBACK_TIMEOUT', 35),
             'fallback_max_retries' => env('LLAMA_COMPETENCY_FALLBACK_MAX_RETRIES', 0),
+            'last_resort_timeout' => env('LLAMA_COMPETENCY_LAST_RESORT_TIMEOUT', 30),
         ],
         // QuestAI Coach slide decks are written in parallel parts of up to 5
-        // slides. Each part gets one Llama attempt, then one fallback attempt,
-        // so the worst case (timeout + fallback_timeout) stays well under
-        // PHP's 120s max_execution_time for web requests.
+        // slides; each part gets one attempt per model. Worst case ~105s.
         'slide_deck' => [
             'max_tokens' => env('LLAMA_SLIDE_DECK_MAX_TOKENS', 2500),
-            'timeout' => env('LLAMA_SLIDE_DECK_TIMEOUT', 35),
-            'fallback_timeout' => env('LLAMA_SLIDE_DECK_FALLBACK_TIMEOUT', 60),
+            'timeout' => env('LLAMA_SLIDE_DECK_TIMEOUT', 30),
+            'fallback_timeout' => env('LLAMA_SLIDE_DECK_FALLBACK_TIMEOUT', 40),
+            'last_resort_timeout' => env('LLAMA_SLIDE_DECK_LAST_RESORT_TIMEOUT', 35),
         ],
     ],
 

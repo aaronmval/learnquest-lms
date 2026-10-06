@@ -142,7 +142,7 @@ class SlideDeckGenerationTest extends TestCase
         $this->assertStringContainsString('part 1 of 2', $sent[0]['system']);
         $this->assertStringContainsString('Produce exactly 4 slides', $sent[0]['system']);
         $this->assertStringContainsString('part 2 of 2 (the final part)', $sent[1]['system']);
-        $this->assertSame(35, $sent[0]['timeout']);
+        $this->assertSame(30, $sent[0]['timeout']);
         $this->assertSame(2500, $sent[0]['max_tokens']);
 
         $download = $this->actingAs($this->professor)->get($res->json('download_url'));
@@ -189,7 +189,7 @@ class SlideDeckGenerationTest extends TestCase
             ['llama-3.3-70b-instruct', 'llama-3.3-70b-instruct', 'deepseek-v4-flash', 'deepseek-v4-flash'],
             array_column($sent, 'model'),
         );
-        $this->assertSame(60, $sent[2]['timeout']);
+        $this->assertSame(40, $sent[2]['timeout']);
     }
 
     public function test_only_the_failed_part_is_retried(): void

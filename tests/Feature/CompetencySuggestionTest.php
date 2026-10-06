@@ -72,7 +72,7 @@ class CompetencySuggestionTest extends TestCase
             $prompt = implode("\n", array_column($messages, 'content'));
 
             return $options['timeout'] === 30
-                && $options['max_retries'] === 1
+                && $options['max_retries'] === 0
                 && str_contains($prompt, 'Subject: General Chemistry 2')
                 && str_contains($prompt, 'hydrogen bonding')
                 && str_contains($prompt, 'Existing competencies (do not repeat): Intermolecular Forces')
