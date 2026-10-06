@@ -56,6 +56,17 @@
                                 ></span
                             >
                         </div>
+                        <!-- Shown for untimed quizzes only (student-quiz.js):
+                             a tour would eat into a timed quiz's clock. -->
+                        <button
+                            id="quizTourBtn"
+                            type="button"
+                            class="hero-tour-btn"
+                            data-tour-start
+                            hidden
+                        >
+                            <i class="fas fa-route"></i> Take the tour
+                        </button>
                     </div>
                     <div class="quiz-timer-ring">
                         <svg viewBox="0 0 80 80" class="timer-svg">
@@ -413,6 +424,8 @@
             <span id="toastMessage"></span>
         </div>
 
+        <script src="../../assets/js/common/guided-tour.js"></script>
+        <script src="../../assets/js/common/page-tour.js"></script>
         <script src="../../assets/js/pages/student/student-quiz.js"></script>
     </body>
 </html>

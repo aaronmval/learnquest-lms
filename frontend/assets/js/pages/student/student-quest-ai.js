@@ -500,7 +500,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Sequential on purpose: the local dev server handles one request at a
     // time, and chips/banner are what the student needs first.
-    await loadContext();
+    const contextLoaded = loadContext();
+    // The first-visit tour waits for the class chips so it can point at them.
+    window.LQPageTour?.init({ key: 'tour_seen_quest_ai', steps: questAiTourSteps, ready: contextLoaded });
+    await contextLoaded;
 
     const requested = takeRequestedAction();
     if (requested) {
@@ -511,6 +514,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     loadSideInsights();
 });
+
+/* GUIDED TOUR — common/page-tour.js */
+function questAiTourSteps() {
+    return [
+        {
+            title: 'Meet QuestAI',
+            body: 'QuestAI is your AI study assistant. It knows your classes and lessons, and adjusts its help to how well you know each topic.',
+        },
+        {
+            target: '#subjectChips',
+            title: 'Pick a class',
+            body: 'Choose which class you want help with, so QuestAI answers from that class\'s lessons.',
+        },
+        {
+            target: '#chatInputBar',
+            title: 'Ask anything',
+            body: 'Type a question about your lessons, like "Why does ice float?" or "Explain mole ratios step by step".',
+        },
+        {
+            target: '#quickAskChips',
+            title: 'Quick questions',
+            body: 'One click to ask for a simple explanation, a practice question and more.',
+        },
+        {
+            target: () => document.getElementById('insightsList')?.closest('.ai-insights-card'),
+            title: 'AI insights for you',
+            body: 'Tips based on your mastery: what you\'re doing well and what to practise next.',
+        },
+        {
+            target: '.session-history-card',
+            title: 'Your chats',
+            body: 'Your recent conversations, so you can pick up where you left off. Start a fresh one any time.',
+        },
+        {
+            title: 'That\'s QuestAI',
+            body: 'QuestAI can make mistakes, so check important answers against your lessons. Replay this tour with the "Take the tour" button at the top.',
+        },
+    ];
+}
 
 /* HAND-OFF FROM OTHER PAGES — e.g. the class page's "Summarize class note"
    opens student-quest-ai.html?classId=5&action=summarize. Only whitelisted

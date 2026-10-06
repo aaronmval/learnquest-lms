@@ -599,7 +599,7 @@ function applyHostRole(role) {
         createClassBtn.style.display = role === "professor" ? "" : "none";
     }
     if (appTourBtn) {
-        appTourBtn.style.display = role === "professor" ? "" : "none";
+        appTourBtn.style.display = "";
     }
     if (document.getElementById("joinClassBtn")) {
         document.getElementById("joinClassBtn").style.display =
@@ -705,7 +705,7 @@ function initHostShell() {
 
         // First visit: introduce the header and sidebar once the first page
         // has loaded. That page's own tour follows when this one ends.
-        if (role === "professor" && getPreferences().app_tour_seen !== true) {
+        if (getPreferences().app_tour_seen !== true) {
             contentFrame.addEventListener("load", startAppTour, { once: true });
         }
     }
@@ -791,12 +791,13 @@ function toggleDesktopSidebar() {
     );
 }
 
-/* APP TOUR (professor) — introduces the header and sidebar with
+/* APP TOUR (both roles) — introduces the header and sidebar with
    common/guided-tour.js. Shown once per account (app_tour_seen in General
    settings) and replayable from the header's ? button. When it ends, the
    current page's own tour (common/page-tour.js) gets its turn. */
 function startAppTour() {
-    if (!window.LQGuidedTour || !professorSidebar) return;
+    const activeSidebar = getActiveSidebar();
+    if (!window.LQGuidedTour || !activeSidebar) return;
 
     // Replaying while a page tour runs would stack two tours.
     try {
@@ -805,14 +806,14 @@ function startAppTour() {
         // ignore same-origin framing issues
     }
 
-    const wasCollapsed = professorSidebar.classList.contains("collapsed");
-    const wasOpen = professorSidebar.classList.contains("open");
+    const wasCollapsed = activeSidebar.classList.contains("collapsed");
+    const wasOpen = activeSidebar.classList.contains("open");
 
     // Show the sidebar's labels for the tour without saving that as the
     // user's sidebar state; it is put back when the tour ends.
     function showSidebar() {
         if (window.matchMedia("(min-width: 768px)").matches) {
-            professorSidebar.classList.remove("collapsed");
+            activeSidebar.classList.remove("collapsed");
         } else {
             openMobileSidebar();
         }
@@ -821,7 +822,7 @@ function startAppTour() {
     }
 
     function restoreSidebar() {
-        professorSidebar.classList.toggle("collapsed", wasCollapsed);
+        activeSidebar.classList.toggle("collapsed", wasCollapsed);
         if (!wasOpen) closeMobileSidebar();
     }
 
@@ -852,7 +853,9 @@ function startAppTour() {
         }
     }
 
-    window.LQGuidedTour.start(
+    const isProfessor = (getStoredRole() || getHostConfig().role) === "professor";
+
+    window.LQGuidedTour.start(isProfessor ?
         [
             {
                 title: "Welcome to LearnQuest",
@@ -928,9 +931,74 @@ function startAppTour() {
                 title: "You're all set",
                 body: 'Every page has its own short tour too. It starts the first time you open the page, and you can replay it with the "Take the tour" button at the top of the page.',
             },
-        ],
+        ] : studentAppTourSteps(showSidebar),
         { onFinish },
     );
+}
+
+/* The student side's app tour: their sidebar and header. */
+function studentAppTourSteps(showSidebar) {
+    return [
+        {
+            title: "Welcome to LearnQuest",
+            body: "This quick tour shows where everything is: the menu on the left and the buttons along the top. Each page also has its own short tour.",
+        },
+        {
+            before: showSidebar,
+            target: "#nav-home",
+            title: "Home",
+            body: "All the classes you're enrolled in. Open a class to see its lessons, announcements and AI quizzes.",
+        },
+        {
+            target: "#nav-dashboard",
+            title: "Dashboard",
+            body: "Your progress: how well you've mastered each topic and how your quiz scores are going. Mastery is estimated from all your answers over time, so it isn't the same as a single quiz score.",
+        },
+        {
+            target: "#labsToggleBtn",
+            title: "Enrolled",
+            body: "A shortcut to each of your classes. Click it to open the list and jump straight to one.",
+        },
+        {
+            target: "#nav-questai",
+            title: "QuestAI Study Assistant",
+            body: "Your AI study buddy. Ask it to explain a topic, give you practice questions or summarise a lesson.",
+        },
+        {
+            target: "#nav-settings",
+            title: "Settings",
+            body: "Your profile, password, notifications and display options such as theme and text size.",
+        },
+        {
+            target: "#joinClassBtn",
+            title: "Join a class",
+            body: "Got a class code from your teacher? Enter it here to join their class.",
+        },
+        {
+            target: "#notiBtn",
+            title: "Notifications",
+            body: "Alerts about new lessons, announcements and changes in your mastery. Choose which ones you get in Settings.",
+        },
+        {
+            target: "#darkModeBtn",
+            title: "Light or dark",
+            body: "Switch between light and dark mode. Your choice is saved to your account.",
+        },
+        {
+            target: "#profileMenuBtn",
+            title: "Your account",
+            body: "Click your name for Account Settings and to sign out.",
+        },
+        {
+            target: "#appTourBtn",
+            title: "Replay this tour",
+            body: "Click here any time to see this tour again.",
+        },
+        {
+            title: "You're all set",
+            body: 'Every page has its own short tour too. It starts the first time you open the page, and you can replay it with the "Take the tour" button at the top of the page.',
+        },
+    ];
 }
 
 /* ENROLLED DROPDOWN (student pages only)*/

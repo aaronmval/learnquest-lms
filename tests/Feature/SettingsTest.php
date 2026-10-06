@@ -40,6 +40,14 @@ class SettingsTest extends TestCase
                     'restore_last_page' => true,
                     'chart_labels' => true,
                     'dashboard_lock' => true,
+                    'app_tour_seen' => false,
+                    'tour_seen_home' => false,
+                    'tour_seen_dashboard' => false,
+                    'tour_seen_class' => false,
+                    'tour_seen_lesson' => false,
+                    'tour_seen_quiz' => false,
+                    'tour_seen_quest_ai' => false,
+                    'tour_seen_settings' => false,
                 ],
                 'idle_lock_minutes' => 0,
                 'otp_on_login' => false,
@@ -292,13 +300,13 @@ class SettingsTest extends TestCase
         $this->actingAs($student)->getJson('/settings')->assertJsonMissingPath('general_preferences.deck_theme');
     }
 
-    public function test_guided_tour_flags_are_professor_only(): void
+    public function test_guided_tour_flags_follow_the_role(): void
     {
         $professor = User::factory()->create(['role' => 'professor']);
         $student = User::factory()->create(['role' => 'student']);
 
         $response = $this->actingAs($professor)->getJson('/settings')->assertOk();
-        foreach (User::PROFESSOR_TOURS as $tour) {
+        foreach (User::TOUR_FLAGS['professor'] as $tour) {
             $response->assertJsonPath("general_preferences.{$tour}", false);
         }
 
@@ -313,8 +321,19 @@ class SettingsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('general_preferences.app_tour_seen', false);
 
-        $this->actingAs($student)->putJson('/settings/general', ['app_tour_seen' => true])->assertStatus(422);
-        $this->actingAs($student)->getJson('/settings')->assertJsonMissingPath('general_preferences.app_tour_seen');
+        // Students have their own pages' tours…
+        $response = $this->actingAs($student)->getJson('/settings')->assertOk();
+        foreach (User::TOUR_FLAGS['student'] as $tour) {
+            $response->assertJsonPath("general_preferences.{$tour}", false);
+        }
+        $this->actingAs($student)->putJson('/settings/general', ['app_tour_seen' => true, 'tour_seen_quiz' => true])
+            ->assertOk()
+            ->assertJsonPath('general_preferences.app_tour_seen', true)
+            ->assertJsonPath('general_preferences.tour_seen_quiz', true);
+
+        // …but not the professor-only ones.
+        $this->actingAs($student)->putJson('/settings/general', ['tour_seen_modules' => true])->assertStatus(422);
+        $this->actingAs($professor)->putJson('/settings/general', ['tour_seen_quiz' => true])->assertStatus(422);
     }
 
     public function test_general_settings_reset_to_defaults(): void

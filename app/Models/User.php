@@ -68,20 +68,32 @@ class User extends Authenticatable
     public const IDLE_LOCK_OPTIONS = [0, 15, 30, 60];
 
     /**
-     * Guided tours a professor sees once (General settings flags): the app
+     * Guided tours each role sees once (General settings flags): the app
      * tour of the header and sidebar, then one per page.
      */
-    public const PROFESSOR_TOURS = [
-        'app_tour_seen',
-        'tour_seen_home',
-        'tour_seen_dashboard',
-        'tour_seen_class',
-        'tour_seen_modules',
-        'tour_seen_module_view',
-        'tour_seen_competencies',
-        'tour_seen_archive',
-        'tour_seen_quest_ai',
-        'tour_seen_settings',
+    public const TOUR_FLAGS = [
+        'professor' => [
+            'app_tour_seen',
+            'tour_seen_home',
+            'tour_seen_dashboard',
+            'tour_seen_class',
+            'tour_seen_modules',
+            'tour_seen_module_view',
+            'tour_seen_competencies',
+            'tour_seen_archive',
+            'tour_seen_quest_ai',
+            'tour_seen_settings',
+        ],
+        'student' => [
+            'app_tour_seen',
+            'tour_seen_home',
+            'tour_seen_dashboard',
+            'tour_seen_class',
+            'tour_seen_lesson',
+            'tour_seen_quiz',
+            'tour_seen_quest_ai',
+            'tour_seen_settings',
+        ],
     ];
 
     /**
@@ -127,10 +139,11 @@ class User extends Authenticatable
             $options['deck_theme'] = ['values' => array_keys(PresentationBuilderService::THEMES), 'default' => 'learnquest'];
             // Set once the Quiz & AI Setup guided tour has been finished or skipped.
             $options['quiz_setup_tour_seen'] = ['values' => [true, false], 'default' => false];
-            // Same for the app tour (header + sidebar) and each page's own tour.
-            foreach (self::PROFESSOR_TOURS as $tour) {
-                $options[$tour] = ['values' => [true, false], 'default' => false];
-            }
+        }
+
+        // Same for the app tour (header + sidebar) and each page's own tour.
+        foreach (self::TOUR_FLAGS[$role] ?? [] as $tour) {
+            $options[$tour] = ['values' => [true, false], 'default' => false];
         }
 
         return $options;

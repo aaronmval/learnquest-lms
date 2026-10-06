@@ -1306,6 +1306,10 @@ html.lq-reduced-motion .dashboard-lock {
     background: rgba(255, 255, 255, 0.26);
 }
 
+.hero-tour-btn[hidden] {
+    display: none;
+}
+
 /* Beside a .hero-btn, which has the same 6px top margin. */
 .hero-actions .hero-tour-btn {
     margin-top: 6px;

@@ -69,13 +69,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateFilterBadges("");
 
-    // Nothing is fetched or drawn until the privacy cover is dismissed.
+    // Nothing is fetched or drawn until the privacy cover is dismissed, and
+    // the first-visit tour waits for the charts so it can point at them.
+    const start = () => {
+        window.LQPageTour?.init({ key: "tour_seen_dashboard", steps: dashboardTourSteps, ready: loadDashboard() });
+    };
+
     if (window.LQDashboardLock) {
-        window.LQDashboardLock.whenUnlocked(loadDashboard);
+        window.LQDashboardLock.whenUnlocked(start);
     } else {
-        loadDashboard();
+        start();
     }
 });
+
+/* GUIDED TOUR — common/page-tour.js */
+function dashboardTourSteps() {
+    return [
+        {
+            title: "Welcome to your Dashboard",
+            body: "This page shows how you're doing: how well you've mastered each topic and how your quizzes went. Here is a quick look around.",
+        },
+        {
+            target: ".filter-controls",
+            title: "Filter your records",
+            body: "Show only a date range or one quarter. Export downloads what you're viewing as a CSV file, and Reset clears the filters.",
+        },
+        {
+            target: ".stat-tiles",
+            title: "Your summary",
+            body: "Overall mastery is LearnQuest's estimate of how well you know the topics, worked out from all your answers over time. The average quiz score is simply your marks, so the two can differ.",
+        },
+        {
+            target: ".chart-card-mini-radar",
+            title: "Mastery by subject",
+            body: "Each point is one of your subjects; further out means stronger. Click a subject to see its topics in the chart above.",
+        },
+        {
+            target: ".chart-card-main-radar",
+            title: "Topic breakdown",
+            body: "The topics (competencies) inside the subject you picked, so you can see exactly which ones need more practice.",
+        },
+        {
+            target: ".chart-card-performance",
+            title: "Quiz scores",
+            body: "Your average quiz score over time.",
+        },
+        {
+            target: ".chart-card-mastery-trend",
+            title: "Mastery over time",
+            body: "How your mastery has grown. A rising line means your practice is paying off.",
+        },
+        {
+            target: ".hero-actions",
+            title: "Get help and keep it private",
+            body: 'Launch QuestAI Coach to practise your weak topics. If the dashboard cover is on, "Lock now" hides your results again.',
+        },
+        {
+            title: "That's your Dashboard",
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
 
 /* DATA LOADING */
 function currentFilters() {

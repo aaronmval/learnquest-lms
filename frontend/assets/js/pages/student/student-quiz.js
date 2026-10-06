@@ -71,8 +71,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initFeedbackControls();
 
-    loadQuiz();
+    // Only untimed quizzes get a tour: the server starts a timed quiz's
+    // clock when it opens, and the lesson page's tour has already covered it.
+    loadQuiz().then(() => {
+        if (!QUIZ || QUIZ.timeLimitSeconds) return;
+        document.getElementById("quizTourBtn")?.removeAttribute("hidden");
+        window.LQPageTour?.init({ key: "tour_seen_quiz", steps: quizTourSteps });
+    });
 });
+
+/* GUIDED TOUR — common/page-tour.js */
+function quizTourSteps() {
+    return [
+        {
+            title: "Taking a quiz",
+            body: "QuestAI wrote these questions from the lesson. This quiz has no time limit, so take a moment to look around first.",
+        },
+        {
+            target: ".quiz-banner-meta",
+            title: "Quiz details",
+            body: "How many questions there are, the time limit (none here) and how many attempts you have.",
+        },
+        {
+            target: "#questionCard",
+            title: "Answer the question",
+            body: "Pick one answer. Not sure? Use the flag to mark the question and come back to it later.",
+        },
+        {
+            target: ".question-nav-actions",
+            title: "Move between questions",
+            body: "Go back and forth with Previous and Next. On the last question, Submit Quiz hands it in.",
+        },
+        {
+            target: ".navigator-card",
+            title: "Question navigator",
+            body: "See which questions you've answered or flagged, and jump straight to any of them.",
+        },
+        {
+            title: "Good luck!",
+            body: "After you submit you'll see your score and can review your answers. Your answers also update your mastery of each topic. Replay this tour with the \"Take the tour\" button at the top.",
+        },
+    ];
+}
 
 /*  QUIZ FEEDBACK — inline "Rate this quiz" section in the results modal  */
 function initFeedbackControls() {

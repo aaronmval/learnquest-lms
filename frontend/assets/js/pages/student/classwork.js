@@ -228,8 +228,47 @@ function handleBackToClass() {
 
 ClassPostCard.initPdfModalControls();
 
+/* GUIDED TOUR — common/page-tour.js. This is where students learn how quizzes
+   work, before opening one: a timed quiz's clock starts with the quiz page. */
+function lessonTourSteps() {
+    return [
+        {
+            title: "Inside a lesson",
+            body: "This is one lesson from your teacher: the lesson itself, an AI summary of it, and its quiz.",
+        },
+        {
+            target: () => document.querySelector("#feedColumn .post-card"),
+            title: "The lesson",
+            body: "Your teacher's notes and the lesson file. Click the file to read it here or download it.",
+        },
+        {
+            target: ".summary-card",
+            title: "Summary of the lesson",
+            body: "QuestAI reads the lesson file and writes a short summary of the key points, for quick review before a quiz.",
+        },
+        {
+            target: ".quiz-card",
+            title: "The AI quiz",
+            body: "QuestAI writes this quiz from the lesson. Some quizzes have a time limit that starts as soon as you open them, so get ready first. Your answers update your mastery of each topic, and your next quiz can adjust to be easier or harder to match it.",
+        },
+        {
+            target: "#backToClassBtn",
+            title: "Back to the class",
+            body: "Return to the class's list of lessons and announcements.",
+        },
+        {
+            title: "That's a lesson",
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    loadLesson();
+    // No tour when the class or lesson isn't found.
+    loadLesson().then(() => {
+        if (!CURRENT_LESSON) return;
+        window.LQPageTour?.init({ key: "tour_seen_lesson", steps: lessonTourSteps });
+    });
     document.getElementById("backToClassBtn")?.addEventListener("click", handleBackToClass);
     document.getElementById("takeQuizBtn")?.addEventListener("click", handleTakeQuiz);
 });

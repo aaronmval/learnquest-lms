@@ -18,8 +18,37 @@ const CLASS_CARD_PALETTE = [
 document.addEventListener('DOMContentLoaded', () => {
     hidePageLoader();
     updateHeroName();
-    loadClasses();
+
+    // The first-visit tour waits for the class cards so it can point at them.
+    window.LQPageTour?.init({ key: 'tour_seen_home', steps: homeTourSteps, ready: loadClasses() });
 });
+
+
+/* GUIDED TOUR — common/page-tour.js */
+function homeTourSteps() {
+    return [
+        {
+            title: 'Welcome to your Portal Hub',
+            body: 'Home is your starting point: every class you\'re enrolled in, in one place.',
+        },
+        {
+            // Just the first card, not the whole grid.
+            target: () => document.querySelector('#classGrid .class-card'),
+            title: 'Your classes',
+            body: 'One card per class, with its teacher. Click a card to open the class and see its lessons, announcements and quizzes.',
+            fallback: 'Your classes will appear here. Ask your teacher for a class code, then use "Join Class" at the top of the screen.',
+        },
+        {
+            target: '.hero-actions .hero-btn',
+            title: 'QuestAI Coach',
+            body: 'Stuck on a topic? Ask QuestAI to explain it, give you practice questions or summarise a lesson.',
+        },
+        {
+            title: 'That\'s Home',
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
 
 
 /* PAGE LOADER: Itinatago ang loading screen pagkatapos mag-load ang lahat ng content */

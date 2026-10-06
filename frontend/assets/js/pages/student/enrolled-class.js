@@ -4,6 +4,43 @@ let CLASS_TEACHER_INITIALS = "";
 let classPosts = [];
 let cardMasteryBadgesLoaded = Promise.resolve();
 
+/* GUIDED TOUR — common/page-tour.js */
+function classTourSteps() {
+    return [
+        {
+            title: "Welcome to your class",
+            body: "Everything your teacher posts for this class lands here: lessons, announcements and the AI quizzes that go with them.",
+        },
+        {
+            target: "#classBannerMastery",
+            title: "Your class mastery",
+            body: "How well you've mastered this subject's topics so far, estimated from all your quiz answers. It grows as you practise.",
+            fallback: "Once your teacher sets up the topics for this subject and you answer some quiz questions, your mastery for the class shows here.",
+        },
+        {
+            // Just the first post, not the whole feed.
+            target: () => document.querySelector("#feedColumn .post-card"),
+            title: "Lessons and announcements",
+            body: "Newest first. Click a lesson to open it: you'll find the lesson file, an AI summary and its quiz.",
+            fallback: "Your teacher's lessons and announcements will appear here.",
+        },
+        {
+            target: "#summarizeBtn",
+            title: "Summarize class notes",
+            body: "Opens QuestAI and asks it for a quick summary of this class's lessons.",
+        },
+        {
+            target: () => document.getElementById("insightsList")?.closest(".ai-insights-card"),
+            title: "AI insights for you",
+            body: "Tips from QuestAI based on your mastery in this class: what you're good at and what to practise next. Use Refresh for new ones.",
+        },
+        {
+            title: "That's your class",
+            body: 'Replay this tour any time with the "Take the tour" button at the top of the page.',
+        },
+    ];
+}
+
 async function loadClassInfo() {
     const classId = new URLSearchParams(window.location.search).get("id");
 
@@ -202,7 +239,12 @@ async function loadInsights(refresh = false) {
 ClassPostCard.initPdfModalControls();
 
 document.addEventListener("DOMContentLoaded", () => {
-    loadClassInfo();
+    // No tour on the "Class not found" screen; otherwise the first-visit
+    // tour waits for the feed so it can point at a lesson.
+    loadClassInfo().then(() => {
+        if (!CLASS_ID) return;
+        window.LQPageTour?.init({ key: "tour_seen_class", steps: classTourSteps });
+    });
 
     document.getElementById("summarizeBtn")?.addEventListener("click", summarizeClassNotes);
     document.getElementById("insightsRefreshBtn")?.addEventListener("click", () => loadInsights(true));
