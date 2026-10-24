@@ -237,6 +237,7 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
         Route::post('/', [SubjectController::class, 'store'])->name('store');
         Route::get('/{subject}', [SubjectController::class, 'show'])->name('show');
         Route::put('/{subject}', [SubjectController::class, 'update'])->name('update');
+        Route::delete('/{subject}', [SubjectController::class, 'destroy'])->name('destroy');
 
         Route::post('/{subject}/sections', [SubjectSectionController::class, 'store'])
             ->name('sections.store');

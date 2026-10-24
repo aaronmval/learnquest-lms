@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSubjectRequest;
 use App\Models\Module;
+use App\Models\QuizAnswer;
+use App\Models\QuizQuestion;
+use App\Models\StudentMastery;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class SubjectController extends Controller
 {
@@ -26,6 +31,9 @@ class SubjectController extends Controller
             ->withMax('modules', 'created_at')
             ->latest()
             ->get();
+
+        // Deleting a subject is for its owner only.
+        $subjects = $subjects->map(fn (Subject $subject) => $subject->toArray() + ['can_delete' => $subject->owner_id === $userId]);
 
         return response()->json($subjects);
     }
@@ -81,5 +89,35 @@ class SubjectController extends Controller
         $subject->load(['owner:id,name,email,avatar_path', 'collaborators:id,name,email,avatar_path']);
 
         return response()->json($subject);
+    }
+
+    /**
+     * Delete a subject with its modules, competencies and collaborator list.
+     * Only the owner may do this. Its sections stay (unlinked from the
+     * subject), and a subject whose competencies already back quiz questions
+     * or student mastery records is refused so BKT history isn't lost.
+     */
+    public function destroy(Request $request, Subject $subject): Response|JsonResponse
+    {
+        abort_unless($subject->isManagedBy($request->user()), 404);
+        abort_unless($subject->owner_id === $request->user()->id, 403, 'Only the subject owner can delete it.');
+
+        $competencyIds = $subject->competencies()->pluck('id');
+        $inUse = QuizQuestion::whereIn('competency_id', $competencyIds)->exists()
+            || QuizAnswer::whereIn('competency_id', $competencyIds)->exists()
+            || StudentMastery::whereIn('competency_id', $competencyIds)->exists();
+
+        if ($inUse) {
+            return response()->json([
+                'message' => 'This subject has quiz questions or student mastery records and cannot be deleted.',
+            ], 422);
+        }
+
+        $filePaths = $subject->modules()->pluck('file_path')->filter()->all();
+
+        $subject->delete();
+        Storage::disk()->delete($filePaths);
+
+        return response()->noContent();
     }
 }

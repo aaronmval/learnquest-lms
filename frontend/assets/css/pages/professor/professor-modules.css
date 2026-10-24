@@ -496,6 +496,38 @@ body.dark .post-kebab-item:hover {
     font-size: 0.85rem;
 }
 
+.post-kebab-item.danger {
+    color: #dc2626;
+}
+body.dark .post-kebab-item.danger {
+    color: #f87171;
+}
+.post-kebab-item.danger:hover {
+    background-color: #fef2f2;
+}
+body.dark .post-kebab-item.danger:hover {
+    background-color: rgba(220, 38, 38, 0.15);
+}
+
+.mat-danger-btn {
+    flex: 0 0 auto;
+    background-color: #dc2626 !important;
+    color: #fff !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    padding: 10px 22px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.2s;
+}
+
+.mat-danger-btn:hover { background-color: #b91c1c !important; }
+.mat-danger-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .mat-subject-uploader {
     display: flex;
     align-items: center;

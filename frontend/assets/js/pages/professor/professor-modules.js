@@ -184,6 +184,16 @@ document.addEventListener("DOMContentLoaded", () => {
         renameItem.innerHTML = '<i class="fas fa-pen"></i> Rename';
 
         kebabMenu.appendChild(renameItem);
+
+        if (subject.can_delete) {
+            const deleteItem = document.createElement("button");
+            deleteItem.type = "button";
+            deleteItem.className = "post-kebab-item danger";
+            deleteItem.dataset.action = "delete";
+            deleteItem.innerHTML = '<i class="fas fa-trash"></i> Delete';
+            kebabMenu.appendChild(deleteItem);
+        }
+
         kebabWrap.append(kebabBtn, kebabMenu);
 
         const arrow = document.createElement("button");
@@ -411,7 +421,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /* SUBJECT CARD KEBAB MENU (rename) */
+    /* SUBJECT CARD KEBAB MENU (rename / delete) */
     function closeAllSubjectKebabMenus() {
         subjectGrid
             ?.querySelectorAll(".post-kebab-menu.open")
@@ -530,7 +540,92 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /* SUBJECT CARD CLICKS — kebab/rename, or open the subject's module-view page */
+    /* DELETE SUBJECT MODAL */
+    const deleteSubjectModal = document.getElementById("deleteSubjectModal");
+    const deleteSubjectModalCard = document.getElementById(
+        "deleteSubjectModalCard",
+    );
+    const deleteSubjectDesc = document.getElementById("deleteSubjectDesc");
+    const deleteSubjectCancelBtn = document.getElementById(
+        "deleteSubjectCancelBtn",
+    );
+    const deleteSubjectConfirmBtn = document.getElementById(
+        "deleteSubjectConfirmBtn",
+    );
+    let deletingSubject = null;
+
+    function openDeleteModal(subject) {
+        if (!deleteSubjectModal) return;
+
+        deletingSubject = subject;
+        if (deleteSubjectDesc) {
+            deleteSubjectDesc.textContent = `"${subject.name}" and all of its materials and competencies will be permanently deleted. Its sections will be kept but no longer linked to this subject.`;
+        }
+
+        deleteSubjectModal.classList.add("visible");
+        requestAnimationFrame(() =>
+            deleteSubjectModalCard?.classList.add("scaled"),
+        );
+    }
+
+    function closeDeleteModal() {
+        if (!deleteSubjectModal) return;
+
+        deleteSubjectModalCard?.classList.remove("scaled");
+        deleteSubjectModal.classList.remove("visible");
+        deletingSubject = null;
+    }
+
+    deleteSubjectCancelBtn?.addEventListener("click", closeDeleteModal);
+
+    deleteSubjectModal?.addEventListener("click", (e) => {
+        if (e.target === deleteSubjectModal) closeDeleteModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (
+            e.key === "Escape" &&
+            deleteSubjectModal?.classList.contains("visible")
+        )
+            closeDeleteModal();
+    });
+
+    deleteSubjectConfirmBtn?.addEventListener("click", async () => {
+        if (!deletingSubject) return;
+
+        const { id, name } = deletingSubject;
+        deleteSubjectConfirmBtn.disabled = true;
+
+        try {
+            const res = await fetch(`/professor/subjects/${id}`, {
+                method: "DELETE",
+                credentials: "same-origin",
+                headers: {
+                    Accept: "application/json",
+                    "X-XSRF-TOKEN": getCsrfToken(),
+                },
+            });
+
+            if (!res.ok) {
+                const message = await extractErrorMessage(
+                    res,
+                    "Could not delete the subject.",
+                );
+                showToast(message);
+                return;
+            }
+
+            closeDeleteModal();
+            showToast(`"${name}" deleted.`);
+            await loadSubjects();
+        } catch (e) {
+            showToast("Could not delete the subject. Please try again.");
+        } finally {
+            deleteSubjectConfirmBtn.disabled = false;
+        }
+    });
+
+    /* SUBJECT CARD CLICKS — kebab/rename/delete, or open the subject's module-view page */
     subjectGrid?.addEventListener("click", (e) => {
         const kebabBtn = e.target.closest(".mat-subject-kebab-btn");
         if (kebabBtn) {
@@ -549,6 +644,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const id = renameItem.closest(".mat-subject-card")?.dataset.id;
             const subject = subjects.find((s) => String(s.id) === String(id));
             if (subject) openRenameModal(subject);
+            return;
+        }
+
+        const deleteItem = e.target.closest('.post-kebab-item[data-action="delete"]');
+        if (deleteItem) {
+            e.stopPropagation();
+            closeAllSubjectKebabMenus();
+            const id = deleteItem.closest(".mat-subject-card")?.dataset.id;
+            const subject = subjects.find((s) => String(s.id) === String(id));
+            if (subject) openDeleteModal(subject);
             return;
         }
 
@@ -592,7 +697,7 @@ function modulesTourSteps() {
             // Just the first card, not the whole grid.
             target: () => document.querySelector(".mat-subject-card"),
             title: "Open a subject",
-            body: "Click a subject to upload its lesson PDFs, post them to your classes and manage the competencies they teach. The ⋮ menu lets you rename it.",
+            body: "Click a subject to upload its lesson PDFs, post them to your classes and manage the competencies they teach. The ⋮ menu lets you rename or delete it.",
             fallback: 'Your subjects will appear here as cards. Click "Add New Subject" to create your first one.',
         },
         {
