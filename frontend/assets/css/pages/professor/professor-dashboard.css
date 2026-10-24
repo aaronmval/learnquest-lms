@@ -289,6 +289,43 @@ body.dark .filter-btn-reset:hover {
     grid-area: analysis;
 }
 
+/* Long lists (every student, every competency) scroll inside a fixed-height
+   card instead of stretching the whole bottom row. */
+.student-mastery-card,
+.analysis-card {
+    height: 560px;
+}
+
+.analysis-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-right: 4px;
+}
+
+/* Height set from the number of competencies in JS, so bars stay readable. */
+.analysis-chart-wrap {
+    flex: none;
+}
+
+.card-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+.card-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.card-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.4);
+    border-radius: 999px;
+}
+.card-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 .chart-card:hover {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
@@ -1397,6 +1434,10 @@ body.dark .export-confirm-btn:disabled {
     .chart-card {
         padding: 18px 16px;
         height: 280px;
+    }
+    .student-mastery-card,
+    .analysis-card {
+        height: 460px;
     }
     .chart-canvas-wrap {
         min-height: 0;

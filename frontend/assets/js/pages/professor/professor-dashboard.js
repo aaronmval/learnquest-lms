@@ -473,6 +473,13 @@ function buildOrUpdateStrengthWeaknessChart(analysis) {
     const chartCtx = document.getElementById("strengthWeaknessChart");
     if (!chartCtx) return;
 
+    // The card scrolls, so give each competency a readable bar instead of
+    // squeezing every one into the card's height.
+    const wrap = document.getElementById("strengthWeaknessWrap");
+    if (wrap) {
+        wrap.style.height = `${Math.max(240, analysis.labels.length * 34 + 60)}px`;
+    }
+
     if (!strengthWeaknessChart) {
         strengthWeaknessChart = new Chart(chartCtx, {
             type: "bar",

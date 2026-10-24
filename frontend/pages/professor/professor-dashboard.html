@@ -259,7 +259,10 @@
                             <span id="studentSortLabel">Highest first</span>
                         </button>
                     </div>
-                    <div class="student-mastery-list" id="studentMasteryList">
+                    <div
+                        class="student-mastery-list card-scroll"
+                        id="studentMasteryList"
+                    >
                         <!-- Student mastery rows injected by JS -->
                     </div>
                 </div>
@@ -280,11 +283,16 @@
                             ><i class="fas fa-brain"></i
                         ></span>
                     </div>
-                    <div class="chart-canvas-wrap">
-                        <canvas id="strengthWeaknessChart"></canvas>
-                    </div>
-                    <div class="analysis-notes" id="analysisNotes">
-                        <!-- Analysis bullets injected by JS -->
+                    <div class="analysis-scroll card-scroll">
+                        <div
+                            class="chart-canvas-wrap analysis-chart-wrap"
+                            id="strengthWeaknessWrap"
+                        >
+                            <canvas id="strengthWeaknessChart"></canvas>
+                        </div>
+                        <div class="analysis-notes" id="analysisNotes">
+                            <!-- Analysis bullets injected by JS -->
+                        </div>
                     </div>
                 </div>
             </section>
