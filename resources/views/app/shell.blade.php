@@ -42,6 +42,7 @@
             idleLockMinutes: @json((int) $user->idle_lock_minutes),
         };
     </script>
+    <script src="/assets/js/button-feedback.js"></script>
     <script src="/assets/js/common/guided-tour.js"></script>
     <script src="/assets/js/common/session-lock.js"></script>
     <script src="{{ route('shell.navbar.js') }}"></script>

@@ -251,6 +251,7 @@
     .google-btn svg { flex-shrink: 0; }
   </style>
   <script src="/assets/js/auth-background.js" defer></script>
+  <script src="/assets/js/button-feedback.js"></script>
 </head>
 
 <body>
