@@ -16,6 +16,8 @@ class QuizAttempt extends Model
         'deadline_at',
         'question_ids',
         'mastery_level',
+        'level_basis',
+        'focus_violations',
         'submitted_at',
         'score_correct',
         'score_total',
@@ -29,6 +31,7 @@ class QuizAttempt extends Model
             'deadline_at' => 'datetime',
             'question_ids' => 'array',
             'submitted_at' => 'datetime',
+            'focus_violations' => 'integer',
         ];
     }
 
@@ -50,5 +53,10 @@ class QuizAttempt extends Model
     public function feedback(): HasOne
     {
         return $this->hasOne(QuizFeedback::class);
+    }
+
+    public function answerReviewRequest(): HasOne
+    {
+        return $this->hasOne(AnswerReviewRequest::class);
     }
 }

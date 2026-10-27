@@ -169,20 +169,28 @@
                         </span>
                     </div>
                     <div class="chart-canvas-wrap">
-                        <canvas id="subjectRadarChart" data-chart-zoom></canvas>
+                        <canvas id="subjectRadarChart" data-chart-zoom data-chart-view-toggle></canvas>
                     </div>
                     <ul class="chart-key">
-                        <li>
+                        <li data-key-view="radar">
                             <span class="chart-key-swatch" style="background-color: #22c55e"></span>
                             Shaded area: your mastery level (BKT estimate)
                         </li>
-                        <li>
+                        <li data-key-view="radar">
                             <i class="fas fa-circle-dot"></i>
                             Each point: one competency of the selected subject
                         </li>
-                        <li>
+                        <li data-key-view="radar">
                             <i class="fas fa-bullseye"></i>
                             Rings: 0% at the centre, 100% at the outer edge
+                        </li>
+                        <li data-key-view="bar" hidden>
+                            <span class="chart-key-swatch" style="background-color: #22c55e"></span>
+                            Bar height: your mastery level (BKT estimate)
+                        </li>
+                        <li data-key-view="bar" hidden>
+                            <i class="fas fa-chart-column"></i>
+                            Each bar: one competency of the selected subject
                         </li>
                     </ul>
                 </div>
@@ -196,20 +204,28 @@
                         </span>
                     </div>
                     <div class="chart-canvas-wrap">
-                        <canvas id="radarChart" data-chart-zoom></canvas>
+                        <canvas id="radarChart" data-chart-zoom data-chart-view-toggle></canvas>
                     </div>
                     <ul class="chart-key">
-                        <li>
+                        <li data-key-view="radar">
                             <span class="chart-key-swatch" style="background-color: #60a5fa"></span>
                             Shaded area: your mastery level (BKT estimate)
                         </li>
-                        <li>
+                        <li data-key-view="radar">
                             <i class="fas fa-circle-dot"></i>
                             Each point: one subject. Click a point to see its sub-topics above
                         </li>
-                        <li>
+                        <li data-key-view="radar">
                             <i class="fas fa-bullseye"></i>
                             Rings: 0% at the centre, 100% at the outer edge
+                        </li>
+                        <li data-key-view="bar" hidden>
+                            <span class="chart-key-swatch" style="background-color: #60a5fa"></span>
+                            Bar height: your mastery level (BKT estimate)
+                        </li>
+                        <li data-key-view="bar" hidden>
+                            <i class="fas fa-chart-column"></i>
+                            Each bar: one subject. Click a bar to see its sub-topics above
                         </li>
                     </ul>
                 </div>

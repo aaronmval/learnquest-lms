@@ -6,6 +6,9 @@ const RESULTS_CIRCUMFERENCE = 326.7;
 const params = new URLSearchParams(window.location.search);
 const CLASS_ID = params.get("id");
 const POST_ID = params.get("postId");
+// view=review&attempt=ID: look back at a submitted attempt (e.g. once the
+// teacher approves an answer review) instead of taking the quiz.
+const REVIEW_ATTEMPT_ID = params.get("view") === "review" ? params.get("attempt") : null;
 
 /* STATE — populated once the quiz has loaded from the server */
 let QUIZ = null;
@@ -21,6 +24,10 @@ let currentAttemptId = null;
 let selectedRating = null;
 let selectedDifficulty = null;
 let feedbackSubmitted = false;
+let focusViolations = 0;
+let maxFocusViolations = 3;
+let lastFocusViolationAt = 0;
+let answerReviewStatus = null; // null | pending | approved | denied
 
 function getCsrfToken() {
     const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
@@ -70,6 +77,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
     initFeedbackControls();
+    initFocusGuard();
+
+    document.getElementById("answerReviewBtn")?.addEventListener("click", requestAnswerReview);
+
+    if (REVIEW_ATTEMPT_ID) {
+        loadAttemptReview();
+        return;
+    }
 
     // Only untimed quizzes get a tour: the server starts a timed quiz's
     // clock when it opens, and the lesson page's tour has already covered it.
@@ -108,8 +123,12 @@ function quizTourSteps() {
             body: "See which questions you've answered or flagged, and jump straight to any of them.",
         },
         {
+            title: "Stay on this page",
+            body: "Switching tabs or windows (like Alt+Tab) while answering counts as leaving the quiz. You'll get a warning each time, and leaving too many times submits your quiz automatically.",
+        },
+        {
             title: "Good luck!",
-            body: "After you submit you'll see your score and can review your answers. Your answers also update your mastery of each topic. Replay this tour with the \"Take the tour\" button at the top.",
+            body: "After you submit you'll see your score right away. If your teacher hides the correct answers, you can ask them for permission to review them. Your answers also update your mastery of each topic. Replay this tour with the \"Take the tour\" button at the top.",
         },
     ];
 }
@@ -258,6 +277,10 @@ async function loadQuiz() {
 
         const settings = data.settings || {};
 
+        currentAttemptId = data.attempt_id ?? null;
+        focusViolations = settings.focus_violations ?? 0;
+        maxFocusViolations = settings.max_focus_violations ?? maxFocusViolations;
+
         QUIZ = {
             subject: data.subject || "Science",
             section: data.section || "",
@@ -288,12 +311,16 @@ async function loadQuiz() {
         renderQuestion(0);
         if (QUIZ.timeLimitSeconds) startTimer();
 
-        // Questions were picked for the student's BKT mastery level.
+        // Questions were picked for the student's BKT mastery level. A level
+        // from the teacher-set academic level (basis "teacher") isn't
+        // announced — students never see that label.
         const ADAPTED_MESSAGES = {
             high: "You've shown high mastery here, so this quiz has more challenging questions.",
             low: "This quiz focuses on the core ideas first to help you build mastery.",
         };
-        if (ADAPTED_MESSAGES[settings.mastery_level]) showToast(ADAPTED_MESSAGES[settings.mastery_level]);
+        if (settings.level_basis === "bkt" && ADAPTED_MESSAGES[settings.mastery_level]) {
+            showToast(ADAPTED_MESSAGES[settings.mastery_level]);
+        }
     } catch (e) {
         console.error("[AI Quiz] Fetch threw:", e);
         console.groupEnd();
@@ -609,6 +636,7 @@ async function finalizeSubmit() {
         });
 
         currentAttemptId = data.attempt_id;
+        answerReviewStatus = data.answer_review?.status ?? null;
         showResults(data);
         if (data.status === "late") {
             showToast("Submitted after the time limit — your teacher will see it as late.");
@@ -621,8 +649,13 @@ async function finalizeSubmit() {
     }
 }
 
-function showResults(data) {
+function showResults(data, { fromReview = false } = {}) {
     const { correct, incorrect, skipped, total, percent } = data.score;
+
+    // answers_visible comes from the review endpoint; on submit the key is
+    // visible exactly when the teacher shows answers right away.
+    const answersVisible = data.answers_visible ?? data.show_answers ?? true;
+    renderAnswerReviewSection(answersVisible);
 
     document.getElementById("resultsScoreText").textContent = `${correct}/${total}`;
     document.getElementById("resultsPercentText").textContent = `${percent}%`;
@@ -681,6 +714,8 @@ function showResults(data) {
     circle.style.stroke = ringColor;
 
     resetFeedbackUI();
+    // Looking back at an earlier attempt: rating happens right after submitting.
+    if (fromReview) document.getElementById("feedbackSection").hidden = true;
     openModal("resultsModal");
 
     requestAnimationFrame(() => {
@@ -720,6 +755,227 @@ function hideMasteryRow(beforeId, afterId, deltaId) {
     if (beforeEl) beforeEl.textContent = "—";
     if (afterEl) afterEl.textContent = "—";
     if (deltaEl) deltaEl.textContent = "";
+}
+
+/*  LEAVING THE QUIZ — a browser can't block Alt+Tab, so each leave (tab
+    switch, other window, minimize) is counted on the server; the student is
+    warned each time and the quiz submits itself at the teacher's limit.  */
+function quizInProgress() {
+    return Boolean(QUIZ && currentAttemptId && !quizSubmitted && !reviewMode && !REVIEW_ATTEMPT_ID);
+}
+
+/** True while focus is anywhere in the app — this page or the shell around it. */
+function appHasFocus() {
+    try {
+        return document.hasFocus() || (window.parent !== window && window.parent.document.hasFocus());
+    } catch (e) {
+        return document.hasFocus();
+    }
+}
+
+function initFocusGuard() {
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") onLeftQuiz();
+    });
+
+    // Clicking the shell's navbar blurs this frame but keeps the app
+    // focused, so only count it once focus has left the whole window.
+    const onBlur = () => setTimeout(() => {
+        if (!appHasFocus()) onLeftQuiz();
+    }, 150);
+    window.addEventListener("blur", onBlur);
+
+    try {
+        if (window.parent !== window) {
+            window.parent.addEventListener("blur", onBlur);
+            window.addEventListener("pagehide", () => window.parent.removeEventListener("blur", onBlur));
+        }
+    } catch (e) {
+        /* not inside the shell */
+    }
+
+    document.getElementById("focusWarningOkBtn")?.addEventListener("click", () => closeModal("focusWarningModal"));
+}
+
+async function onLeftQuiz() {
+    if (!quizInProgress()) return;
+
+    // One Alt+Tab fires both blur and visibilitychange — count it once.
+    const now = Date.now();
+    if (now - lastFocusViolationAt < 1000) return;
+    lastFocusViolationAt = now;
+
+    focusViolations++;
+
+    try {
+        const res = await fetch(
+            `/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz/attempts/${currentAttemptId}/focus-violation`,
+            {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { Accept: "application/json", "X-XSRF-TOKEN": getCsrfToken() },
+            },
+        );
+        if (res.ok) {
+            const data = await res.json();
+            focusViolations = data.violations;
+            maxFocusViolations = data.limit;
+        }
+    } catch (e) {
+        console.error("[AI Quiz] Couldn't record leaving the quiz:", e);
+    }
+
+    if (!quizInProgress()) return;
+
+    if (focusViolations >= maxFocusViolations) {
+        closeModal("focusWarningModal");
+        showToast("Quiz submitted because you left the quiz too many times.");
+        finalizeSubmit();
+        return;
+    }
+
+    const left = maxFocusViolations - focusViolations;
+    document.getElementById("focusWarningDesc").textContent =
+        `You left the quiz (${focusViolations} of ${maxFocusViolations}). ` +
+        `Your teacher can see this. ${left === 1 ? "Leave once more" : `Leave ${left} more times`} and your quiz will be submitted automatically.`;
+    openModal("focusWarningModal");
+}
+
+/*  ANSWER REVIEW — when the teacher hides the correct answers, the student
+    asks permission to see them for this attempt.  */
+const ANSWER_REVIEW_STATES = {
+    none: {
+        text: "Your teacher shows the correct answers and explanations only after approving a request.",
+        label: "Ask teacher to review answers",
+        disabled: false,
+    },
+    pending: {
+        text: "Request sent. You'll get a notification when your teacher responds.",
+        label: "Waiting for your teacher",
+        disabled: true,
+    },
+    denied: {
+        text: "Your teacher didn't approve your last request.",
+        label: "Ask again",
+        disabled: false,
+    },
+    approved: {
+        text: "Your teacher approved your request.",
+        label: "Show the correct answers",
+        disabled: false,
+    },
+};
+
+function renderAnswerReviewSection(answersVisible) {
+    const section = document.getElementById("answerReviewSection");
+    if (!section) return;
+
+    section.hidden = answersVisible || !currentAttemptId;
+    if (section.hidden) return;
+
+    const state = ANSWER_REVIEW_STATES[answerReviewStatus || "none"] || ANSWER_REVIEW_STATES.none;
+    const btn = document.getElementById("answerReviewBtn");
+    document.getElementById("answerReviewText").textContent = state.text;
+    btn.textContent = state.label;
+    btn.disabled = state.disabled;
+}
+
+function attemptReviewUrl(attemptId) {
+    return `student-quiz.html?id=${CLASS_ID}&postId=${POST_ID}&attempt=${attemptId}&view=review`;
+}
+
+async function requestAnswerReview() {
+    if (!currentAttemptId) return;
+
+    if (answerReviewStatus === "approved") {
+        window.location.href = attemptReviewUrl(currentAttemptId);
+        return;
+    }
+
+    const btn = document.getElementById("answerReviewBtn");
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(
+            `/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz/attempts/${currentAttemptId}/answer-review`,
+            {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { Accept: "application/json", "X-XSRF-TOKEN": getCsrfToken() },
+            },
+        );
+        if (!res.ok) throw new Error(`answer review request failed (HTTP ${res.status})`);
+
+        answerReviewStatus = (await res.json()).status;
+        if (answerReviewStatus === "approved") {
+            window.location.href = attemptReviewUrl(currentAttemptId);
+            return;
+        }
+        showToast("Request sent to your teacher.");
+    } catch (e) {
+        console.error("[AI Quiz] Answer review request threw:", e);
+        showToast("Couldn't send your request. Please try again.");
+    }
+
+    renderAnswerReviewSection(false);
+}
+
+/*  LOOK BACK AT A SUBMITTED ATTEMPT (view=review)  */
+async function loadAttemptReview() {
+    renderLoadingState();
+    document.getElementById("questionText").textContent = "Loading your answers…";
+
+    try {
+        const res = await fetch(
+            `/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz/attempts/${REVIEW_ATTEMPT_ID}/review`,
+            { credentials: "same-origin", headers: { Accept: "application/json" } },
+        );
+        if (!res.ok) throw new Error(`review request failed (HTTP ${res.status})`);
+        const data = await res.json();
+
+        currentAttemptId = data.attempt_id;
+        answerReviewStatus = data.answer_review?.status ?? null;
+        reviewByQuestionId = {};
+        (data.review || []).forEach((entry) => {
+            reviewByQuestionId[entry.question_id] = entry;
+        });
+
+        // Choices come in their original order, so display index = original index.
+        QUIZ = {
+            subject: data.subject || "Science",
+            section: data.section || "",
+            title: data.lesson_title || "Quiz",
+            timeLimitSeconds: null,
+            maxAttempts: null,
+            attemptsUsed: 0,
+            questions: (data.questions || []).map((q) => ({
+                id: q.id,
+                text: q.text,
+                options: q.choices,
+                choiceIndexes: q.choices.map((_, i) => i),
+            })),
+        };
+
+        if (!QUIZ.questions.length) {
+            renderLoadError("This attempt has no answers to review.", { retry: false });
+            return;
+        }
+
+        userAnswers = QUIZ.questions.map((q) => reviewByQuestionId[q.id]?.selected_index ?? null);
+        flagged = new Array(QUIZ.questions.length).fill(false);
+        quizSubmitted = true;
+        reviewMode = true;
+
+        renderBanner();
+        document.getElementById("quizMetaAttempts").textContent = "Submitted attempt";
+        buildNavigatorGrid();
+        setInteractiveButtonsEnabled(true);
+        renderQuestion(0);
+        showResults(data, { fromReview: true });
+    } catch (e) {
+        console.error("[AI Quiz] Review load threw:", e);
+        renderLoadError("We couldn't load this attempt's answers.", { retry: false });
+    }
 }
 
 /*  MODAL HELPERS  */

@@ -110,7 +110,13 @@ class QuizGenerationController extends Controller
             return $open;
         }
 
-        $mastery = $settings['adaptive'] ? $adaptiveQuiz->masteryFor($student, $active) : null;
+        // Teacher-set academic level for this class — only used before the
+        // student has BKT evidence on these competencies.
+        $academicLevel = $quiz->classPost?->classRoom?->students()
+            ->where('users.id', $student->id)
+            ->first()?->pivot?->academic_level;
+
+        $mastery = $settings['adaptive'] ? $adaptiveQuiz->masteryFor($student, $active, $academicLevel) : null;
         $mix = $adaptiveQuiz->mixFor($settings['difficulty_mix'], $mastery['level'] ?? null);
         $questions = $adaptiveQuiz->select($active, $settings['question_count'], $mix);
 
@@ -118,8 +124,9 @@ class QuizGenerationController extends Controller
             'quiz_id' => $quiz->id,
             'student_id' => $student->id,
             'adaptive' => $settings['adaptive'],
-            'mastery' => $mastery ? round($mastery['mastery'], 3) : null,
+            'mastery' => isset($mastery['mastery']) ? round($mastery['mastery'], 3) : null,
             'mastery_level' => $mastery['level'] ?? null,
+            'level_basis' => $mastery['basis'] ?? null,
             'mix' => $mix,
             'served' => $questions->countBy('difficulty'),
         ]);
@@ -131,6 +138,7 @@ class QuizGenerationController extends Controller
             'deadline_at' => $settings['time_limit_minutes'] !== null ? now()->addMinutes($settings['time_limit_minutes']) : null,
             'question_ids' => $questions->pluck('id')->all(),
             'mastery_level' => $mastery['level'] ?? null,
+            'level_basis' => $mastery['basis'] ?? null,
             'status' => 'in_progress',
         ]);
     }
@@ -275,6 +283,7 @@ class QuizGenerationController extends Controller
 
         return [
             'quiz_id' => $quiz->id,
+            'attempt_id' => $attempt->id,
             'lesson_title' => $post->title,
             'subject' => $post->classRoom?->subject ?? $post->classRoom?->name ?? 'Science',
             'section' => $post->classRoom?->section,
@@ -300,6 +309,11 @@ class QuizGenerationController extends Controller
                 'remaining_seconds' => $attempt->deadline_at ? (int) max(0, ceil(now()->diffInSeconds($attempt->deadline_at, false))) : null,
                 // BKT mastery level that chose the questions (null = teacher's mix).
                 'mastery_level' => $attempt->mastery_level,
+                // "bkt" or "teacher" (academic level) — the page only tells
+                // the student about BKT-based adaptation.
+                'level_basis' => $attempt->level_basis,
+                'focus_violations' => (int) $attempt->focus_violations,
+                'max_focus_violations' => (int) config('quiz.max_focus_violations'),
                 'max_attempts' => $settings['max_attempts'],
                 'attempts_used' => $attemptsUsed,
                 'show_answers' => $settings['show_answers'],

@@ -20,6 +20,7 @@ class QuizAnswer extends Model
     {
         return [
             'is_correct' => 'boolean',
+            'selected_index' => 'integer',
             'answered_at' => 'datetime',
         ];
     }

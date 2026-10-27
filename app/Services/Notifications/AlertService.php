@@ -2,12 +2,15 @@
 
 namespace App\Services\Notifications;
 
+use App\Models\AnswerReviewRequest;
 use App\Models\ClassPost;
 use App\Models\ClassRoom;
 use App\Models\Module;
 use App\Models\QuizFeedback;
 use App\Models\Subject;
 use App\Models\User;
+use App\Notifications\AnswerReviewDecided;
+use App\Notifications\AnswerReviewRequested;
 use App\Notifications\ClassPostPublished;
 use App\Notifications\MasteryLevelChanged;
 use App\Notifications\ModuleChangeRequested;
@@ -63,6 +66,22 @@ class AlertService
     {
         $this->safely('quiz_feedback', function () use ($feedback, $post) {
             $this->professorOf($post->classRoom)?->notify(new QuizFeedbackReceived($feedback, $post));
+        });
+    }
+
+    /** Student asks to review a quiz's answers → the class's professor. */
+    public function answerReviewRequested(User $student, ClassPost $post): void
+    {
+        $this->safely('answer_review_requested', function () use ($student, $post) {
+            $this->professorOf($post->classRoom)?->notify(new AnswerReviewRequested($student, $post));
+        });
+    }
+
+    /** Professor approves/denies an answer review → the student. */
+    public function answerReviewDecided(AnswerReviewRequest $request, ClassPost $post): void
+    {
+        $this->safely('answer_review_decided', function () use ($request, $post) {
+            User::find($request->student_id)?->notify(new AnswerReviewDecided($request, $post));
         });
     }
 

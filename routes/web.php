@@ -162,6 +162,14 @@ Route::middleware(['auth', 'student.role'])->prefix('student')->name('student.')
         ->name('classes.posts.quiz.attempts.store');
     Route::post('/classes/{class}/posts/{post}/quiz/attempts/{attempt}/feedback', [QuizFeedbackController::class, 'store'])
         ->name('classes.posts.quiz.attempts.feedback.store');
+    Route::get('/classes/{class}/posts/{post}/quiz/attempts/latest', [QuizAttemptController::class, 'latest'])
+        ->name('classes.posts.quiz.attempts.latest');
+    Route::post('/classes/{class}/posts/{post}/quiz/attempts/{attempt}/focus-violation', [QuizAttemptController::class, 'focusViolation'])
+        ->middleware('throttle:30,1')->name('classes.posts.quiz.attempts.focus-violation');
+    Route::post('/classes/{class}/posts/{post}/quiz/attempts/{attempt}/answer-review', [QuizAttemptController::class, 'requestAnswerReview'])
+        ->middleware('throttle:10,1')->name('classes.posts.quiz.attempts.answer-review.store');
+    Route::get('/classes/{class}/posts/{post}/quiz/attempts/{attempt}/review', [QuizAttemptController::class, 'review'])
+        ->name('classes.posts.quiz.attempts.review');
 });
 
 // Professor Routes
@@ -201,6 +209,8 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
         ->name('classes.students.index');
     Route::delete('/classes/{class}/students/{student}', [ProfessorClassController::class, 'removeStudent'])
         ->name('classes.students.destroy');
+    Route::put('/classes/{class}/students/{student}/academic-level', [ProfessorClassController::class, 'updateAcademicLevel'])
+        ->name('classes.students.academic-level');
 
     Route::get('/classes/{class}/posts', [ClassPostController::class, 'index'])->name('classes.posts.index');
     Route::post('/classes/{class}/posts', [ClassPostController::class, 'store'])->name('classes.posts.store');
@@ -230,6 +240,9 @@ Route::middleware(['auth', 'professor.role'])->prefix('professor')->name('profes
             ->name('questions.competency');
         Route::delete('/questions/{question}/review', [QuizStudioController::class, 'clearReview'])
             ->name('questions.review.clear');
+        Route::get('/answer-reviews', [QuizStudioController::class, 'answerReviews'])->name('answer-reviews.index');
+        Route::put('/answer-reviews/{answerReview}', [QuizStudioController::class, 'decideAnswerReview'])
+            ->name('answer-reviews.decide');
     });
 
     Route::prefix('subjects')->name('subjects.')->group(function () {

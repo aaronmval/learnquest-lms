@@ -31,14 +31,17 @@ class AdaptiveQuizService
 
     /**
      * The student's BKT mastery over the competencies these questions test,
-     * averaged over competencies they've actually been assessed on. Null
-     * when they have no quiz evidence yet — a new student gets the
-     * teacher's mix rather than being treated as "low" because of the prior.
+     * averaged over competencies they've actually been assessed on.
+     *
+     * With no quiz evidence yet, the teacher-set academic level (if any)
+     * picks the starting level instead (basis "teacher"); otherwise null, so
+     * a new student gets the teacher's mix rather than being treated as
+     * "low" because of the prior. Once evidence exists, BKT always decides.
      *
      * @param  Collection<int, QuizQuestion>  $questions  with `competency` loaded
-     * @return ?array{mastery: float, level: string}
+     * @return ?array{mastery: ?float, level: string, basis: string}
      */
-    public function masteryFor(User $student, Collection $questions): ?array
+    public function masteryFor(User $student, Collection $questions, ?string $academicLevel = null): ?array
     {
         $competencies = $questions->pluck('competency')->filter()->unique('id')->values();
 
@@ -49,12 +52,14 @@ class AdaptiveQuizService
         $assessed = collect($this->adaptive->competencyProfile($student, $competencies))->where('assessed', true);
 
         if ($assessed->isEmpty()) {
-            return null;
+            $level = $academicLevel !== null ? (config('quiz.academic_levels')[$academicLevel] ?? null) : null;
+
+            return $level !== null ? ['mastery' => null, 'level' => $level, 'basis' => 'teacher'] : null;
         }
 
         $mastery = (float) $assessed->avg('mastery');
 
-        return ['mastery' => $mastery, 'level' => $this->adaptive->classify($mastery)];
+        return ['mastery' => $mastery, 'level' => $this->adaptive->classify($mastery), 'basis' => 'bkt'];
     }
 
     /**

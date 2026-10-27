@@ -754,6 +754,7 @@ body.dark .legend-unanswered {
 /*  SHARED MODAL BASE  */
 #logoutModal,
 #submitConfirmModal,
+#focusWarningModal,
 #resultsModal {
     display: none;
     position: fixed;
@@ -766,12 +767,14 @@ body.dark .legend-unanswered {
 
 #logoutModal.open,
 #submitConfirmModal.open,
+#focusWarningModal.open,
 #resultsModal.open {
     display: flex;
 }
 
 #logoutModalCard,
 #submitConfirmModalCard,
+#focusWarningModalCard,
 #resultsModalCard {
     background: #fff;
     border-radius: 16px;
@@ -789,12 +792,14 @@ body.dark .legend-unanswered {
 
 body.dark #logoutModalCard,
 body.dark #submitConfirmModalCard,
+body.dark #focusWarningModalCard,
 body.dark #resultsModalCard {
     background: #1e293b;
 }
 
 #logoutModal.open #logoutModalCard,
 #submitConfirmModal.open #submitConfirmModalCard,
+#focusWarningModal.open #focusWarningModalCard,
 #resultsModal.open #resultsModalCard {
     transform: scale(1);
     opacity: 1;
@@ -1097,6 +1102,28 @@ body.dark .mastery-delta-chip.delta-negative {
 body.dark .mastery-delta-chip.delta-neutral {
     color: #cbd5e1;
     background: rgba(148, 163, 184, 0.2);
+}
+
+/*  ANSWER REVIEW REQUEST — results modal, when answers are hidden  */
+.answer-review-text {
+    margin: 0 0 12px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+body.dark .answer-review-text {
+    color: #94a3b8;
+}
+
+.answer-review-btn {
+    width: 100%;
+    margin: 0;
+}
+
+.answer-review-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 /*  RESULTS FEEDBACK — "Rate this quiz" section  */

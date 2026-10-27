@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'settingsForm', 'questionCount', 'timerEnabled', 'timeLimit', 'maxAttempts', 'shuffleQuestions',
         'shuffleChoices', 'showAnswers', 'adaptive', 'adaptivePreview', 'saveSettingsBtn', 'generateBtn', 'generateBtnText', 'reviewCard',
         'feedbackCard', 'feedbackBody', 'reviewMeta', 'topUpBar', 'topUpText', 'topUpBtn', 'questionList', 'trainingCard', 'trainingSubtitle',
-        'trainingBody',
+        'trainingBody', 'answerReviewCard', 'answerReviewList', 'answerReviewBadge',
     ].forEach(id => {
         dom[id] = document.getElementById(id);
     });
@@ -103,9 +103,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dom.sectionSelect.addEventListener('change', () => selectClass(Number(dom.sectionSelect.value)));
 
+    dom.answerReviewList.addEventListener('click', e => {
+        const btn = e.target.closest('[data-review-id]');
+        if (btn) decideAnswerReview(Number(btn.dataset.reviewId), btn.dataset.approve === '1', btn);
+    });
+
     // The first-open tour waits for the lesson list so it can point at it.
-    window.LQPageTour?.init({ key: 'quiz_setup_tour_seen', steps: setupTourSteps, ready: loadLessons() });
+    const ready = loadLessons().then(openLinkedLesson);
+    window.LQPageTour?.init({ key: 'quiz_setup_tour_seen', steps: setupTourSteps, ready });
 });
+
+/* ?classId=&postId= (e.g. from an answer review alert) opens that lesson. */
+async function openLinkedLesson() {
+    const params = new URLSearchParams(window.location.search);
+    const classId = Number(params.get('classId'));
+    const postId = Number(params.get('postId'));
+    if (!classId || !postId || !findClass(classId)) return;
+
+    dom.sectionSelect.value = String(classId);
+    selectClass(classId);
+    if (findClass(classId).lessons.some(l => l.id === postId)) await selectLesson(postId);
+}
 
 /* GUIDED TOUR — walks through the page in the order it is used. Shown once
    per account (common/page-tour.js) and replayable from the hero's "Take
@@ -325,6 +343,7 @@ function showLessonPanels(show) {
     dom.settingsCard.classList.toggle('is-hidden', !show);
     dom.reviewCard.classList.toggle('is-hidden', !show || !state.studio?.quiz);
     dom.feedbackCard.classList.toggle('is-hidden', !show || !state.studio?.quiz);
+    dom.answerReviewCard.classList.toggle('is-hidden', !show || !state.studio?.quiz);
 }
 
 async function loadStudio() {
@@ -344,6 +363,78 @@ async function loadStudio() {
     renderReview();
     showLessonPanels(true);
     renderFeedback(); // after the card is visible, so segment widths can be measured
+    loadAnswerReviews();
+}
+
+/* ANSWER REVIEW REQUESTS — students asking to see the correct answers of an
+   attempt when "Show correct answers right after submitting" is off. */
+const ANSWER_REVIEW_CHIPS = {
+    pending: { text: 'Pending', cls: 'status-checked' },
+    approved: { text: 'Approved', cls: 'status-saved' },
+    denied: { text: 'Denied', cls: 'status-rejected' },
+};
+
+function renderAnswerReviewBadge(pending) {
+    dom.answerReviewBadge.classList.toggle('is-hidden', !pending);
+    dom.answerReviewBadge.textContent = `${pending} pending`;
+}
+
+async function loadAnswerReviews() {
+    const postId = state.activePostId;
+    if (!state.studio?.quiz) return;
+
+    renderAnswerReviewBadge(state.studio.quiz.pending_answer_reviews || 0);
+
+    const { ok, data } = await apiRequest(lessonUrl('/answer-reviews'));
+    if (postId !== state.activePostId) return;
+    if (!ok) {
+        dom.answerReviewList.innerHTML = '<p class="list-empty">Could not load answer review requests.</p>';
+        return;
+    }
+
+    const requests = data.requests || [];
+    if (!requests.length) {
+        dom.answerReviewList.innerHTML = state.studio.settings.show_answers
+            ? '<p class="list-empty">Students see the correct answers right after submitting, so there is nothing to approve.</p>'
+            : '<p class="list-empty">No requests yet. Students can ask to review the answers after submitting.</p>';
+        return;
+    }
+
+    dom.answerReviewList.innerHTML = requests.map(renderAnswerReviewRow).join('');
+}
+
+function renderAnswerReviewRow(r) {
+    const chip = ANSWER_REVIEW_CHIPS[r.status] || ANSWER_REVIEW_CHIPS.pending;
+    const when = r.requested_at ? new Date(r.requested_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
+    const left = r.focus_violations ? ` · left the quiz ${r.focus_violations}×` : '';
+    const actions = r.status === 'pending'
+        ? `<button type="button" class="action-btn deny-btn" data-review-id="${r.id}" data-approve="0"><i class="fas fa-xmark"></i> Deny</button>
+           <button type="button" class="action-btn primary-btn" data-review-id="${r.id}" data-approve="1"><i class="fas fa-check"></i> Approve</button>`
+        : `<span class="status-chip ${chip.cls}">${chip.text}</span>`;
+
+    return `
+        <div class="answer-review-row">
+            <div class="answer-review-who">
+                <span class="answer-review-name">${esc(r.student_name || 'Student')}</span>
+                <span class="answer-review-meta">Score ${esc(r.score_correct ?? 0)}/${esc(r.score_total ?? 0)}${left}${when ? ` · asked ${esc(when)}` : ''}</span>
+            </div>
+            <div class="answer-review-actions">${actions}</div>
+        </div>`;
+}
+
+async function decideAnswerReview(id, approved, button) {
+    setBusy(button, true);
+    const { ok, status, data } = await apiRequest(lessonUrl(`/answer-reviews/${id}`), { method: 'PUT', body: { approved } });
+    setBusy(button, false);
+
+    if (!ok) {
+        showToast(errorMessageFor(status, data, 'Could not save your decision. Please try again.'));
+        return;
+    }
+
+    if (state.studio?.quiz) state.studio.quiz.pending_answer_reviews = data.pending;
+    showToast(approved ? 'Approved — the student can now review the answers.' : 'Request denied.');
+    loadAnswerReviews();
 }
 
 /* SETTINGS */
@@ -686,6 +777,11 @@ function renderReview() {
         `${quiz.attempts} student attempt${quiz.attempts === 1 ? '' : 's'}`,
     ];
     if (feedback?.count) parts.push(`student rating ${feedback.average_rating}/5`);
+    // Leaving the quiz page (tab switch / Alt+Tab) while answering.
+    if (quiz.focus_violations) {
+        const n = quiz.attempts_with_focus_violations;
+        parts.push(`left the quiz ${quiz.focus_violations} time${quiz.focus_violations === 1 ? '' : 's'} across ${n} attempt${n === 1 ? '' : 's'}`);
+    }
     dom.reviewMeta.textContent = parts.join(' · ');
 
     const missing = target - active;

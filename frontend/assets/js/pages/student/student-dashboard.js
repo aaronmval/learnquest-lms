@@ -40,17 +40,27 @@ Chart.defaults.font.family = "'Inter', sans-serif";
 const legendOptions = {
     position: "top",
     align: "start",
-    labels: { boxWidth: 14, color: "#e2e8f0" },
+    labels: { boxWidth: 14, color: "#f1f5f9", font: { size: 13 } },
 };
 
 const radarScale = {
     min: 0,
     max: 100,
-    ticks: { stepSize: 20, color: axisColor, backdropColor: "transparent" },
+    ticks: { stepSize: 20, color: axisColor, backdropColor: "transparent", font: { size: 12 } },
     grid: { color: gridColor },
     angleLines: { color: gridColor },
-    pointLabels: { color: "#e2e8f0", font: { size: 11 } },
+    pointLabels: { color: "#f1f5f9", font: { size: 13 } },
 };
+
+/* Radar or bar graph for a canvas — switched from the chart-zoom toolbar
+   (common/chart-zoom.js); the charts are rebuilt on "lq:chartviewchange". */
+function chartViewFor(canvas) {
+    return window.LQChartView?.get(canvas) || "radar";
+}
+
+function scalesFor(view) {
+    return window.LQChartView ? window.LQChartView.scales(view, radarScale) : { r: radarScale };
+}
 
 const percentAxis = {
     min: 0,
@@ -185,6 +195,14 @@ function radarSubjects() {
     return (dashboardData?.subjects || []).filter((s) => s.mastery !== null);
 }
 
+// Radar ↔ bar switch: rebuild just that chart from the data already loaded.
+document.getElementById("radarChart")?.addEventListener("lq:chartviewchange", () => {
+    if (dashboardData) renderSubjectRadar(radarSubjects());
+});
+document.getElementById("subjectRadarChart")?.addEventListener("lq:chartviewchange", () => {
+    if (dashboardData) renderCompetencyRadar();
+});
+
 function destroyCharts() {
     [radarChart, performanceChart, masteryChart, subjectRadarChart].forEach((chart) => chart?.destroy());
     radarChart = performanceChart = masteryChart = subjectRadarChart = null;
@@ -242,15 +260,20 @@ function renderSubjectRadar(subjects) {
     }
     setEmptyState("radarChart", null);
 
+    radarChart?.destroy();
+    const view = chartViewFor(canvas);
+
     radarChart = new Chart(canvas, {
-        type: "radar",
+        type: view,
         data: {
             labels: subjects.map((s) => s.label),
             datasets: [
                 {
                     label: "BKT Mastery Level (%)",
                     data: subjects.map((s) => s.mastery),
-                    backgroundColor: "rgba(96, 165, 250, 0.25)",
+                    backgroundColor: view === "bar" ? "rgba(96, 165, 250, 0.7)" : "rgba(96, 165, 250, 0.25)",
+                    borderRadius: view === "bar" ? 6 : 0,
+                    maxBarThickness: 48,
                     borderColor: "#60a5fa",
                     borderWidth: 2,
                     pointBackgroundColor: "#60a5fa",
@@ -289,7 +312,7 @@ function renderSubjectRadar(subjects) {
                     },
                 },
             },
-            scales: { r: radarScale },
+            scales: scalesFor(view),
         },
     });
 }
@@ -313,15 +336,19 @@ function renderCompetencyRadar() {
     if (subtitle) subtitle.textContent = `${subject.label} mastery by competency`;
     setEmptyState("subjectRadarChart", null);
 
+    const view = chartViewFor(canvas);
+
     subjectRadarChart = new Chart(canvas, {
-        type: "radar",
+        type: view,
         data: {
             labels: subject.competencies.map((c) => c.name),
             datasets: [
                 {
                     label: `${subject.label} Competency Mastery (%)`,
                     data: subject.competencies.map((c) => c.mastery),
-                    backgroundColor: "rgba(34, 197, 94, 0.22)",
+                    backgroundColor: view === "bar" ? "rgba(34, 197, 94, 0.7)" : "rgba(34, 197, 94, 0.22)",
+                    borderRadius: view === "bar" ? 6 : 0,
+                    maxBarThickness: 48,
                     borderColor: "#22c55e",
                     borderWidth: 2,
                     pointBackgroundColor: "#22c55e",
@@ -346,7 +373,7 @@ function renderCompetencyRadar() {
                     },
                 },
             },
-            scales: { r: radarScale },
+            scales: scalesFor(view),
         },
     });
 }

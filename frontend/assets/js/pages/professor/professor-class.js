@@ -860,6 +860,44 @@ async function confirmRegenerateQuiz() {
 let classStudents = [];
 let pendingRemoveStudentId = null;
 
+// Teacher-set academic level (value "" = not set). Keys match config/quiz.php.
+const ACADEMIC_LEVELS = [
+    ["", "Level: not set"],
+    ["advanced", "Advanced"],
+    ["average", "Average"],
+    ["needs_support", "Needs support"],
+];
+
+async function updateAcademicLevel(select) {
+    const studentId = Number(select.dataset.studentId);
+    const student = classStudents.find((s) => s.id === studentId);
+    const previous = student?.academic_level || "";
+    select.disabled = true;
+
+    try {
+        const res = await fetch(`/professor/classes/${CLASS_ID}/students/${studentId}/academic-level`, {
+            method: "PUT",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-XSRF-TOKEN": getCsrfToken(),
+            },
+            body: JSON.stringify({ academic_level: select.value || null }),
+        });
+        if (!res.ok) throw new Error("failed to save academic level");
+
+        if (student) student.academic_level = select.value || null;
+        const label = ACADEMIC_LEVELS.find(([value]) => value === select.value)?.[1];
+        showToast(select.value ? `${student?.name || "Student"}: ${label}` : "Academic level cleared");
+    } catch (e) {
+        select.value = previous;
+        showToast("Could not save the academic level. Please try again.");
+    } finally {
+        select.disabled = false;
+    }
+}
+
 function openStudentsModal() {
     if (!CLASS_ID) return;
 
@@ -914,10 +952,15 @@ function renderStudents() {
         return;
     }
 
-    list.innerHTML = classStudents
+    const levelHint = `<p class="academic-level-hint"><i class="fas fa-circle-info"></i> Academic level sets the starting quiz difficulty until a student has quiz results; after that, their BKT mastery decides. Students don't see it.</p>`;
+
+    list.innerHTML = levelHint + classStudents
         .map((s) => {
             const joined = formatPostDate(s.joined_at);
             const joinedHtml = joined ? `<span class="student-joined">· Joined ${escapeHtml(joined)}</span>` : "";
+            const levelOptions = ACADEMIC_LEVELS.map(
+                ([value, label]) => `<option value="${value}"${(s.academic_level || "") === value ? " selected" : ""}>${label}</option>`,
+            ).join("");
 
             return `
             <div class="student-row">
@@ -930,6 +973,7 @@ function renderStudents() {
                     <p class="student-name">${escapeHtml(s.name)}</p>
                     <p class="student-meta"><span class="student-email">${escapeHtml(s.email)}</span>${joinedHtml}</p>
                 </div>
+                <select class="academic-level-select" data-student-id="${s.id}" aria-label="Academic level of ${escapeHtml(s.name)}">${levelOptions}</select>
                 <button class="student-remove-btn" type="button" data-student-id="${s.id}" aria-label="Remove ${escapeHtml(s.name)} from the class">
                     <i class="fas fa-user-minus"></i> Remove
                 </button>
@@ -1286,6 +1330,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ?.addEventListener("click", closeStudentsModal);
     document.getElementById("studentsModal")?.addEventListener("click", (e) => {
         if (e.target.id === "studentsModal") closeStudentsModal();
+    });
+    document.getElementById("studentsList")?.addEventListener("change", (e) => {
+        if (e.target.matches(".academic-level-select")) updateAcademicLevel(e.target);
     });
     document.getElementById("studentsList")?.addEventListener("click", (e) => {
         const btn = e.target.closest(".student-remove-btn");

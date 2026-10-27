@@ -6,6 +6,7 @@ use App\Exceptions\AI\InvalidAiResponseException;
 use App\Exceptions\AI\LlamaApiException;
 use App\Http\Requests\ReviewQuizQuestionRequest;
 use App\Http\Requests\UpdateQuizSettingsRequest;
+use App\Models\AnswerReviewRequest;
 use App\Models\ClassPost;
 use App\Models\ClassRoom;
 use App\Models\Competency;
@@ -13,6 +14,8 @@ use App\Models\QuizQuestion;
 use App\Models\QuizQuestionReview;
 use App\Services\AI\QuizGenerationService;
 use App\Services\Learning\AdaptiveQuizService;
+use App\Services\Notifications\AlertService;
+use App\Services\Quiz\AnswerReviewService;
 use App\Services\Quiz\QuizFeedbackService;
 use App\Services\Quiz\QuizSettingsService;
 use App\Services\Quiz\QuizTrainingService;
@@ -87,7 +90,7 @@ class QuizStudioController extends Controller
      * Everything the page needs for one lesson: settings, questions with
      * answers and reviews, student results per question, student feedback.
      */
-    public function show(Request $request, ClassRoom $class, ClassPost $post, QuizSettingsService $settingsService, QuizTrainingService $training, QuizFeedbackService $feedback, AdaptiveQuizService $adaptiveQuiz): JsonResponse
+    public function show(Request $request, ClassRoom $class, ClassPost $post, QuizSettingsService $settingsService, QuizTrainingService $training, QuizFeedbackService $feedback, AdaptiveQuizService $adaptiveQuiz, AnswerReviewService $answerReviews): JsonResponse
     {
         $this->authorizeOwnedLesson($request, $class, $post);
 
@@ -119,6 +122,11 @@ class QuizStudioController extends Controller
                 'generated_at' => $quiz->generated_at?->toIso8601String(),
                 'model' => $quiz->model,
                 'attempts' => $quiz->attempts()->where('status', '!=', 'in_progress')->count(),
+                // Times students left the quiz while taking it (alt-tab / tab switch).
+                'focus_violations' => (int) $quiz->attempts()->sum('focus_violations'),
+                'attempts_with_focus_violations' => $quiz->attempts()->where('focus_violations', '>', 0)->count(),
+                'max_focus_violations' => (int) config('quiz.max_focus_violations'),
+                'pending_answer_reviews' => $answerReviews->pendingCount($post),
                 'feedback' => $feedback->summaryForQuiz($quiz),
                 'feedback_breakdown' => $feedback->breakdownForQuiz($quiz),
             ] : null,
@@ -349,6 +357,30 @@ class QuizStudioController extends Controller
         $subject = $class->subject ?: ($class->parentSubject?->name ?? $class->name);
 
         return $class->section ? "{$subject} - {$class->section}" : $subject;
+    }
+
+    /** Students' requests to review this lesson's quiz answers, pending first. */
+    public function answerReviews(Request $request, ClassRoom $class, ClassPost $post, AnswerReviewService $answerReviews): JsonResponse
+    {
+        $this->authorizeOwnedLesson($request, $class, $post);
+
+        return response()->json(['requests' => $answerReviews->listForPost($post)]);
+    }
+
+    public function decideAnswerReview(Request $request, ClassRoom $class, ClassPost $post, AnswerReviewRequest $answerReview, AnswerReviewService $answerReviews, AlertService $alerts): JsonResponse
+    {
+        $this->authorizeOwnedLesson($request, $class, $post);
+        abort_unless($answerReview->class_post_id === $post->id, 404);
+
+        $approved = (bool) $request->validate(['approved' => ['required', 'boolean']])['approved'];
+        $answerReviews->decide($answerReview, $request->user(), $approved);
+        $alerts->answerReviewDecided($answerReview, $post);
+
+        return response()->json([
+            'id' => $answerReview->id,
+            'status' => $answerReview->status,
+            'pending' => $answerReviews->pendingCount($post),
+        ]);
     }
 
     private function authorizeOwnedLesson(Request $request, ClassRoom $class, ClassPost $post): void

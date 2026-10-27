@@ -183,7 +183,7 @@
                                 <label class="switch">
                                     <input id="showAnswers" type="checkbox" />
                                     <span class="switch-track" aria-hidden="true"></span>
-                                    <span class="switch-text">Show correct answers after submitting</span>
+                                    <span class="switch-text">Show correct answers right after submitting (otherwise students must ask you)</span>
                                 </label>
                             </div>
 
@@ -215,6 +215,27 @@
                                 <span id="generateBtnText">Generate quiz</span>
                             </button>
                         </div>
+                    </article>
+
+                    <!-- ANSWER REVIEW REQUESTS -->
+                    <article
+                        id="answerReviewCard"
+                        class="validator-panel is-hidden"
+                        aria-labelledby="answerReviewTitle"
+                    >
+                        <div class="panel-title-row">
+                            <div>
+                                <h2 id="answerReviewTitle">
+                                    Answer review requests
+                                    <span id="answerReviewBadge" class="status-chip status-checked is-hidden"></span>
+                                </h2>
+                                <p class="panel-meta">
+                                    Students asking to see the correct answers
+                                    and explanations of their attempt
+                                </p>
+                            </div>
+                        </div>
+                        <div id="answerReviewList" class="answer-review-list"></div>
                     </article>
 
                     <!-- STUDENT FEEDBACK -->

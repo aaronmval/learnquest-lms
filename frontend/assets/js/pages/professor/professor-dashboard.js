@@ -357,22 +357,45 @@ function refreshDashboard(errorMessage = null) {
     if (errorMessage) renderAnalysisNotes(analysis);
 }
 
+/* Radar by default; the chart-zoom toolbar can switch it to a bar graph
+   (common/chart-zoom.js), which rebuilds it from the last data shown. */
+const radarScale = {
+    min: 0,
+    max: 100,
+    ticks: { stepSize: 20, color: axisColor, backdropColor: "transparent", font: { size: 12 } },
+    grid: { color: gridColor },
+    angleLines: { color: gridColor },
+    pointLabels: { color: "#f1f5f9", font: { size: 13 } },
+};
+
+let lastRadarData = { labels: [], data: [] };
+
 function buildOrUpdateRadarChart(radar) {
     const radarCtx = document.getElementById("radarChart");
     if (!radarCtx) return;
+    lastRadarData = radar;
+
+    const view = window.LQChartView?.get(radarCtx) || "radar";
+
+    if (radarChart && radarChart.config.type !== view) {
+        radarChart.destroy();
+        radarChart = null;
+    }
 
     if (!radarChart) {
         radarChart = new Chart(radarCtx, {
-            type: "radar",
+            type: view,
             data: {
                 labels: radar.labels,
                 datasets: [
                     {
                         label: "Average Lesson Mastery",
                         data: radar.data,
-                        backgroundColor: "rgba(34, 211, 238, 0.26)",
+                        backgroundColor: view === "bar" ? "rgba(34, 211, 238, 0.7)" : "rgba(34, 211, 238, 0.26)",
                         borderColor: "#22d3ee",
                         borderWidth: 2,
+                        borderRadius: view === "bar" ? 6 : 0,
+                        maxBarThickness: 48,
                         pointBackgroundColor: "#22d3ee",
                         pointBorderColor: "#fff",
                         pointRadius: 4,
@@ -387,23 +410,10 @@ function buildOrUpdateRadarChart(radar) {
                     legend: {
                         position: "top",
                         align: "start",
-                        labels: { boxWidth: 14, color: "#e2e8f0" },
+                        labels: { boxWidth: 14, color: "#f1f5f9", font: { size: 13 } },
                     },
                 },
-                scales: {
-                    r: {
-                        min: 0,
-                        max: 100,
-                        ticks: {
-                            stepSize: 20,
-                            color: axisColor,
-                            backdropColor: "transparent",
-                        },
-                        grid: { color: gridColor },
-                        angleLines: { color: gridColor },
-                        pointLabels: { color: "#e2e8f0", font: { size: 12 } },
-                    },
-                },
+                scales: window.LQChartView ? window.LQChartView.scales(view, radarScale) : { r: radarScale },
             },
         });
     } else {
@@ -412,6 +422,10 @@ function buildOrUpdateRadarChart(radar) {
         radarChart.update();
     }
 }
+
+document.getElementById("radarChart")?.addEventListener("lq:chartviewchange", () => {
+    buildOrUpdateRadarChart(lastRadarData);
+});
 
 function buildOrUpdatePerformanceChart(performance) {
     const perfCtx = document.getElementById("performanceChart");
@@ -477,7 +491,7 @@ function buildOrUpdateStrengthWeaknessChart(analysis) {
     // squeezing every one into the card's height.
     const wrap = document.getElementById("strengthWeaknessWrap");
     if (wrap) {
-        wrap.style.height = `${Math.max(240, analysis.labels.length * 34 + 60)}px`;
+        wrap.style.height = `${Math.max(260, analysis.labels.length * 40 + 70)}px`;
     }
 
     if (!strengthWeaknessChart) {
@@ -511,18 +525,18 @@ function buildOrUpdateStrengthWeaknessChart(analysis) {
                     legend: {
                         position: "top",
                         align: "start",
-                        labels: { boxWidth: 14, color: "#e2e8f0" },
+                        labels: { boxWidth: 14, color: "#f1f5f9", font: { size: 13 } },
                     },
                 },
                 scales: {
                     x: {
                         min: 0,
                         max: 100,
-                        ticks: { color: axisColor, stepSize: 20 },
+                        ticks: { color: axisColor, stepSize: 20, font: { size: 12 } },
                         grid: { color: gridColor },
                     },
                     y: {
-                        ticks: { color: axisColor },
+                        ticks: { color: "#e2e8f0", font: { size: 13 } },
                         grid: { display: false },
                     },
                 },

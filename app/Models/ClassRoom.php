@@ -69,6 +69,7 @@ class ClassRoom extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'class_enrollments', 'class_id', 'student_id')
+            ->withPivot('academic_level')
             ->withTimestamps();
     }
 

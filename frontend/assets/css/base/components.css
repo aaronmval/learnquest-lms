@@ -1109,6 +1109,15 @@ html.lq-text-large {
     color: #5ec8ff;
 }
 
+/* Radar ↔ bar switch (common/chart-zoom.js) */
+.chart-view-toggle.active {
+    color: #5ec8ff;
+}
+
+.chart-key li[hidden] {
+    display: none;
+}
+
 /* CHART KEY — explains what a radar chart shows */
 .chart-key {
     list-style: none;

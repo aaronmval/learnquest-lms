@@ -62,6 +62,8 @@ class QuizAttemptTest extends TestCase
 
     public function test_full_submit_flow_grades_and_updates_mastery(): void
     {
+        // Answers shown right after submitting (the default asks permission).
+        config(['quiz.default_settings.show_answers' => true]);
         [$student, $classId, $postId, $question, $competencyId] = $this->enrolledStudentWithGeneratedQuiz();
 
         $res = $this->actingAs($student)->postJson("/student/classes/{$classId}/posts/{$postId}/quiz/attempts", [

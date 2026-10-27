@@ -5,6 +5,7 @@ namespace App\Services\Quiz;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizAttempt;
+use App\Models\QuizQuestion;
 use App\Models\User;
 use App\Services\Bkt\BayesianKnowledgeTracingService;
 use Illuminate\Support\Facades\DB;
@@ -117,14 +118,7 @@ class QuizAttemptService
                     'answered_at' => now(),
                 ]);
 
-                $review[] = [
-                    'question_id' => $question->id,
-                    'selected_index' => $selectedIndex,
-                    'correct_index' => array_search($question->correct_answer, $question->choices, true),
-                    'is_correct' => $isCorrect,
-                    'explanation' => $question->explanation,
-                    'competency_name' => $question->competency->name,
-                ];
+                $review[] = $this->reviewEntry($question, $selectedIndex, $isCorrect);
             }
 
             $total = $questions->count();
@@ -168,5 +162,60 @@ class QuizAttemptService
                 ],
             ];
         });
+    }
+
+    /**
+     * A submitted attempt's review rebuilt from its stored answers, with the
+     * question text and choices (original order) so the quiz page can show
+     * it later — e.g. once the teacher approves an answer review.
+     *
+     * @return array{score: array, questions: array, review: array}
+     */
+    public function reviewFor(QuizAttempt $attempt): array
+    {
+        $answers = $attempt->answers()
+            ->with('question.competency')
+            ->get()
+            ->filter(fn (QuizAnswer $answer) => $answer->question !== null)
+            ->sortBy(fn (QuizAnswer $answer) => $answer->question->order_index)
+            ->values();
+
+        $correct = $answers->where('is_correct', true)->count();
+        $incorrect = $answers->where('is_correct', false)->count();
+        $total = (int) ($attempt->score_total ?? $answers->count());
+
+        return [
+            'score' => [
+                'correct' => $correct,
+                'incorrect' => $incorrect,
+                'skipped' => $answers->whereNull('is_correct')->count(),
+                'total' => $total,
+                'percent' => $total ? (int) round($correct / $total * 100) : 0,
+            ],
+            'questions' => $answers->map(fn (QuizAnswer $answer) => [
+                'id' => $answer->question->id,
+                'text' => $answer->question->question_text,
+                'choices' => $answer->question->choices,
+            ])->all(),
+            'review' => $answers
+                ->map(fn (QuizAnswer $answer) => $this->reviewEntry($answer->question, $answer->selected_index, $answer->is_correct))
+                ->all(),
+        ];
+    }
+
+    /**
+     * One question's review entry. Indexes are the question's original
+     * choice indexes (the page maps them to its displayed order).
+     */
+    private function reviewEntry(QuizQuestion $question, ?int $selectedIndex, ?bool $isCorrect): array
+    {
+        return [
+            'question_id' => $question->id,
+            'selected_index' => $selectedIndex,
+            'correct_index' => array_search($question->correct_answer, $question->choices, true),
+            'is_correct' => $isCorrect,
+            'explanation' => $question->explanation,
+            'competency_name' => $question->competency?->name,
+        ];
     }
 }

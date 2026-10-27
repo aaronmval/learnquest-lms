@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ProfessorClassController extends Controller
 {
@@ -84,9 +85,30 @@ class ProfessorClassController extends Controller
                 'email' => $student->email,
                 'avatar_url' => $student->avatar_url,
                 'joined_at' => $student->pivot->created_at?->toIso8601String(),
+                'academic_level' => $student->pivot->academic_level,
             ]);
 
         return response()->json($students);
+    }
+
+    /**
+     * Teacher-set academic level for a student in this class. It only sets
+     * the starting quiz difficulty before the student has BKT evidence —
+     * mastery itself is always estimated by BKT.
+     */
+    public function updateAcademicLevel(Request $request, ClassRoom $class, User $student): JsonResponse
+    {
+        abort_unless($class->professor_id === $request->user()->id, 404);
+
+        $data = $request->validate([
+            'academic_level' => ['present', 'nullable', 'string', Rule::in(array_keys(config('quiz.academic_levels')))],
+        ]);
+
+        abort_unless($class->students()->where('users.id', $student->id)->exists(), 404);
+
+        $class->students()->updateExistingPivot($student->id, ['academic_level' => $data['academic_level']]);
+
+        return response()->json(['id' => $student->id, 'academic_level' => $data['academic_level']]);
     }
 
     /**

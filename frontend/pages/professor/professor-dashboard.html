@@ -169,20 +169,28 @@
                         ></span>
                     </div>
                     <div class="chart-canvas-wrap chart-canvas-wrap-main">
-                        <canvas id="radarChart" data-chart-zoom></canvas>
+                        <canvas id="radarChart" data-chart-zoom data-chart-view-toggle></canvas>
                     </div>
                     <ul class="chart-key">
-                        <li>
+                        <li data-key-view="radar">
                             <span class="chart-key-swatch" style="background-color: #22d3ee"></span>
                             Shaded area: average class mastery (BKT estimate)
                         </li>
-                        <li>
+                        <li data-key-view="radar">
                             <i class="fas fa-circle-dot"></i>
                             Each point: one lesson
                         </li>
-                        <li>
+                        <li data-key-view="radar">
                             <i class="fas fa-bullseye"></i>
                             Rings: 0% at the centre, 100% at the outer edge
+                        </li>
+                        <li data-key-view="bar" hidden>
+                            <span class="chart-key-swatch" style="background-color: #22d3ee"></span>
+                            Bar height: average class mastery (BKT estimate)
+                        </li>
+                        <li data-key-view="bar" hidden>
+                            <i class="fas fa-chart-column"></i>
+                            Each bar: one lesson
                         </li>
                     </ul>
                 </div>
@@ -270,9 +278,10 @@
 
                 <div class="chart-card analysis-card">
                     <div class="chart-header">
-                        <h3 class="chart-title">
-                            AI Strengths vs Weaknesses Analysis
-                        </h3>
+                        <div>
+                            <h3 class="chart-title">AI Analysis:</h3>
+                            <p class="chart-subtitle">Strengths vs Weaknesses</p>
+                        </div>
                         <span
                             class="active-filter-badge filter-badge-hidden"
                             id="analysisBadge"

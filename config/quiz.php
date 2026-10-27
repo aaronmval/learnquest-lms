@@ -45,7 +45,8 @@ return [
         'max_attempts' => null,                // null = unlimited
         'shuffle_questions' => true,
         'shuffle_choices' => false,
-        'show_answers' => true,
+        // false = students ask the teacher for permission to review answers.
+        'show_answers' => false,
         'adaptive' => true,
     ],
 
@@ -60,6 +61,26 @@ return [
     // counts as on time (covers network delay on auto-submit). Later
     // submissions are still graded, but marked "late".
     'time_limit_grace_seconds' => (int) env('QUIZ_TIME_LIMIT_GRACE_SECONDS', 60),
+
+    // Times a student may leave an in-progress quiz (switch tab, alt-tab,
+    // minimize) before it is submitted automatically. Each leave is
+    // recorded on the attempt for the teacher to see.
+    'max_focus_violations' => (int) env('QUIZ_MAX_FOCUS_VIOLATIONS', 3),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Teacher-set academic level
+    |--------------------------------------------------------------------------
+    | Maps each level a teacher can set per student to the adaptive mastery
+    | level (AdaptiveLearningService) used for the starting quiz difficulty
+    | — only until the student has BKT evidence. null = the teacher's mix.
+    */
+
+    'academic_levels' => [
+        'advanced' => 'high',
+        'average' => null,
+        'needs_support' => 'low',
+    ],
 
     /*
     |--------------------------------------------------------------------------

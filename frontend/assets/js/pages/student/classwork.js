@@ -4,6 +4,11 @@ let CLASS_TEACHER_INITIALS = "";
 let POST_ID = null;
 let CURRENT_LESSON = null;
 
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : "";
+}
+
 function showNotFound(title, message, linkHref, linkLabel) {
     const notFound = document.getElementById("classNotFound");
     const wrap = document.getElementById("classroomWrap");
@@ -83,6 +88,7 @@ async function loadLesson() {
         renderLesson(lesson);
         renderLessonSummary(lesson);
         renderQuizCard();
+        loadLatestAttempt();
         loadLessonMastery();
     } catch (e) {
         showNotFound(
@@ -215,6 +221,92 @@ function renderQuizCard() {
     takeBtn.disabled = true;
 }
 
+/* LATEST ATTEMPT — score of the last submitted attempt and, when the teacher
+   hides the correct answers, the status of the request to review them. */
+let latestAttempt = null;
+
+async function loadLatestAttempt() {
+    if (!CLASS_ID || !POST_ID || !CURRENT_LESSON?.attachment) return;
+
+    try {
+        const res = await fetch(`/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz/attempts/latest`, {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error("failed to load latest attempt");
+        latestAttempt = (await res.json()).attempt;
+    } catch (e) {
+        latestAttempt = null;
+    }
+
+    renderAttemptStatus();
+}
+
+function renderAttemptStatus() {
+    const box = document.getElementById("quizAttemptStatus");
+    const text = document.getElementById("quizAttemptText");
+    const btn = document.getElementById("quizReviewBtn");
+    if (!box || !text || !btn) return;
+
+    box.hidden = !latestAttempt;
+    if (!latestAttempt) return;
+
+    const score = `Last score: ${latestAttempt.score_correct ?? 0}/${latestAttempt.score_total ?? 0}.`;
+
+    if (latestAttempt.answers_visible) {
+        text.textContent = score;
+        btn.textContent = "Review answers";
+        btn.disabled = false;
+        return;
+    }
+
+    const STATUS = {
+        pending: ["Waiting for your teacher to approve reviewing the answers.", "Request sent", true],
+        denied: ["Your teacher didn't approve reviewing the answers.", "Ask again", false],
+    }[latestAttempt.answer_review_status] || ["Correct answers are hidden until your teacher approves.", "Ask teacher to review answers", false];
+
+    text.textContent = `${score} ${STATUS[0]}`;
+    btn.textContent = STATUS[1];
+    btn.disabled = STATUS[2];
+}
+
+async function handleQuizReview() {
+    if (!latestAttempt) return;
+
+    const reviewUrl = `student-quiz.html?id=${CLASS_ID}&postId=${POST_ID}&attempt=${latestAttempt.id}&view=review`;
+    if (latestAttempt.answers_visible) {
+        window.location.href = reviewUrl;
+        return;
+    }
+
+    const btn = document.getElementById("quizReviewBtn");
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(
+            `/student/classes/${CLASS_ID}/posts/${POST_ID}/quiz/attempts/${latestAttempt.id}/answer-review`,
+            {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { Accept: "application/json", "X-XSRF-TOKEN": getCsrfToken() },
+            },
+        );
+        if (!res.ok) throw new Error("request failed");
+
+        const { status } = await res.json();
+        if (status === "approved") {
+            window.location.href = reviewUrl;
+            return;
+        }
+        latestAttempt.answer_review_status = status;
+    } catch (e) {
+        btn.disabled = false;
+        return;
+    }
+
+    renderAttemptStatus();
+}
+
 function handleTakeQuiz() {
     const takeBtn = document.getElementById("takeQuizBtn");
     if (!takeBtn || takeBtn.disabled) return;
@@ -249,7 +341,7 @@ function lessonTourSteps() {
         {
             target: ".quiz-card",
             title: "The AI quiz",
-            body: "QuestAI writes this quiz from the lesson. Some quizzes have a time limit that starts as soon as you open them, so get ready first. Your answers update your mastery of each topic, and your next quiz can adjust to be easier or harder to match it.",
+            body: "QuestAI writes this quiz from the lesson. Some quizzes have a time limit that starts as soon as you open them, so get ready first. Stay on the quiz page while answering: switching tabs or windows is counted, and leaving too often submits the quiz. Your answers update your mastery of each topic, and your next quiz can adjust to be easier or harder to match it.",
         },
         {
             target: "#backToClassBtn",
@@ -271,4 +363,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     document.getElementById("backToClassBtn")?.addEventListener("click", handleBackToClass);
     document.getElementById("takeQuizBtn")?.addEventListener("click", handleTakeQuiz);
+    document.getElementById("quizReviewBtn")?.addEventListener("click", handleQuizReview);
 });

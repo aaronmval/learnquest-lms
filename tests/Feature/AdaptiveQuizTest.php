@@ -137,6 +137,75 @@ class AdaptiveQuizTest extends TestCase
         return array_merge(['easy' => 0, 'medium' => 0, 'hard' => 0], $difficulties->countBy()->all());
     }
 
+    private function setAcademicLevel(User $student, ?string $level): void
+    {
+        $this->actingAs($this->professor)
+            ->putJson("/professor/classes/{$this->classId}/students/{$student->id}/academic-level", ['academic_level' => $level])
+            ->assertOk();
+    }
+
+    public function test_advanced_students_without_quiz_results_start_on_a_harder_quiz(): void
+    {
+        $student = $this->student(null);
+        $this->setAcademicLevel($student, 'advanced');
+
+        $response = $this->openQuiz($student);
+
+        $this->assertSame(['easy' => 0, 'medium' => 2, 'hard' => 3], $this->servedMix($response));
+        $response->assertJsonPath('settings.mastery_level', 'high');
+        $response->assertJsonPath('settings.level_basis', 'teacher');
+    }
+
+    public function test_needs_support_students_without_quiz_results_start_on_an_easier_quiz(): void
+    {
+        $student = $this->student(null);
+        $this->setAcademicLevel($student, 'needs_support');
+
+        $this->assertSame(['easy' => 2, 'medium' => 2, 'hard' => 1], $this->servedMix($this->openQuiz($student)));
+    }
+
+    public function test_average_academic_level_keeps_the_teachers_mix(): void
+    {
+        $student = $this->student(null);
+        $this->setAcademicLevel($student, 'average');
+
+        $response = $this->openQuiz($student);
+
+        $this->assertSame(['easy' => 1, 'medium' => 2, 'hard' => 2], $this->servedMix($response));
+        $response->assertJsonPath('settings.level_basis', null);
+    }
+
+    public function test_bkt_evidence_overrides_the_academic_level(): void
+    {
+        $student = $this->student(0.20);
+        $this->setAcademicLevel($student, 'advanced');
+
+        $response = $this->openQuiz($student);
+
+        $this->assertSame(['easy' => 2, 'medium' => 2, 'hard' => 1], $this->servedMix($response));
+        $response->assertJsonPath('settings.level_basis', 'bkt');
+    }
+
+    public function test_only_the_class_owner_can_set_a_valid_academic_level(): void
+    {
+        $student = $this->student(null);
+        $url = "/professor/classes/{$this->classId}/students/{$student->id}/academic-level";
+
+        $this->actingAs($this->professor)->putJson($url, ['academic_level' => 'genius'])->assertUnprocessable();
+
+        $other = User::factory()->create(['role' => 'professor']);
+        $this->actingAs($other)->putJson($url, ['academic_level' => 'advanced'])->assertNotFound();
+
+        $stranger = User::factory()->create(['role' => 'student']);
+        $this->actingAs($this->professor)
+            ->putJson("/professor/classes/{$this->classId}/students/{$stranger->id}/academic-level", ['academic_level' => 'advanced'])
+            ->assertNotFound();
+
+        $this->setAcademicLevel($student, 'advanced');
+        $this->actingAs($this->professor)->getJson("/professor/classes/{$this->classId}/students")
+            ->assertJsonPath('0.academic_level', 'advanced');
+    }
+
     public function test_high_mastery_students_get_a_harder_quiz(): void
     {
         $response = $this->openQuiz($this->student(0.90));

@@ -1714,6 +1714,58 @@ body.dark .student-name {
     white-space: nowrap;
 }
 
+/* Teacher-set academic level (starting quiz difficulty) */
+.academic-level-hint {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin: 0 0 6px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.academic-level-hint i {
+    margin-top: 2px;
+}
+
+body.dark .academic-level-hint {
+    background-color: #1e293b;
+    color: #cbd5e1;
+}
+
+.academic-level-select {
+    flex-shrink: 0;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 9px;
+    background-color: #fff;
+    color: #0f172a;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 6px 8px;
+    cursor: pointer;
+}
+
+body.dark .academic-level-select {
+    background-color: #0f172a;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+@media (max-width: 560px) {
+    .student-row {
+        flex-wrap: wrap;
+    }
+
+    .academic-level-select {
+        margin-left: 50px;
+    }
+}
+
 .student-remove-btn {
     display: flex;
     align-items: center;

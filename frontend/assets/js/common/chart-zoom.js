@@ -35,6 +35,95 @@
         return el;
     }
 
+    /* Radar ↔ bar switch for <canvas data-chart-view-toggle>. The view is
+       kept on canvas.dataset.chartView (remembered per chart); the page
+       rebuilds its chart on "lq:chartviewchange", reading the view through
+       window.LQChartView. Chart-key items marked data-key-view="radar|bar"
+       show only in their view. */
+    var VIEW_STORAGE_PREFIX = "lq_chartView_";
+
+    function savedView(canvas) {
+        try {
+            return localStorage.getItem(VIEW_STORAGE_PREFIX + canvas.id) === "bar" ? "bar" : "radar";
+        } catch (e) {
+            return "radar";
+        }
+    }
+
+    function applyView(canvas, view, viewBtn, labelsBtn) {
+        canvas.dataset.chartView = view;
+
+        var toBar = view === "radar";
+        viewBtn.innerHTML = toBar ? '<i class="fas fa-chart-column"></i>' : '<i class="fas fa-circle-nodes"></i>';
+        viewBtn.title = toBar ? "Show as bar graph" : "Show as radar chart";
+        viewBtn.setAttribute("aria-label", viewBtn.title);
+        viewBtn.setAttribute("aria-pressed", String(view === "bar"));
+        viewBtn.classList.toggle("active", view === "bar");
+
+        // Bar graphs always show their axis labels.
+        labelsBtn.hidden = view === "bar";
+
+        var card = canvas.closest(".chart-card");
+        if (card) {
+            card.querySelectorAll("[data-key-view]").forEach(function (item) {
+                item.hidden = item.getAttribute("data-key-view") !== view;
+            });
+        }
+    }
+
+    function viewToggle(canvas, labelsBtn) {
+        var btn = button("", "");
+        btn.classList.add("chart-view-toggle");
+        applyView(canvas, savedView(canvas), btn, labelsBtn);
+
+        btn.addEventListener("click", function () {
+            var view = canvas.dataset.chartView === "bar" ? "radar" : "bar";
+            applyView(canvas, view, btn, labelsBtn);
+            try {
+                localStorage.setItem(VIEW_STORAGE_PREFIX + canvas.id, view);
+            } catch (e) {
+                // storage unavailable — the choice lasts for this page only
+            }
+            canvas.dispatchEvent(new CustomEvent("lq:chartviewchange", { detail: { view: view } }));
+        });
+
+        return btn;
+    }
+
+    window.LQChartView = {
+        /** "radar" or "bar" for this canvas. */
+        get: function (canvas) {
+            return (canvas && canvas.dataset.chartView) === "bar" ? "bar" : "radar";
+        },
+
+        /** Chart.js scales for the view, built from the page's radar scale. */
+        scales: function (view, radarScale) {
+            if (view !== "bar") return { r: radarScale };
+
+            var labelColor = (radarScale.pointLabels && radarScale.pointLabels.color) || "#e2e8f0";
+            var labelFont = (radarScale.pointLabels && radarScale.pointLabels.font) || { size: 12 };
+
+            return {
+                x: {
+                    ticks: { color: labelColor, font: labelFont, autoSkip: false, maxRotation: 45 },
+                    grid: { display: false },
+                },
+                y: {
+                    min: radarScale.min,
+                    max: radarScale.max,
+                    ticks: {
+                        stepSize: radarScale.ticks && radarScale.ticks.stepSize,
+                        color: radarScale.ticks && radarScale.ticks.color,
+                        callback: function (value) {
+                            return value + "%";
+                        },
+                    },
+                    grid: { color: radarScale.grid && radarScale.grid.color },
+                },
+            };
+        },
+    };
+
     function attach(canvas) {
         var wrap = canvas.closest(".chart-canvas-wrap");
         if (!wrap || wrap.classList.contains("chart-zoomable")) return;
@@ -76,6 +165,9 @@
 
         var controls = document.createElement("div");
         controls.className = "chart-zoom-controls";
+        if (canvas.hasAttribute("data-chart-view-toggle")) {
+            controls.appendChild(viewToggle(canvas, labels));
+        }
         controls.appendChild(labels);
         controls.appendChild(zoomOut);
         controls.appendChild(reset);
