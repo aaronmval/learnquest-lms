@@ -128,7 +128,7 @@ function quizTourSteps() {
         },
         {
             title: "Good luck!",
-            body: "After you submit you'll see your score right away. If your teacher hides the correct answers, you can ask them for permission to review them. Your answers also update your mastery of each topic. Replay this tour with the \"Take the tour\" button at the top.",
+            body: "After you submit you'll see your score right away. If your teacher requires it, ask them for permission before reviewing your answers. Your answers also update your mastery of each topic. Replay this tour with the \"Take the tour\" button at the top.",
         },
     ];
 }
@@ -652,10 +652,11 @@ async function finalizeSubmit() {
 function showResults(data, { fromReview = false } = {}) {
     const { correct, incorrect, skipped, total, percent } = data.score;
 
-    // answers_visible comes from the review endpoint; on submit the key is
-    // visible exactly when the teacher shows answers right away.
-    const answersVisible = data.answers_visible ?? data.show_answers ?? true;
-    renderAnswerReviewSection(answersVisible);
+    // Locked until the teacher approves (when they require permission):
+    // only the score is shown, and "Review Answers" becomes a request.
+    const reviewUnlocked = data.review_unlocked ?? true;
+    document.getElementById("reviewAnswersBtn").hidden = !reviewUnlocked;
+    renderAnswerReviewSection(reviewUnlocked);
 
     document.getElementById("resultsScoreText").textContent = `${correct}/${total}`;
     document.getElementById("resultsPercentText").textContent = `${percent}%`;
@@ -841,11 +842,11 @@ async function onLeftQuiz() {
     openModal("focusWarningModal");
 }
 
-/*  ANSWER REVIEW — when the teacher hides the correct answers, the student
-    asks permission to see them for this attempt.  */
+/*  ANSWER REVIEW — when the teacher requires permission, the student asks
+    before they can review this attempt's answers.  */
 const ANSWER_REVIEW_STATES = {
     none: {
-        text: "Your teacher shows the correct answers and explanations only after approving a request.",
+        text: "Your teacher needs to approve before you can review your answers.",
         label: "Ask teacher to review answers",
         disabled: false,
     },
@@ -861,16 +862,16 @@ const ANSWER_REVIEW_STATES = {
     },
     approved: {
         text: "Your teacher approved your request.",
-        label: "Show the correct answers",
+        label: "Review my answers",
         disabled: false,
     },
 };
 
-function renderAnswerReviewSection(answersVisible) {
+function renderAnswerReviewSection(reviewUnlocked) {
     const section = document.getElementById("answerReviewSection");
     if (!section) return;
 
-    section.hidden = answersVisible || !currentAttemptId;
+    section.hidden = reviewUnlocked || !currentAttemptId;
     if (section.hidden) return;
 
     const state = ANSWER_REVIEW_STATES[answerReviewStatus || "none"] || ANSWER_REVIEW_STATES.none;
@@ -955,6 +956,13 @@ async function loadAttemptReview() {
                 choiceIndexes: q.choices.map((_, i) => i),
             })),
         };
+
+        // Still locked: show the score and the request, not the questions.
+        if (data.review_unlocked === false) {
+            renderLoadError("Your answers are locked until your teacher approves your request to review them.", { retry: false });
+            showResults(data, { fromReview: true });
+            return;
+        }
 
         if (!QUIZ.questions.length) {
             renderLoadError("This attempt has no answers to review.", { retry: false });

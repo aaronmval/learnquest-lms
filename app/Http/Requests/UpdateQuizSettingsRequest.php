@@ -33,6 +33,7 @@ class UpdateQuizSettingsRequest extends FormRequest
             'shuffle_questions' => ['required', 'boolean'],
             'shuffle_choices' => ['required', 'boolean'],
             'show_answers' => ['required', 'boolean'],
+            'review_requires_permission' => ['sometimes', 'boolean'],
             'adaptive' => ['required', 'boolean'],
         ];
     }

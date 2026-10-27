@@ -17,7 +17,7 @@ class QuizSettingsService
     public const DIFFICULTIES = ['easy', 'medium', 'hard'];
 
     /**
-     * @return array{question_count:int, time_limit_minutes:?int, difficulty_mix:array{easy:int, medium:int, hard:int}, max_attempts:?int, shuffle_questions:bool, shuffle_choices:bool, show_answers:bool, adaptive:bool, saved:bool}
+     * @return array{question_count:int, time_limit_minutes:?int, difficulty_mix:array{easy:int, medium:int, hard:int}, max_attempts:?int, shuffle_questions:bool, shuffle_choices:bool, show_answers:bool, review_requires_permission:bool, adaptive:bool, saved:bool}
      */
     public function for(ClassPost $post): array
     {
@@ -46,6 +46,7 @@ class QuizSettingsService
                 'shuffle_questions' => (bool) $data['shuffle_questions'],
                 'shuffle_choices' => (bool) $data['shuffle_choices'],
                 'show_answers' => (bool) $data['show_answers'],
+                'review_requires_permission' => (bool) ($data['review_requires_permission'] ?? config('quiz.default_settings.review_requires_permission', true)),
                 'adaptive' => (bool) ($data['adaptive'] ?? true),
             ],
         );
@@ -118,6 +119,7 @@ class QuizSettingsService
             'shuffle_questions' => (bool) $defaults['shuffle_questions'],
             'shuffle_choices' => (bool) $defaults['shuffle_choices'],
             'show_answers' => (bool) $defaults['show_answers'],
+            'review_requires_permission' => (bool) ($defaults['review_requires_permission'] ?? true),
             'adaptive' => (bool) ($defaults['adaptive'] ?? true),
         ];
     }
@@ -132,6 +134,7 @@ class QuizSettingsService
             'shuffle_questions' => $setting->shuffle_questions,
             'shuffle_choices' => $setting->shuffle_choices,
             'show_answers' => $setting->show_answers,
+            'review_requires_permission' => $setting->review_requires_permission,
             'adaptive' => $setting->adaptive,
         ];
     }

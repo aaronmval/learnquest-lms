@@ -45,8 +45,10 @@ return [
         'max_attempts' => null,                // null = unlimited
         'shuffle_questions' => true,
         'shuffle_choices' => false,
-        // false = students ask the teacher for permission to review answers.
-        'show_answers' => false,
+        // Correct answers and explanations shown in the review.
+        'show_answers' => true,
+        // Students ask the teacher before they can review their answers.
+        'review_requires_permission' => true,
         'adaptive' => true,
     ],
 

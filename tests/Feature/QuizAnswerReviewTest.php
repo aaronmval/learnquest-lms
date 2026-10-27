@@ -90,7 +90,22 @@ class QuizAnswerReviewTest extends TestCase
         ])->assertCreated()->json('attempt_id');
     }
 
-    public function test_hidden_answers_keep_the_score_but_not_the_key(): void
+    private function saveSettings(bool $requiresPermission, bool $showAnswers): void
+    {
+        $this->actingAs($this->professor)->putJson($this->studioUrl('/settings'), [
+            'question_count' => 5,
+            'time_limit_minutes' => null,
+            'difficulty_mix' => ['easy' => 30, 'medium' => 40, 'hard' => 30],
+            'max_attempts' => null,
+            'shuffle_questions' => false,
+            'shuffle_choices' => false,
+            'show_answers' => $showAnswers,
+            'review_requires_permission' => $requiresPermission,
+            'adaptive' => true,
+        ])->assertOk()->assertJsonPath('settings.review_requires_permission', $requiresPermission);
+    }
+
+    public function test_a_locked_review_returns_only_the_score(): void
     {
         $this->actingAs($this->student)->getJson($this->url())->assertOk();
 
@@ -99,11 +114,36 @@ class QuizAnswerReviewTest extends TestCase
         ])
             ->assertCreated()
             ->assertJsonPath('score.incorrect', 1)
-            ->assertJsonPath('review.0.is_correct', false)
-            ->assertJsonPath('review.0.correct_index', null)
-            ->assertJsonPath('review.0.explanation', null)
-            ->assertJsonPath('show_answers', false)
+            ->assertJsonPath('review', [])
+            ->assertJsonPath('review_unlocked', false)
+            ->assertJsonPath('answers_visible', false)
             ->assertJsonPath('answer_review.status', null);
+    }
+
+    public function test_without_permission_and_hidden_key_students_see_right_and_wrong_only(): void
+    {
+        $this->saveSettings(requiresPermission: false, showAnswers: false);
+        $attemptId = $this->submitAttempt();
+
+        $this->actingAs($this->student)->getJson($this->url("/attempts/{$attemptId}/review"))
+            ->assertJsonPath('review_unlocked', true)
+            ->assertJsonPath('answers_visible', false)
+            ->assertJsonPath('review.0.is_correct', false)
+            ->assertJsonPath('review.0.correct_index', null);
+    }
+
+    public function test_an_approved_review_still_respects_hidden_correct_answers(): void
+    {
+        $this->saveSettings(requiresPermission: true, showAnswers: false);
+        $attemptId = $this->submitAttempt();
+        $this->actingAs($this->student)->postJson($this->url("/attempts/{$attemptId}/answer-review"))->assertCreated();
+        $this->actingAs($this->professor)
+            ->putJson($this->studioUrl('/answer-reviews/'.AnswerReviewRequest::firstOrFail()->id), ['approved' => true]);
+
+        $this->actingAs($this->student)->getJson($this->url("/attempts/{$attemptId}/review"))
+            ->assertJsonPath('review_unlocked', true)
+            ->assertJsonPath('review.0.is_correct', false)
+            ->assertJsonPath('review.0.correct_index', null);
     }
 
     public function test_review_stays_hidden_until_the_teacher_approves(): void
@@ -112,9 +152,10 @@ class QuizAnswerReviewTest extends TestCase
 
         $this->actingAs($this->student)->getJson($this->url("/attempts/{$attemptId}/review"))
             ->assertOk()
-            ->assertJsonPath('answers_visible', false)
-            ->assertJsonPath('review.0.correct_index', null)
-            ->assertJsonPath('questions.0.text', 'Which particle has a negative charge?');
+            ->assertJsonPath('review_unlocked', false)
+            ->assertJsonPath('review', [])
+            ->assertJsonPath('questions', [])
+            ->assertJsonPath('score.incorrect', 1);
 
         $this->actingAs($this->student)->postJson($this->url("/attempts/{$attemptId}/answer-review"))
             ->assertCreated()
@@ -124,7 +165,7 @@ class QuizAnswerReviewTest extends TestCase
             ->where('data->kind', 'answer_review_requested')->count());
 
         $this->actingAs($this->student)->getJson($this->url("/attempts/{$attemptId}/review"))
-            ->assertJsonPath('answers_visible', false)
+            ->assertJsonPath('review_unlocked', false)
             ->assertJsonPath('answer_review.status', 'pending');
 
         $requests = $this->actingAs($this->professor)->getJson($this->studioUrl('/answer-reviews'))
@@ -142,13 +183,15 @@ class QuizAnswerReviewTest extends TestCase
             ->where('data->kind', 'answer_review_decided')->count());
 
         $this->actingAs($this->student)->getJson($this->url("/attempts/{$attemptId}/review"))
+            ->assertJsonPath('review_unlocked', true)
             ->assertJsonPath('answers_visible', true)
+            ->assertJsonPath('questions.0.text', 'Which particle has a negative charge?')
             ->assertJsonPath('review.0.correct_index', 2)
             ->assertJsonPath('review.0.explanation', 'Electrons are negatively charged.');
 
         $this->actingAs($this->student)->getJson($this->url('/attempts/latest'))
             ->assertJsonPath('attempt.id', $attemptId)
-            ->assertJsonPath('attempt.answers_visible', true)
+            ->assertJsonPath('attempt.review_unlocked', true)
             ->assertJsonPath('attempt.answer_review_status', 'approved');
     }
 
@@ -162,7 +205,7 @@ class QuizAnswerReviewTest extends TestCase
             ->assertJsonPath('status', 'denied');
 
         $this->actingAs($this->student)->getJson($this->url("/attempts/{$attemptId}/review"))
-            ->assertJsonPath('answers_visible', false)
+            ->assertJsonPath('review_unlocked', false)
             ->assertJsonPath('answer_review.status', 'denied');
 
         $this->actingAs($this->student)->postJson($this->url("/attempts/{$attemptId}/answer-review"))
@@ -190,18 +233,9 @@ class QuizAnswerReviewTest extends TestCase
         $this->assertSame('pending', $request->fresh()->status);
     }
 
-    public function test_answers_shown_right_away_need_no_request(): void
+    public function test_reviews_without_required_permission_need_no_request(): void
     {
-        $this->actingAs($this->professor)->putJson($this->studioUrl('/settings'), [
-            'question_count' => 5,
-            'time_limit_minutes' => null,
-            'difficulty_mix' => ['easy' => 30, 'medium' => 40, 'hard' => 30],
-            'max_attempts' => null,
-            'shuffle_questions' => false,
-            'shuffle_choices' => false,
-            'show_answers' => true,
-            'adaptive' => true,
-        ])->assertOk();
+        $this->saveSettings(requiresPermission: false, showAnswers: true);
 
         $attemptId = $this->submitAttempt();
 

@@ -580,7 +580,7 @@ class QuizStudioTest extends TestCase
 
     public function test_hidden_answers_keep_right_and_wrong_but_not_the_key(): void
     {
-        $this->saveSettings(['show_answers' => false]);
+        $this->saveSettings(['show_answers' => false, 'review_requires_permission' => false]);
 
         $review = collect($this->submit(['electron' => 0, 'nucleus' => 0])->assertCreated()->json('review'))->keyBy('question_id');
 

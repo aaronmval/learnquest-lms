@@ -9,10 +9,12 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
- * Permission to review answers. When a lesson's teacher doesn't show the
- * correct answers right after submitting, a student asks for them per
- * attempt and the teacher approves or denies. Scores are never held back —
- * only the answer key and explanations.
+ * Permission to review answers. When a lesson's "ask my permission before
+ * students review their answers" setting is on, a student asks per attempt
+ * and the teacher approves or denies. Until then the student sees only
+ * their score — not which questions they got right, nor the answer key.
+ * Once unlocked, the review shows the key if the teacher's "show correct
+ * answers" setting is on.
  */
 class AnswerReviewService
 {
@@ -53,12 +55,24 @@ class AnswerReviewService
     }
 
     /**
-     * @param  array{show_answers: bool}  $settings  the lesson's quiz settings
+     * Whether the student may open this attempt's question-by-question review.
+     *
+     * @param  array{review_requires_permission: bool}  $settings  the lesson's quiz settings
      */
-    public function canViewAnswers(QuizAttempt $attempt, array $settings): bool
+    public function canReview(QuizAttempt $attempt, array $settings): bool
     {
-        return $settings['show_answers']
+        return ! $settings['review_requires_permission']
             || $attempt->answerReviewRequest?->status === AnswerReviewRequest::STATUS_APPROVED;
+    }
+
+    /**
+     * The status the student sees: "approved" when no permission is needed.
+     *
+     * @param  array{review_requires_permission: bool}  $settings
+     */
+    public function visibleStatus(QuizAttempt $attempt, array $settings): ?string
+    {
+        return $settings['review_requires_permission'] ? $this->statusFor($attempt) : AnswerReviewRequest::STATUS_APPROVED;
     }
 
     /** null when nothing has been asked. */

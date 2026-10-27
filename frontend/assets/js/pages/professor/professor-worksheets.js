@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     [
         'sectionSelect', 'materialsList', 'emptyState', 'settingsCard', 'lessonTitle', 'settingsStatus',
         'settingsForm', 'questionCount', 'timerEnabled', 'timeLimit', 'maxAttempts', 'shuffleQuestions',
-        'shuffleChoices', 'showAnswers', 'adaptive', 'adaptivePreview', 'saveSettingsBtn', 'generateBtn', 'generateBtnText', 'reviewCard',
+        'shuffleChoices', 'showAnswers', 'reviewRequiresPermission', 'adaptive', 'adaptivePreview', 'saveSettingsBtn', 'generateBtn', 'generateBtnText', 'reviewCard',
         'feedbackCard', 'feedbackBody', 'reviewMeta', 'topUpBar', 'topUpText', 'topUpBtn', 'questionList', 'trainingCard', 'trainingSubtitle',
         'trainingBody', 'answerReviewCard', 'answerReviewList', 'answerReviewBadge',
     ].forEach(id => {
@@ -394,8 +394,8 @@ async function loadAnswerReviews() {
 
     const requests = data.requests || [];
     if (!requests.length) {
-        dom.answerReviewList.innerHTML = state.studio.settings.show_answers
-            ? '<p class="list-empty">Students see the correct answers right after submitting, so there is nothing to approve.</p>'
+        dom.answerReviewList.innerHTML = !state.studio.settings.review_requires_permission
+            ? '<p class="list-empty">Students can review their answers right after submitting, so there is nothing to approve. Turn on “Ask my permission before students review their answers” to require it.</p>'
             : '<p class="list-empty">No requests yet. Students can ask to review the answers after submitting.</p>';
         return;
     }
@@ -508,6 +508,7 @@ function renderSettings() {
     dom.shuffleQuestions.checked = settings.shuffle_questions;
     dom.shuffleChoices.checked = settings.shuffle_choices;
     dom.showAnswers.checked = settings.show_answers;
+    dom.reviewRequiresPermission.checked = settings.review_requires_permission;
     dom.adaptive.checked = settings.adaptive;
 
     state.mix = { ...settings.difficulty_mix };
@@ -648,6 +649,7 @@ function readSettingsForm() {
         shuffle_questions: dom.shuffleQuestions.checked,
         shuffle_choices: dom.shuffleChoices.checked,
         show_answers: dom.showAnswers.checked,
+        review_requires_permission: dom.reviewRequiresPermission.checked,
         adaptive: dom.adaptive.checked,
     };
 }

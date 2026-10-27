@@ -17,6 +17,7 @@ class QuizSetting extends Model
         'shuffle_questions',
         'shuffle_choices',
         'show_answers',
+        'review_requires_permission',
         'adaptive',
     ];
 
@@ -30,6 +31,7 @@ class QuizSetting extends Model
             'shuffle_questions' => 'boolean',
             'shuffle_choices' => 'boolean',
             'show_answers' => 'boolean',
+            'review_requires_permission' => 'boolean',
             'adaptive' => 'boolean',
         ];
     }

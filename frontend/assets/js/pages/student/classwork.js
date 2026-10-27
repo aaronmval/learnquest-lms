@@ -222,7 +222,7 @@ function renderQuizCard() {
 }
 
 /* LATEST ATTEMPT — score of the last submitted attempt and, when the teacher
-   hides the correct answers, the status of the request to review them. */
+   requires permission to review answers, the status of that request. */
 let latestAttempt = null;
 
 async function loadLatestAttempt() {
@@ -253,7 +253,7 @@ function renderAttemptStatus() {
 
     const score = `Last score: ${latestAttempt.score_correct ?? 0}/${latestAttempt.score_total ?? 0}.`;
 
-    if (latestAttempt.answers_visible) {
+    if (latestAttempt.review_unlocked) {
         text.textContent = score;
         btn.textContent = "Review answers";
         btn.disabled = false;
@@ -261,9 +261,9 @@ function renderAttemptStatus() {
     }
 
     const STATUS = {
-        pending: ["Waiting for your teacher to approve reviewing the answers.", "Request sent", true],
-        denied: ["Your teacher didn't approve reviewing the answers.", "Ask again", false],
-    }[latestAttempt.answer_review_status] || ["Correct answers are hidden until your teacher approves.", "Ask teacher to review answers", false];
+        pending: ["Waiting for your teacher to approve reviewing your answers.", "Request sent", true],
+        denied: ["Your teacher didn't approve reviewing your answers.", "Ask again", false],
+    }[latestAttempt.answer_review_status] || ["Your teacher needs to approve before you can review your answers.", "Ask teacher to review answers", false];
 
     text.textContent = `${score} ${STATUS[0]}`;
     btn.textContent = STATUS[1];
@@ -274,7 +274,7 @@ async function handleQuizReview() {
     if (!latestAttempt) return;
 
     const reviewUrl = `student-quiz.html?id=${CLASS_ID}&postId=${POST_ID}&attempt=${latestAttempt.id}&view=review`;
-    if (latestAttempt.answers_visible) {
+    if (latestAttempt.review_unlocked) {
         window.location.href = reviewUrl;
         return;
     }

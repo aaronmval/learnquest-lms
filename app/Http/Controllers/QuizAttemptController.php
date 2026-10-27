@@ -19,8 +19,8 @@ class QuizAttemptController extends Controller
     /**
      * Submit and grade a full quiz attempt in one request. Correctness,
      * explanations, and mastery deltas are computed here and only here —
-     * the answer key is only ever returned after the student has submitted,
-     * and only when the teacher shows answers or approved a review request.
+     * per-question results are only ever returned after the student has
+     * submitted, and only once the review is unlocked (see presentReview).
      */
     public function store(
         StoreQuizAttemptRequest $request,
@@ -57,15 +57,12 @@ class QuizAttemptController extends Controller
         $result = $attempts->submit($quiz, $student, $request->validated()['answers'], $openAttempt);
         $alerts->quizGraded($student, $post, $result['mastery_deltas']);
 
-        // Answers not shown right away: keep the score and right/wrong, hide
-        // the key until the teacher approves a review request.
-        if (! $settings['show_answers']) {
-            $result['review'] = $this->withoutAnswerKey($result['review']);
-        }
+        // A fresh attempt has no approved request yet: when the teacher
+        // requires permission, the student gets only their score for now.
+        $unlocked = ! $settings['review_requires_permission'];
 
-        return response()->json($result + [
-            'show_answers' => $settings['show_answers'],
-            'answer_review' => ['status' => null],
+        return response()->json($this->presentReview($result, $unlocked, $settings) + [
+            'answer_review' => ['status' => $unlocked ? 'approved' : null],
         ], 201);
     }
 
@@ -104,7 +101,7 @@ class QuizAttemptController extends Controller
         $this->authorizeAttempt($attempt, $post, $request->user());
         abort_if($attempt->status === 'in_progress', 409);
 
-        if ($settingsService->for($post)['show_answers']) {
+        if (! $settingsService->for($post)['review_requires_permission']) {
             return response()->json(['status' => 'approved']);
         }
 
@@ -119,8 +116,9 @@ class QuizAttemptController extends Controller
     }
 
     /**
-     * A submitted attempt's score and review. The answer key and
-     * explanations are included only when the student may see them.
+     * A submitted attempt's score and review. The question-by-question
+     * review is included only once unlocked (no permission needed, or the
+     * teacher approved), and the answer key only when the teacher shows it.
      */
     public function review(
         Request $request,
@@ -137,20 +135,14 @@ class QuizAttemptController extends Controller
         abort_if($attempt->status === 'in_progress', 409);
 
         $settings = $settingsService->for($post);
-        $canView = $answerReviews->canViewAnswers($attempt, $settings);
-        $result = $attempts->reviewFor($attempt);
+        $unlocked = $answerReviews->canReview($attempt, $settings);
 
-        if (! $canView) {
-            $result['review'] = $this->withoutAnswerKey($result['review']);
-        }
-
-        return response()->json($result + [
+        return response()->json($this->presentReview($attempts->reviewFor($attempt), $unlocked, $settings) + [
             'attempt_id' => $attempt->id,
             'lesson_title' => $post->title,
             'subject' => $class->subject ?? $class->name ?? 'Science',
             'section' => $class->section,
-            'answers_visible' => $canView,
-            'answer_review' => ['status' => $settings['show_answers'] ? 'approved' : $answerReviews->statusFor($attempt)],
+            'answer_review' => ['status' => $answerReviews->visibleStatus($attempt, $settings)],
         ]);
     }
 
@@ -184,17 +176,37 @@ class QuizAttemptController extends Controller
             'score_correct' => $attempt->score_correct,
             'score_total' => $attempt->score_total,
             'submitted_at' => $attempt->submitted_at?->toIso8601String(),
-            'answers_visible' => $answerReviews->canViewAnswers($attempt, $settings),
-            'answer_review_status' => $settings['show_answers'] ? 'approved' : $answerReviews->statusFor($attempt),
+            'review_unlocked' => $answerReviews->canReview($attempt, $settings),
+            'answer_review_status' => $answerReviews->visibleStatus($attempt, $settings),
         ]]);
     }
 
-    private function withoutAnswerKey(array $review): array
+    /**
+     * Locked: no per-question data at all (not even right/wrong), only the
+     * score. Unlocked: the review, with the answer key only when the teacher
+     * shows correct answers.
+     *
+     * @param  array{show_answers: bool}  $settings
+     */
+    private function presentReview(array $result, bool $unlocked, array $settings): array
     {
-        return array_map(
-            fn ($entry) => array_merge($entry, ['correct_index' => null, 'explanation' => null]),
-            $review,
-        );
+        if (! $unlocked) {
+            $result['review'] = [];
+            if (array_key_exists('questions', $result)) {
+                $result['questions'] = [];
+            }
+        } elseif (! $settings['show_answers']) {
+            $result['review'] = array_map(
+                fn ($entry) => array_merge($entry, ['correct_index' => null, 'explanation' => null]),
+                $result['review'],
+            );
+        }
+
+        return $result + [
+            'review_unlocked' => $unlocked,
+            'show_answers' => $settings['show_answers'],
+            'answers_visible' => $unlocked && $settings['show_answers'],
+        ];
     }
 
     private function authorizeEnrolled(Request $request, ClassRoom $class): void

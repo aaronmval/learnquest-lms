@@ -181,9 +181,14 @@
                                     <span class="switch-text">Shuffle answer choices</span>
                                 </label>
                                 <label class="switch">
+                                    <input id="reviewRequiresPermission" type="checkbox" />
+                                    <span class="switch-track" aria-hidden="true"></span>
+                                    <span class="switch-text">Ask my permission before students review their answers</span>
+                                </label>
+                                <label class="switch">
                                     <input id="showAnswers" type="checkbox" />
                                     <span class="switch-track" aria-hidden="true"></span>
-                                    <span class="switch-text">Show correct answers right after submitting (otherwise students must ask you)</span>
+                                    <span class="switch-text">Show correct answers and explanations in the review</span>
                                 </label>
                             </div>
 
@@ -230,8 +235,9 @@
                                     <span id="answerReviewBadge" class="status-chip status-checked is-hidden"></span>
                                 </h2>
                                 <p class="panel-meta">
-                                    Students asking to see the correct answers
-                                    and explanations of their attempt
+                                    Students asking to review the answers of
+                                    their attempt (when your permission is
+                                    required)
                                 </p>
                             </div>
                         </div>
